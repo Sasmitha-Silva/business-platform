@@ -2,52 +2,82 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, Briefcase, ShieldCheck, Rocket, Lightbulb, Save, ArrowLeft, UserCheck } from "lucide-react";
+import {
+  Check,
+  ShieldCheck,
+  ArrowRight,
+  ArrowLeft,
+  Building2,
+  CheckCircle2,
+  Lock,
+  User,
+  Mail,
+  Phone,
+  KeyRound,
+  IdCard,
+  Globe,
+  MapPin,
+  FileText,
+  Briefcase,
+  Stethoscope,
+  Palette,
+  Laptop,
+  Landmark,
+  Compass,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 const steps = [
-  { id: 1, label: "Rotaractor ID & Account", icon: UserCheck },
-  { id: 2, label: "Business Details", icon: Briefcase },
-  { id: 3, label: "Location & Verification", icon: ShieldCheck },
-  { id: 4, label: "Review & Launch", icon: Rocket },
+  { id: 1, label: "1. Your Profile" },
+  { id: 2, label: "2. Business Info" },
+  { id: 3, label: "3. Verification" },
 ];
 
-export default function PublicRegistrationPage() {
+const sectorOptions = [
+  { id: "Legal & Corporate", label: "Legal & Corporate", icon: Briefcase },
+  { id: "Healthcare & Medicine", label: "Healthcare & Medicine", icon: Stethoscope },
+  { id: "Creative & Digital", label: "Creative & Digital", icon: Palette },
+  { id: "Technology & Software", label: "Technology & Software", icon: Laptop },
+  { id: "Finance & Audit", label: "Finance & Audit", icon: Landmark },
+  { id: "Architecture & Construction", label: "Architecture", icon: Compass },
+];
+
+export default function BusinessRegistrationPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [toastVisible, setToastVisible] = useState(false);
   const router = useRouter();
 
   // Form State
   const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
     rotaryId: "",
     clubName: "",
-    fullName: "",
-    email: "",
-    password: "",
+    district: "District 3220",
     businessName: "",
-    category: "Technology & Software",
-    businessType: "B2B (Business to Business)",
+    category: "Legal & Corporate",
     tagline: "",
     description: "",
+    website: "",
+    address: "",
     city: "Colombo",
     country: "Sri Lanka",
-    phone: "",
-    whatsapp: "",
     gstNumber: "",
+    statutoryNo: "",
+    agreeTerms: true,
   });
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleNext = () => {
-    if (currentStep < 4) {
+    if (currentStep < 3) {
       setCurrentStep((prev) => prev + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       router.push("/dashboard");
     }
@@ -56,15 +86,14 @@ export default function PublicRegistrationPage() {
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF6F4] pb-20">
-      {/* Registration Header Bar with Clear "Back to Home" Link */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-border sticky top-0 z-40 py-4 px-6 sm:px-12 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-4">
+    <div className="h-screen w-screen overflow-hidden bg-[#FAF6F4] flex flex-col justify-between font-sans">
+      {/* Header Bar */}
+      <header className="relative z-10 bg-white/80 backdrop-blur-md border-b border-pink-100/80 py-3 px-6 sm:px-10 flex items-center justify-between shrink-0 shadow-xs">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="sm"
@@ -78,360 +107,425 @@ export default function PublicRegistrationPage() {
 
           <div className="hidden sm:block w-px h-5 bg-border" />
 
-          <Link href="/" className="flex items-center gap-2 text-lg font-extrabold text-[#D41367]">
-            <span>Rotaract Network</span>
+          <Link href="/" className="flex items-center gap-2 text-base sm:text-lg font-black text-[#D41367]">
+            <div className="w-7 h-7 rounded-lg bg-[#D41367] text-white flex items-center justify-center font-bold text-xs shadow-sm">
+              R
+            </div>
+            <span>Rotaract Business Network</span>
           </Link>
         </div>
 
-        <div className="flex items-center gap-4 text-xs font-semibold">
+        <div className="flex items-center gap-3 text-xs font-semibold">
           <span className="text-muted-foreground hidden sm:inline">Already registered?</span>
-          <Button variant="outline" className="rounded-full border-border hover:border-[#D41367] hover:text-[#D41367] text-xs h-9 px-4 bg-white" asChild>
-            <Link href="/auth/login">Login with Rotaract Email</Link>
+          <Button variant="outline" className="rounded-full border-pink-200 hover:border-[#D41367] hover:text-[#D41367] text-xs h-8 px-4 bg-white/90 font-bold" asChild>
+            <Link href="/auth/login">Login</Link>
           </Button>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        {/* Stepper Header Bar */}
-        <div className="mb-10">
-          <div className="flex items-center justify-between relative max-w-3xl mx-auto">
-            <div className="absolute top-5 left-12 right-12 h-0.5 bg-border -z-0" />
-            <div
-              className="absolute top-5 left-12 h-0.5 bg-[#D41367] transition-all duration-300 -z-0"
-              style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
-            />
-
+      {/* Main 100vh Full-Screen Content Area */}
+      <main className="relative z-10 flex-1 flex flex-col justify-center max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-5 overflow-hidden">
+        {/* Step Tab Navigation Bar */}
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-1.5 shadow-sm border border-pink-100 max-w-2xl mx-auto mb-4 w-full shrink-0">
+          <div className="grid grid-cols-3 gap-1.5">
             {steps.map((step) => {
-              const isCompleted = currentStep > step.id;
               const isActive = currentStep === step.id;
+              const isDone = currentStep > step.id;
 
               return (
-                <div key={step.id} className="flex flex-col items-center z-10">
+                <button
+                  key={step.id}
+                  onClick={() => isDone && setCurrentStep(step.id)}
+                  disabled={!isDone && !isActive}
+                  className={`py-2 px-3 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2 ${
+                    isActive
+                      ? "bg-[#D41367] text-white shadow-md font-bold"
+                      : isDone
+                      ? "bg-pink-50 text-[#D41367] hover:bg-pink-100/80 font-bold"
+                      : "bg-transparent text-muted-foreground font-medium opacity-60"
+                  }`}
+                >
                   <div
-                    className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
-                      isCompleted
-                        ? "bg-[#D41367] text-white shadow-sm"
-                        : isActive
-                        ? "bg-[#D41367] text-white ring-4 ring-[#D41367]/20 shadow-md scale-110"
-                        : "bg-white border-2 border-border text-muted-foreground"
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 ${
+                      isActive
+                        ? "bg-white text-[#D41367]"
+                        : isDone
+                        ? "bg-[#D41367] text-white"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {isCompleted ? <Check className="w-5 h-5" /> : <step.icon className="w-5 h-5" />}
+                    {isDone ? <Check className="w-3 h-3" /> : step.id}
                   </div>
-                  <span
-                    className={`text-xs font-bold mt-2 text-center max-w-[100px] ${
-                      isActive ? "text-[#D41367]" : isCompleted ? "text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </div>
+                  <span className="text-xs truncate">{step.label}</span>
+                </button>
               );
             })}
           </div>
         </div>
 
-        {/* Main Form Split Card Container */}
-        <div className="bg-white rounded-[2.5rem] border border-border overflow-hidden shadow-xl grid md:grid-cols-12">
-          {/* Left Context Panel */}
-          <div className="md:col-span-5 bg-gradient-to-b from-pink-50 to-pink-100/50 p-6 sm:p-8 border-r border-border flex flex-col justify-between space-y-6">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D41367] bg-white px-3 py-1 rounded-full border border-pink-200">
-                Step {currentStep} of 4
-              </span>
-              <h2 className="text-2xl font-extrabold text-[#D41367] mt-3">
-                {currentStep === 1 && "Rotaract Identity"}
-                {currentStep === 2 && "Business Profile"}
-                {currentStep === 3 && "Location & Tax Verification"}
-                {currentStep === 4 && "Review & Launch"}
-              </h2>
-              <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-                {currentStep === 1 && "Provide your official Rotaract ID number. This links your verified business profile directly with your Rotary membership."}
-                {currentStep === 2 && "Tell the network about your venture. This information will appear on your public directory card."}
-                {currentStep === 3 && "Provide office locations and optional GST/Udyam certificates for instant badge verification."}
-                {currentStep === 4 && "Review your registration details before publishing your listing to 28,000+ global Rotaract leaders."}
-              </p>
+        {/* Form Layout Grid */}
+        <div className="grid lg:grid-cols-12 gap-6 items-stretch flex-1 max-h-[calc(100vh-130px)]">
+          {/* Left Column: Photo-Backed Premium Theme Hero Panel */}
+          <div className="lg:col-span-4 rounded-3xl overflow-hidden relative shadow-lg flex flex-col justify-between p-6 sm:p-7 text-white">
+            <Image
+              src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=85"
+              alt="Rotaract Business Leaders"
+              fill
+              className="object-cover object-center opacity-100 pointer-events-none"
+              priority
+              unoptimized
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#18181B] via-[#D41367]/80 to-[#D41367]/50" />
 
-              {/* Tip Box */}
-              <div className="bg-white rounded-2xl p-4 border border-pink-200 mt-6 flex items-start gap-3 shadow-sm">
-                <Lightbulb className="w-5 h-5 text-[#D41367] shrink-0 mt-0.5" />
-                <p className="text-xs text-foreground/80 leading-relaxed">
-                  {currentStep === 1 && "Tip: Using your official Rotaract email allows instant password recovery."}
-                  {currentStep === 2 && "Tip: Profiles with clear taglines receive up to 40% more enquiry messages."}
-                  {currentStep === 3 && "Tip: Uploading your GST number instantly unlocks the Bronze Verification Badge."}
-                  {currentStep === 4 && "Ready to launch! You can update documents anytime in your owner portal."}
+            <div className="relative z-10 space-y-6 my-auto">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black text-white leading-tight drop-shadow-sm">
+                  Join 1,200+ Rotaract Business Leaders.
+                </h2>
+                <p className="text-xs text-white/90 mt-1.5 leading-relaxed font-medium">
+                  Establish verified B2B standing across worldwide Rotaract districts.
                 </p>
               </div>
-            </div>
 
-            {/* Live Profile Preview Card */}
-            <div className="bg-white rounded-2xl p-4 border border-pink-200 space-y-2 shadow-sm">
-              <p className="text-[10px] font-extrabold text-[#D41367] uppercase tracking-wider">LIVE PROFILE PREVIEW</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-[#D41367] font-bold text-sm shrink-0">
-                  {formData.businessName ? formData.businessName.charAt(0) : "R"}
+              {/* Relevant & Concise Benefit Items */}
+              <div className="space-y-2.5">
+                <div className="bg-black/30 border border-white/20 rounded-2xl p-3 flex items-center gap-3 backdrop-blur-md">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="text-xs font-bold text-white">Verified Member Badge</span>
                 </div>
-                <div className="space-y-1 flex-1 min-w-0">
-                  <p className="text-xs font-bold text-foreground truncate">
-                    {formData.businessName || "Your Business Name"}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {formData.category} · {formData.city || "Location"}
-                  </p>
+
+                <div className="bg-black/30 border border-white/20 rounded-2xl p-3 flex items-center gap-3 backdrop-blur-md">
+                  <Globe className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span className="text-xs font-bold text-white">Global Network Reach</span>
+                </div>
+
+                <div className="bg-black/30 border border-white/20 rounded-2xl p-3 flex items-center gap-3 backdrop-blur-md">
+                  <Lock className="w-4 h-4 text-white shrink-0" />
+                  <span className="text-xs font-bold text-white">Direct B2B Enquiries</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Form Panel */}
-          <div className="md:col-span-7 p-6 sm:p-8 flex flex-col justify-between space-y-6">
-            <div>
-              {/* STEP 1: Rotaractor Identity & Credentials */}
-              {currentStep === 1 && (
-                <div className="space-y-4 animate-fade-in">
-                  <div className="bg-[#FFEBEF] border border-[#F9C0CE] rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-[#D41367] font-bold text-xs">
-                      <UserCheck className="w-4 h-4" /> Rotaract / Rotary Identity Link
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Rotary Member ID*</Label>
-                        <Input
-                          value={formData.rotaryId}
-                          onChange={(e) => handleInputChange("rotaryId", e.target.value)}
-                          placeholder="e.g. ROT-3220-8841"
-                          className="h-10 text-xs bg-white border-border rounded-xl"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Home Club Name*</Label>
-                        <Input
-                          value={formData.clubName}
-                          onChange={(e) => handleInputChange("clubName", e.target.value)}
-                          placeholder="e.g. Rotaract Club of Downtown"
-                          className="h-10 text-xs bg-white border-border rounded-xl"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
+          {/* Right Column: Clean Form Panel Standardized Typography */}
+          <div className="lg:col-span-8 bg-white border border-pink-100 rounded-3xl p-6 sm:p-8 flex flex-col justify-between overflow-y-auto shadow-sm">
+            {/* Step 1: Your Profile Form */}
+            {currentStep === 1 && (
+              <div className="space-y-6 animate-fade-in">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">Step 1: Your Member Profile</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
+                    Enter your credentials and home club details.
+                  </p>
+                </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Full Name*</Label>
-                    <Input
-                      value={formData.fullName}
-                      onChange={(e) => handleInputChange("fullName", e.target.value)}
-                      placeholder="Anand Vardhan"
-                      className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl"
-                      required
+                <div className="grid sm:grid-cols-2 gap-6 pt-2">
+                  {/* First Name */}
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        FIRST NAME
+                      </label>
+                      <User className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Input Your First Name"
+                      value={formData.firstName}
+                      onChange={(e) => handleInputChange("firstName", e.target.value)}
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Work Email Address*</Label>
-                    <Input
+                  {/* Last Name */}
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        LAST NAME
+                      </label>
+                      <User className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Input Your Last Name"
+                      value={formData.lastName}
+                      onChange={(e) => handleInputChange("lastName", e.target.value)}
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        EMAIL ADDRESS
+                      </label>
+                      <Mail className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
                       type="email"
+                      placeholder="Input Your Email"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
-                      placeholder="anand@company.com"
-                      className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl"
-                      required
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Create Password*</Label>
-                    <Input
+                  {/* Phone */}
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center">
+                        PHONE NUMBER <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold normal-case tracking-normal">Optional</span>
+                      </label>
+                      <Phone className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Input Your Phone Number"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+
+                  {/* Rotary Member ID */}
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        ROTARY / ROTARACT MEMBER ID
+                      </label>
+                      <IdCard className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. ROT-10492"
+                      value={formData.rotaryId}
+                      onChange={(e) => handleInputChange("rotaryId", e.target.value)}
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+
+                  {/* Rotaract Home Club */}
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        ROTARACT HOME CLUB
+                      </label>
+                      <Building2 className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. Rotaract Club of Colombo"
+                      value={formData.clubName}
+                      onChange={(e) => handleInputChange("clubName", e.target.value)}
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+
+                  {/* Password */}
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors sm:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        ACCOUNT PASSWORD
+                      </label>
+                      <KeyRound className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
                       type="password"
+                      placeholder="Create Password"
                       value={formData.password}
                       onChange={(e) => handleInputChange("password", e.target.value)}
-                      placeholder="Min. 8 characters"
-                      className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl"
-                      required
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
                     />
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* STEP 2: Business Profile */}
-              {currentStep === 2 && (
-                <div className="space-y-4 animate-fade-in">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Business / Entity Name*</Label>
-                    <Input
+            {/* Step 2: Business Information Form */}
+            {currentStep === 2 && (
+              <div className="space-y-6 animate-fade-in">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">Step 2: Business Details</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
+                    Provide details about your venture for your directory card.
+                  </p>
+                </div>
+
+                <div className="space-y-6 pt-2">
+                  {/* Business Name */}
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        BUSINESS / COMPANY NAME
+                      </label>
+                      <Building2 className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Skyline Legal Associates"
                       value={formData.businessName}
                       onChange={(e) => handleInputChange("businessName", e.target.value)}
-                      placeholder="e.g. Lumina Digital Solutions"
-                      className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl"
-                      required
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Industry Category*</Label>
-                      <select
-                        value={formData.category}
-                        onChange={(e) => handleInputChange("category", e.target.value)}
-                        className="w-full h-11 px-3 text-xs bg-warm-bg/40 border border-border rounded-xl outline-none"
-                      >
-                        <option>Technology & Software</option>
-                        <option>Professional Services</option>
-                        <option>Manufacturing</option>
-                        <option>Healthcare</option>
-                        <option>Retail & E-commerce</option>
-                      </select>
+                  {/* Industry Sector Chips */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      SELECT INDUSTRY SECTOR
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {sectorOptions.map((sec) => {
+                        const isSelected = formData.category === sec.id;
+                        const Icon = sec.icon;
+
+                        return (
+                          <button
+                            type="button"
+                            key={sec.id}
+                            onClick={() => handleInputChange("category", sec.id)}
+                            className={`p-2.5 rounded-2xl border text-left flex items-center gap-2 transition-all ${
+                              isSelected
+                                ? "bg-[#D41367] text-white border-[#D41367] shadow-sm font-bold scale-[1.02]"
+                                : "bg-pink-50/40 text-foreground border-pink-200/80 hover:border-[#D41367]/40 hover:bg-white"
+                            }`}
+                          >
+                            <div
+                              className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 text-xs ${
+                                isSelected ? "bg-white/20 text-white" : "bg-white text-[#D41367] border border-pink-100"
+                              }`}
+                            >
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-xs leading-tight font-bold truncate">{sec.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Business Model*</Label>
-                      <select
-                        value={formData.businessType}
-                        onChange={(e) => handleInputChange("businessType", e.target.value)}
-                        className="w-full h-11 px-3 text-xs bg-warm-bg/40 border border-border rounded-xl outline-none"
-                      >
-                        <option>B2B (Business to Business)</option>
-                        <option>B2C (Business to Consumer)</option>
-                        <option>Manufacturer</option>
-                        <option>Service Provider</option>
-                      </select>
-                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">One-Line Tagline</Label>
-                    <Input
-                      value={formData.tagline}
-                      onChange={(e) => handleInputChange("tagline", e.target.value)}
-                      placeholder="Innovating cloud software for global enterprises..."
-                      className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Full Description</Label>
-                    <Textarea
-                      rows={4}
-                      value={formData.description}
-                      onChange={(e) => handleInputChange("description", e.target.value)}
-                      placeholder="Describe your business operations, services, and commitment to Rotary ethics..."
-                      className="text-xs bg-warm-bg/40 border-border rounded-xl resize-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: Location & Verification */}
-              {currentStep === 3 && (
-                <div className="space-y-4 animate-fade-in">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Office City*</Label>
-                      <Input
+                  {/* City & Country Grid */}
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          CITY
+                        </label>
+                        <MapPin className="w-4 h-4 text-[#D41367]" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Colombo / Dubai / Mumbai"
                         value={formData.city}
                         onChange={(e) => handleInputChange("city", e.target.value)}
-                        placeholder="Colombo"
-                        className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl"
+                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Country*</Label>
-                      <Input
-                        value={formData.country}
-                        onChange={(e) => handleInputChange("country", e.target.value)}
-                        placeholder="Sri Lanka"
-                        className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl"
+
+                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center">
+                          WEBSITE URL <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold normal-case tracking-normal">Optional</span>
+                        </label>
+                        <Globe className="w-4 h-4 text-[#D41367]" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="https://yourcompany.com"
+                        value={formData.website}
+                        onChange={(e) => handleInputChange("website", e.target.value)}
+                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
                       />
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Phone Number</Label>
-                      <Input
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange("phone", e.target.value)}
-                        placeholder="+94 77 123 4567"
-                        className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">WhatsApp Number</Label>
-                      <Input
-                        value={formData.whatsapp}
-                        onChange={(e) => handleInputChange("whatsapp", e.target.value)}
-                        placeholder="+94 77 123 4567"
-                        className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl"
-                      />
-                    </div>
-                  </div>
+            {/* Step 3: Verification Credentials */}
+            {currentStep === 3 && (
+              <div className="space-y-6 animate-fade-in">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">Step 3: Verification Credentials</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
+                    Submit optional statutory registration numbers for verified badge standing.
+                  </p>
+                </div>
 
-                  <div className="space-y-1.5 pt-2">
-                    <Label className="text-xs font-bold text-foreground">GST / Tax Registration Number (Optional)</Label>
-                    <Input
+                <div className="grid sm:grid-cols-2 gap-6 pt-2">
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center">
+                        GST / TAX REG NO <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold normal-case tracking-normal">Optional</span>
+                      </label>
+                      <FileText className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="22AAAAA0000A1Z5"
                       value={formData.gstNumber}
                       onChange={(e) => handleInputChange("gstNumber", e.target.value)}
-                      placeholder="22AAAAA0000A1Z5"
-                      className="h-11 text-sm bg-warm-bg/40 border-border rounded-xl font-mono"
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
                     />
-                    <p className="text-[10px] text-muted-foreground">Adding GST automatically qualifies your business for Silver Verification.</p>
+                  </div>
+
+                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center">
+                        STATUTORY BUSINESS NO <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold normal-case tracking-normal">Optional</span>
+                      </label>
+                      <ShieldCheck className="w-4 h-4 text-[#D41367]" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="PV-109482"
+                      value={formData.statutoryNo}
+                      onChange={(e) => handleInputChange("statutoryNo", e.target.value)}
+                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
+                    />
                   </div>
                 </div>
-              )}
 
-              {/* STEP 4: Review & Launch */}
-              {currentStep === 4 && (
-                <div className="space-y-4 animate-fade-in">
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-xs space-y-2">
-                    <p className="font-extrabold text-emerald-800 flex items-center gap-1.5">
-                      <Check className="w-4 h-4" /> Ready for Global Publication
+                <div className="bg-pink-50/80 border border-pink-200 rounded-2xl p-4 flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-[#D41367] shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <h4 className="font-extrabold text-foreground">District Verification Review</h4>
+                    <p className="text-muted-foreground mt-0.5 leading-relaxed font-normal">
+                      Your business profile will be reviewed within 24-48 hours by your assigned Rotaract District Representative to issue your official verified badge.
                     </p>
-                    <p className="text-emerald-700 leading-relaxed">
-                      By clicking Launch Business Listing below, your Rotaract ID will be linked to this business and your portal account created instantly.
-                    </p>
-                  </div>
-
-                  <div className="bg-warm-bg/60 rounded-2xl p-4 border border-border space-y-2 text-xs">
-                    <p><strong>Owner:</strong> {formData.fullName || "Anand Vardhan"} ({formData.email || "anand@company.com"})</p>
-                    <p><strong>Rotary ID:</strong> <span className="font-mono text-[#D41367]">{formData.rotaryId || "ROT-3220-8841"}</span></p>
-                    <p><strong>Business:</strong> {formData.businessName || "Lumina Digital Solutions"}</p>
-                    <p><strong>Location:</strong> {formData.city}, {formData.country}</p>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* In-Card Control Buttons Bar */}
-            <div className="pt-6 border-t border-border flex items-center justify-between gap-3">
-              <button
-                onClick={() => setToastVisible(true)}
-                className="flex items-center gap-2 text-xs font-bold text-foreground/80 hover:text-[#D41367] transition-colors"
-              >
-                <Save className="w-4 h-4 text-[#D41367]" /> Save Draft
-              </button>
-
-              <div className="flex items-center gap-3">
-                {currentStep > 1 && (
-                  <Button
-                    variant="outline"
-                    onClick={handleBack}
-                    className="rounded-xl px-6 h-10 text-xs font-bold border-border bg-white"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
-                  </Button>
-                )}
-                <Button
-                  onClick={handleNext}
-                  className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl px-8 h-10 text-xs font-bold shadow-md gap-1"
-                >
-                  {currentStep === 4 ? "Launch Business Listing →" : "Next Step →"}
-                </Button>
               </div>
+            )}
+
+            {/* Bottom Footer Action Controls */}
+            <div className="pt-4 border-t border-pink-100 flex items-center justify-between mt-4 shrink-0">
+              {currentStep > 1 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBack}
+                  className="rounded-full border-pink-200 text-foreground hover:bg-pink-50 text-xs font-bold px-5 h-10"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Previous Step
+                </Button>
+              ) : (
+                <div />
+              )}
+
+              <Button
+                type="button"
+                onClick={handleNext}
+                className="rounded-full bg-[#D41367] hover:bg-[#B80E56] text-white text-xs font-extrabold px-7 h-10 shadow-md gap-1"
+              >
+                <span>{currentStep === 3 ? "Complete Business Registration" : "Next Step"}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

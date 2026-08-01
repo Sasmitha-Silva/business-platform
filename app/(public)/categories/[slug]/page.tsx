@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Building2, ChevronRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, Building2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { VerificationBadge } from "@/components/verification-badge";
 import { BusinessCard } from "@/components/business-card";
 import { mockCategories, mockBusinesses } from "@/lib/mock-data";
 
@@ -29,91 +28,68 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     (b) => b.category_id === category.id && b.status === "approved"
   );
 
-  const stats = [
-    { value: `${businesses.length * 18}+`, label: "Verified Producers" },
-    { value: `${Math.floor(businesses.length * 3.5)}`, label: "Global Markets" },
-    { value: "98%", label: "Trust Score" },
-    { value: `$${(businesses.length * 0.3).toFixed(1)}M`, label: "B2B Trade Volume" },
-  ];
-
   return (
-    <div>
-      {/* Hero */}
-      <section className="bg-gradient-to-b from-warm-bg to-card border-b border-border py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            <div className="animate-fade-in-up">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-crimson/10 text-crimson text-xs font-semibold rounded-full mb-4">
-                <ShieldCheck className="w-3.5 h-3.5" /> Verified Network
-              </span>
-              <h1 className="text-3xl lg:text-4xl font-bold text-foreground">
-                Discover Verified {category.name} in Rotaract
+    <div className="min-h-screen bg-background pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Compact Header (No Hero) */}
+        <div className="pt-4 pb-6 border-b border-border mb-8">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+            <Link href="/" className="hover:text-[#D41367] transition-colors">Home</Link>
+            <ChevronRight className="w-3 h-3" />
+            <Link href="/categories" className="hover:text-[#D41367] transition-colors">Categories</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-foreground font-medium">{category.name}</span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                {category.name}
               </h1>
-              <p className="text-muted-foreground mt-3 max-w-lg">
-                Connect with reliable {category.name.toLowerCase()} partners vetted by the Rotaract Business Network. Find quality-assured excellence within our global community.
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                {businesses.length} verified business{businesses.length !== 1 ? "es" : ""} · {category.children?.length || 0} specializations
               </p>
-              <div className="flex items-center gap-3 mt-6">
-                <Button className="bg-crimson hover:bg-crimson-dark text-white rounded-full gap-2" asChild>
-                  <Link href="/directory">Browse All Members <ArrowRight className="w-4 h-4" /></Link>
-                </Button>
-                <Button variant="outline" className="rounded-full border-crimson text-crimson hover:bg-crimson/5" asChild>
-                  <Link href="/auth/signup">Register Your Business</Link>
-                </Button>
-              </div>
             </div>
-            <div className="hidden lg:flex justify-center">
-              <div className="w-80 h-52 rounded-3xl bg-gradient-to-br from-crimson/10 to-warm-pink flex items-center justify-center shadow-lg">
-                <Building2 className="w-20 h-20 text-crimson/30" />
-              </div>
-            </div>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D41367] hover:bg-[#B80E56] text-white text-xs font-bold rounded-full transition-colors shadow-sm shrink-0 self-start sm:self-auto"
+            >
+              Register Your Business
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
-      </section>
 
-      {/* Stats */}
-      <section className="border-b border-border bg-card py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-2xl font-bold text-crimson">{stat.value}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Content */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex gap-8">
-          {/* Sub-categories sidebar */}
-          <div className="hidden lg:block w-56 shrink-0">
-            <div className="bg-card rounded-2xl border border-border p-5 sticky top-24">
-              <h3 className="font-semibold text-foreground mb-4">Sub-Categories</h3>
-              <div className="space-y-1">
-                {category.children?.map((sub, i) => (
-                  <button
-                    key={sub.id}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                      i === 0
-                        ? "bg-crimson text-white font-medium"
-                        : "text-muted-foreground hover:bg-accent hover:text-crimson"
-                    }`}
-                  >
-                    <span className="truncate">{sub.name}</span>
-                    <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+        {/* Content Layout */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Subcategories Sidebar */}
+          {category.children && category.children.length > 0 && (
+            <div className="lg:w-56 shrink-0">
+              <div className="bg-card rounded-2xl border border-border p-4 sticky top-24">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                  Specializations
+                </h3>
+                <div className="space-y-1">
+                  <button className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold bg-[#D41367] text-white transition-colors">
+                    <span>All Businesses</span>
+                    <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">{businesses.length}</span>
                   </button>
-                ))}
+                  {category.children.map((sub) => (
+                    <button
+                      key={sub.id}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-muted-foreground hover:bg-[#FEE8F0] hover:text-[#D41367] transition-colors"
+                    >
+                      <span className="truncate">{sub.name}</span>
+                      <ChevronRight className="w-3 h-3 shrink-0 opacity-50" />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Business Grid */}
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-foreground mb-6">
-              Top {category.name} Businesses
-            </h2>
+          <div className="flex-1 min-w-0">
             {businesses.length > 0 ? (
               <div className="grid sm:grid-cols-2 gap-5">
                 {businesses.map((biz) => (
@@ -121,17 +97,20 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-card rounded-2xl border border-border">
-                <Building2 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground">No businesses listed in this category yet.</p>
-                <Button className="bg-crimson hover:bg-crimson-dark text-white rounded-full mt-4" asChild>
-                  <Link href="/auth/signup">Be the First to Register</Link>
+              <div className="text-center py-16 bg-card rounded-2xl border border-border p-8">
+                <Building2 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                <h3 className="text-base font-bold text-foreground mb-1">No businesses listed yet</h3>
+                <p className="text-xs text-muted-foreground mb-4 max-w-sm mx-auto">
+                  Be the first verified Rotaract entrepreneur to list your enterprise under {category.name}.
+                </p>
+                <Button className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full text-xs font-bold px-6" asChild>
+                  <Link href="/register">Register Business</Link>
                 </Button>
               </div>
             )}
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

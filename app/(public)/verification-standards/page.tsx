@@ -1,100 +1,109 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ShieldCheck, Award, FileCheck, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShieldCheck, CheckCircle2, ArrowRight, ChevronRight, Award, FileCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Verification Standards — Rotaract Business Network",
   description: "Learn about Gold, Silver, and Bronze verification tiers, required documents, and audit criteria.",
 };
 
+const tiers = [
+  {
+    tier: "Gold Tier",
+    badge: "bg-[#F7A81B] text-slate-950",
+    border: "border-[#F7A81B]",
+    title: "Gold Certified (Level 3)",
+    desc: "Highest level verification for established enterprises with statutory compliance and District Representative endorsement.",
+    docs: [
+      "GST / Government Tax Certificate",
+      "Official DRR Endorsement Letter",
+      "MSME / Udyam Certificate",
+      "Rotary Member ID & Active Standing",
+    ],
+  },
+  {
+    tier: "Silver Tier",
+    badge: "bg-slate-700 text-white",
+    border: "border-slate-300",
+    title: "Silver Certified (Level 2)",
+    desc: "For registered businesses and independent professionals verified via official business registration or GST documentation.",
+    docs: [
+      "GST or MSME Certificate",
+      "Rotary Member ID Number",
+      "Active Club Standing",
+    ],
+  },
+  {
+    tier: "Bronze Tier",
+    badge: "bg-amber-800 text-white",
+    border: "border-amber-300",
+    title: "Bronze Certified (Level 1)",
+    desc: "For early-stage Rotaract entrepreneurs verified through active Rotary ID and home club confirmation.",
+    docs: [
+      "Valid Rotary Member ID",
+      "Home Club President Confirmation",
+    ],
+  },
+];
+
 export default function VerificationStandardsPage() {
   return (
-    <div className="bg-[#FAF6F4] min-h-screen pb-16 pt-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-bold text-[#D41367] uppercase tracking-wider">TRUST & COMPLIANCE</span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight mt-1">
-            Verification Tiers & Standards
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Every business badge on our platform is backed by official document verification conducted by District Moderators.
-          </p>
+    <div className="bg-background min-h-screen pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="pt-4 pb-6 border-b border-border mb-8">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+            <Link href="/" className="hover:text-[#D41367] transition-colors">Home</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-foreground font-medium">Verification Standards</span>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                Verification Tiers & Standards
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                Every business badge on our platform is backed by official document verification.
+              </p>
+            </div>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D41367] hover:bg-[#B80E56] text-white text-xs font-bold rounded-full transition-colors shadow-sm shrink-0 self-start sm:self-auto"
+            >
+              Get Verified Now
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
         {/* Tier Cards Grid */}
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Gold Tier */}
-          <div className="bg-white rounded-3xl p-8 border-2 border-[#F7A81B] shadow-lg space-y-4 relative overflow-hidden">
-            <span className="bg-[#F7A81B] text-white font-extrabold text-[10px] uppercase tracking-wider px-3 py-1 rounded-full inline-block">
-              GOLD CERTIFIED (TIER 3)
-            </span>
-            <h2 className="text-xl font-extrabold text-foreground">Highest Level Verification</h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              For established enterprises with full statutory compliance, GST verification, and official District Representative (DRR) endorsement.
-            </p>
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          {tiers.map((t) => (
+            <div
+              key={t.tier}
+              className={`bg-card rounded-2xl p-6 border ${t.border} shadow-sm flex flex-col justify-between space-y-4`}
+            >
+              <div className="space-y-3">
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full inline-block ${t.badge}`}>
+                  {t.tier}
+                </span>
+                <h2 className="text-base font-bold text-foreground">{t.title}</h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">{t.desc}</p>
+              </div>
 
-            <div className="space-y-2 pt-2 border-t border-border text-xs">
-              <p className="font-bold text-foreground">Required Documents:</p>
-              <div className="space-y-1.5 text-muted-foreground">
-                <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> GST / Government Tax Cert</p>
-                <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Official DRR Endorsement Letter</p>
-                <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> MSME / Udyam Certificate</p>
-                <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Rotary ID & Club Membership</p>
+              <div className="pt-3 border-t border-border space-y-2 text-xs">
+                <p className="font-bold text-foreground">Required Documents:</p>
+                <div className="space-y-1.5 text-muted-foreground">
+                  {t.docs.map((doc) => (
+                    <p key={doc} className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#D41367] shrink-0" />
+                      <span>{doc}</span>
+                    </p>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Silver Tier */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-300 shadow-md space-y-4">
-            <span className="bg-slate-700 text-white font-extrabold text-[10px] uppercase tracking-wider px-3 py-1 rounded-full inline-block">
-              SILVER CERTIFIED (TIER 2)
-            </span>
-            <h2 className="text-xl font-extrabold text-foreground">Business Standing</h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              For registered businesses and professionals verified via official business registration or GST documentation.
-            </p>
-
-            <div className="space-y-2 pt-2 border-t border-border text-xs">
-              <p className="font-bold text-foreground">Required Documents:</p>
-              <div className="space-y-1.5 text-muted-foreground">
-                <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> GST or MSME Certificate</p>
-                <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Rotary ID Number</p>
-                <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Active Club Standing</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Bronze Tier */}
-          <div className="bg-white rounded-3xl p-8 border border-amber-300 shadow-sm space-y-4">
-            <span className="bg-amber-700 text-white font-extrabold text-[10px] uppercase tracking-wider px-3 py-1 rounded-full inline-block">
-              BRONZE CERTIFIED (TIER 1)
-            </span>
-            <h2 className="text-xl font-extrabold text-foreground">Member Entry Tier</h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              For early-stage Rotaract entrepreneurs verified through active Rotary ID and home club confirmation.
-            </p>
-
-            <div className="space-y-2 pt-2 border-t border-border text-xs">
-              <p className="font-bold text-foreground">Required Documents:</p>
-              <div className="space-y-1.5 text-muted-foreground">
-                <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Valid Rotary Member ID</p>
-                <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> Home Club Confirmation</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[#D41367] rounded-3xl p-8 sm:p-12 text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
-          <div className="space-y-2">
-            <h3 className="text-2xl font-extrabold">Apply for Verification Today</h3>
-            <p className="text-xs text-white/85 max-w-lg">
-              Boost your profile credibility and get featured on our global directory spotlight.
-            </p>
-          </div>
-          <Button className="bg-white text-[#D41367] hover:bg-white/90 font-extrabold rounded-full px-8 h-12 text-xs shadow-lg shrink-0" asChild>
-            <Link href="/verification">Upload Verification Docs <ArrowRight className="w-4 h-4" /></Link>
-          </Button>
+          ))}
         </div>
       </div>
     </div>

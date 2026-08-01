@@ -93,7 +93,7 @@ export function Navbar() {
         {/* Mobile Menu */}
         <div className="md:hidden pointer-events-auto">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger>
+            <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/20 text-white">
                 <Menu className="w-5 h-5" />
               </Button>

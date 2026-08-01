@@ -1,163 +1,144 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { FileCheck, ShieldCheck, Rocket, Users, Award, CheckCircle, ArrowRight, Building2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import type { Metadata } from "next";
+import { ArrowRight, ChevronRight, CheckCircle2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "How It Works",
+  title: "How It Works — Rotaract Business Network",
   description: "Learn how the Rotaract Business Network verification process works and how to get your business listed.",
 };
 
-const verificationTiers = [
-  {
-    tier: "Level 1 — Bronze",
-    title: "GST Verified",
-    description: "Upload your GST certificate for basic verification by our Super Admin team.",
-    docs: ["GST Certificate (Form REG-06)"],
-    reviewer: "Super Admin",
-    color: "bg-amber-50 border-amber-200",
-    badge: "text-amber-700",
-  },
-  {
-    tier: "Level 2 — Silver",
-    title: "GST + DRR Verified",
-    description: "Submit your DRR recommendation letter alongside your GST cert for district-level verification.",
-    docs: ["GST Certificate", "DRR Recommendation Letter"],
-    reviewer: "District Moderator",
-    color: "bg-slate-50 border-slate-200",
-    badge: "text-slate-600",
-  },
-  {
-    tier: "Level 3 — Gold",
-    title: "GST + DRR + Udyam Verified",
-    description: "The highest tier — submit all three documents for comprehensive verification.",
-    docs: ["GST Certificate", "DRR Letter", "Udyam Registration"],
-    reviewer: "Super Admin",
-    color: "bg-yellow-50 border-yellow-200",
-    badge: "text-yellow-700",
-  },
-];
-
-const benefits = [
-  { icon: ShieldCheck, title: "Verified Trust", description: "Multi-tier verification builds instant credibility with clients." },
-  { icon: Users, title: "Global Network", description: "Connect with 28,000+ Rotaract professionals worldwide." },
-  { icon: Building2, title: "Business Visibility", description: "SEO-optimized profiles rank on search engines." },
-  { icon: Award, title: "Community Recognition", description: "Showcase your Rotary values alongside your business." },
+const features = [
+  { title: "Verified Credibility", desc: "Multi-tier verification builds instant trust with fellow Rotaractors." },
+  { title: "Global Reach", desc: "Access 28,000+ Rotaract entrepreneurs and leaders worldwide." },
+  { title: "District Moderation", desc: "Vetted directly by assigned District Rotaract Representatives." },
+  { title: "B2B Directory", desc: "Searchable listings with direct enquiry routing." },
 ];
 
 export default function HowItWorksPage() {
   return (
-    <div>
-      {/* Hero */}
-      <section className="text-center py-16 lg:py-20">
-        <div className="max-w-3xl mx-auto px-4">
-          <h1 className="text-4xl lg:text-5xl font-bold text-foreground">
-            How <span className="text-gradient">Verification</span> Works
-          </h1>
-          <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto">
-            Our multi-tier verification system ensures every business in the
-            Rotaract network meets the highest standards of trust and
-            professional integrity.
-          </p>
-        </div>
-      </section>
-
-      {/* Steps */}
-      <section className="py-12 bg-card border-y border-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8 stagger-children">
-            {[
-              { icon: FileCheck, step: "Step 1", title: "Register & List", desc: "Create your business profile with Rotaract details, business info, location, and contact." },
-              { icon: ShieldCheck, step: "Step 2", title: "Submit Documents", desc: "Upload verification documents — GST, DRR letter, and/or Udyam certificate." },
-              { icon: Rocket, step: "Step 3", title: "Get Verified", desc: "Our moderators review your submission. Once approved, your badge appears instantly." },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-crimson/10 flex items-center justify-center mb-4">
-                  <item.icon className="w-8 h-8 text-crimson" />
-                </div>
-                <span className="text-xs font-semibold text-crimson uppercase">{item.step}</span>
-                <h3 className="text-xl font-bold text-foreground mt-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground mt-2">{item.desc}</p>
-              </div>
-            ))}
+    <div className="bg-background min-h-screen pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="pt-4 pb-6 border-b border-border mb-8">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+            <Link href="/" className="hover:text-[#D41367] transition-colors">Home</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-foreground font-medium">How It Works</span>
           </div>
-        </div>
-      </section>
-
-      {/* Verification Tiers */}
-      <section className="py-16">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-10">
-            Verification Tiers
-          </h2>
-          <div className="space-y-6 stagger-children">
-            {verificationTiers.map((tier) => (
-              <div
-                key={tier.tier}
-                className={`rounded-2xl border p-6 lg:p-8 ${tier.color}`}
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div className="flex-1">
-                    <span className={`text-sm font-bold uppercase tracking-wider ${tier.badge}`}>
-                      {tier.tier}
-                    </span>
-                    <h3 className="text-xl font-bold text-foreground mt-1">{tier.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-2">{tier.description}</p>
-                    <div className="mt-3 space-y-1">
-                      {tier.docs.map((doc) => (
-                        <div key={doc} className="flex items-center gap-2 text-sm text-foreground">
-                          <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                          {doc}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Reviewed by: <span className="font-semibold text-foreground">{tier.reviewer}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits */}
-      <section className="py-16 bg-card border-y border-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-10">
-            Why Get Verified?
-          </h2>
-          <div className="grid sm:grid-cols-2 gap-6 stagger-children">
-            {benefits.map((b) => (
-              <div key={b.title} className="flex items-start gap-4 p-5 rounded-2xl bg-warm-bg hover:bg-accent/60 transition-colors">
-                <div className="w-11 h-11 rounded-xl bg-crimson/10 flex items-center justify-center shrink-0">
-                  <b.icon className="w-5 h-5 text-crimson" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{b.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{b.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-16 text-center">
-        <div className="max-w-2xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-foreground">Ready to Get Started?</h2>
-          <p className="text-muted-foreground mt-3">
-            Join 1,200+ verified businesses in the Rotaract network.
-          </p>
-          <Button className="bg-crimson hover:bg-crimson-dark text-white rounded-full px-8 py-3 mt-6 gap-2 text-base" asChild>
-            <Link href="/auth/signup">
-              Register Your Business <ArrowRight className="w-5 h-5" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                How Verification Works
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                Our step-by-step verification ensures high-integrity professional networking.
+              </p>
+            </div>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D41367] hover:bg-[#B80E56] text-white text-xs font-bold rounded-full transition-colors shadow-sm shrink-0 self-start sm:self-auto"
+            >
+              Start Registration
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
-          </Button>
+          </div>
         </div>
-      </section>
+
+        {/* Spendesk-Style Curved Arrow Process Section */}
+        <div className="bg-gradient-to-br from-[#5C0A2E] via-[#8C0E43] to-[#D41367] rounded-[2.5rem] p-8 sm:p-14 lg:p-16 text-white relative overflow-hidden shadow-2xl mb-12">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-[11px] font-extrabold uppercase tracking-[0.2em] mb-3 shadow-sm backdrop-blur-md">
+              THREE SIMPLE STEPS
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Fast & Transparent Path
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-10 lg:gap-12 relative z-10 items-start max-w-5xl mx-auto">
+            {/* Step 1 */}
+            <div className="flex flex-col items-center text-center relative group">
+              <div className="text-6xl font-black text-white/90 drop-shadow-md mb-3 font-mono tracking-tighter group-hover:scale-110 transition-transform">
+                1
+              </div>
+              <h3 className="text-base sm:text-lg font-extrabold text-white mb-1.5">
+                Register & List Profile
+              </h3>
+              <p className="text-xs text-white/75 leading-relaxed max-w-xs">
+                Submit your active Rotaract ID, home club details, location, and service offerings.
+              </p>
+
+              <div className="hidden md:block absolute -right-16 top-6 w-24 h-12 pointer-events-none z-20">
+                <svg className="w-full h-full" viewBox="0 0 100 50" fill="none">
+                  <path
+                    d="M 10 35 Q 50 5 90 35"
+                    stroke="rgba(255, 255, 255, 0.6)"
+                    strokeWidth="2.5"
+                    strokeDasharray="4 4"
+                    fill="none"
+                  />
+                  <polygon points="86,37 96,35 90,26" fill="rgba(255, 255, 255, 0.9)" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex flex-col items-center text-center relative group">
+              <div className="text-6xl font-black text-[#F7A81B] drop-shadow-md mb-3 font-mono tracking-tighter group-hover:scale-110 transition-transform">
+                2
+              </div>
+              <h3 className="text-base sm:text-lg font-extrabold text-white mb-1.5">
+                District Review
+              </h3>
+              <p className="text-xs text-white/75 leading-relaxed max-w-xs">
+                Upload verification documents (GST, DRR endorsement letter, Udyam) for District Moderator review.
+              </p>
+
+              <div className="hidden md:block absolute -right-16 top-6 w-24 h-12 pointer-events-none z-20">
+                <svg className="w-full h-full" viewBox="0 0 100 50" fill="none">
+                  <path
+                    d="M 10 35 Q 50 5 90 35"
+                    stroke="rgba(255, 255, 255, 0.6)"
+                    strokeWidth="2.5"
+                    strokeDasharray="4 4"
+                    fill="none"
+                  />
+                  <polygon points="86,37 96,35 90,26" fill="rgba(255, 255, 255, 0.9)" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex flex-col items-center text-center relative group">
+              <div className="text-6xl font-black text-white/90 drop-shadow-md mb-3 font-mono tracking-tighter group-hover:scale-110 transition-transform">
+                3
+              </div>
+              <h3 className="text-base sm:text-lg font-extrabold text-white mb-1.5">
+                Get Badge & Connect
+              </h3>
+              <p className="text-xs text-white/75 leading-relaxed max-w-xs">
+                Your trust badge goes live on the directory, opening direct B2B opportunities globally.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Features List */}
+        <div className="bg-card rounded-2xl border border-border p-6 sm:p-8">
+          <h2 className="text-base font-bold text-foreground mb-6">Why Get Verified?</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {features.map((f) => (
+              <div key={f.title} className="space-y-1">
+                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                  <CheckCircle2 className="w-4 h-4 text-[#D41367] shrink-0" />
+                  <span>{f.title}</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed pl-6">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
