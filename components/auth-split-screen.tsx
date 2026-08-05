@@ -7,7 +7,11 @@ import { ArrowRight, Users, Mail, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export default function AuthSplitScreen() {
+interface AuthSplitScreenProps {
+  isSignUp?: boolean;
+}
+
+export default function AuthSplitScreen({ isSignUp = false }: AuthSplitScreenProps) {
   const router = useRouter();
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -61,10 +65,20 @@ export default function AuthSplitScreen() {
           {/* Header */}
           <div className="space-y-1">
             <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              Welcome <span className="text-[#D41367]">Back</span>
+              {isSignUp ? (
+                <>
+                  Join the <span className="text-[#D41367]">Network</span>
+                </>
+              ) : (
+                <>
+                  Welcome <span className="text-[#D41367]">Back</span>
+                </>
+              )}
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Enter your credentials to access your member dashboard.
+              {isSignUp
+                ? "Enter your credentials to create your member account."
+                : "Enter your credentials to access your member dashboard."}
             </p>
           </div>
 
@@ -93,9 +107,11 @@ export default function AuthSplitScreen() {
                   Password
                 </label>
                 <div className="flex items-center gap-3">
-                  <Link href="#" className="text-xs text-[#D41367] font-bold hover:underline">
-                    Forgot?
-                  </Link>
+                  {!isSignUp && (
+                    <Link href="#" className="text-xs text-[#D41367] font-bold hover:underline">
+                      Forgot?
+                    </Link>
+                  )}
                   <KeyRound className="w-4 h-4 text-[#D41367]" />
                 </div>
               </div>
@@ -109,19 +125,21 @@ export default function AuthSplitScreen() {
             </div>
 
             {/* Remember Me */}
-            <div className="flex items-center gap-2 pt-1">
-              <Checkbox id="remember" className="accent-[#D41367]" />
-              <label htmlFor="remember" className="text-xs text-muted-foreground cursor-pointer font-medium">
-                Keep me signed in for 30 days
-              </label>
-            </div>
+            {!isSignUp && (
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox id="remember" className="accent-[#D41367]" />
+                <label htmlFor="remember" className="text-xs text-muted-foreground cursor-pointer font-medium">
+                  Keep me signed in for 30 days
+                </label>
+              </div>
+            )}
 
             {/* Submit Button */}
             <Button
               type="submit"
               className="w-full bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full h-11 text-sm font-extrabold gap-2 shadow-md hover:shadow-lg transition-all"
             >
-              <span>Access Business Owner Portal</span>
+              <span>{isSignUp ? "Create Member Account" : "Access Business Owner Portal"}</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
           </form>
@@ -168,10 +186,21 @@ export default function AuthSplitScreen() {
           </div>
 
           <p className="text-xs text-center text-muted-foreground font-medium pt-1">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-[#D41367] font-bold hover:underline">
-              Register your business
-            </Link>
+            {isSignUp ? (
+              <>
+                Already have an account?{" "}
+                <Link href="/auth/login" className="text-[#D41367] font-bold hover:underline">
+                  Log in
+                </Link>
+              </>
+            ) : (
+              <>
+                Don&apos;t have an account?{" "}
+                <Link href="/register" className="text-[#D41367] font-bold hover:underline">
+                  Register your business
+                </Link>
+              </>
+            )}
           </p>
         </div>
 
