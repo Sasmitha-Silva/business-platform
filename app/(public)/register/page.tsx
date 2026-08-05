@@ -90,7 +90,7 @@ export default function BusinessRegistrationPage() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#FAF6F4] flex flex-col justify-between font-sans">
+    <div className="h-screen w-screen overflow-hidden bg-[#FAF6F4] flex flex-col justify-between font-sans relative">
       {/* Header Bar */}
       <header className="relative z-10 bg-white/80 backdrop-blur-md border-b border-pink-100/80 py-3 px-6 sm:px-10 flex items-center justify-between shrink-0 shadow-xs">
         <div className="flex items-center gap-3">
@@ -223,8 +223,8 @@ export default function BusinessRegistrationPage() {
                   {/* First Name */}
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        FIRST NAME
+                      <label className="text-xs font-bold text-foreground">
+                        First Name
                       </label>
                       <User className="w-4 h-4 text-[#D41367]" />
                     </div>
@@ -240,8 +240,8 @@ export default function BusinessRegistrationPage() {
                   {/* Last Name */}
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        LAST NAME
+                      <label className="text-xs font-bold text-foreground">
+                        Last Name
                       </label>
                       <User className="w-4 h-4 text-[#D41367]" />
                     </div>
@@ -257,8 +257,8 @@ export default function BusinessRegistrationPage() {
                   {/* Email */}
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        EMAIL ADDRESS
+                      <label className="text-xs font-bold text-foreground">
+                        Email Address
                       </label>
                       <Mail className="w-4 h-4 text-[#D41367]" />
                     </div>
@@ -274,8 +274,8 @@ export default function BusinessRegistrationPage() {
                   {/* Phone */}
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center">
-                        PHONE NUMBER <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold normal-case tracking-normal">Optional</span>
+                      <label className="text-xs font-bold text-foreground flex items-center">
+                        Phone Number <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold">Optional</span>
                       </label>
                       <Phone className="w-4 h-4 text-[#D41367]" />
                     </div>
@@ -291,8 +291,8 @@ export default function BusinessRegistrationPage() {
                   {/* Rotary Member ID */}
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        ROTARY / ROTARACT MEMBER ID
+                      <label className="text-xs font-bold text-foreground">
+                        Rotary / Rotaract Member ID
                       </label>
                       <IdCard className="w-4 h-4 text-[#D41367]" />
                     </div>
@@ -308,8 +308,8 @@ export default function BusinessRegistrationPage() {
                   {/* Rotaract Home Club */}
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        ROTARACT HOME CLUB
+                      <label className="text-xs font-bold text-foreground">
+                        Rotaract Home Club
                       </label>
                       <Building2 className="w-4 h-4 text-[#D41367]" />
                     </div>
@@ -325,8 +325,8 @@ export default function BusinessRegistrationPage() {
                   {/* Password */}
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors sm:col-span-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        ACCOUNT PASSWORD
+                      <label className="text-xs font-bold text-foreground">
+                        Account Password
                       </label>
                       <KeyRound className="w-4 h-4 text-[#D41367]" />
                     </div>
@@ -356,8 +356,8 @@ export default function BusinessRegistrationPage() {
                   {/* Business Name */}
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        BUSINESS / COMPANY NAME
+                      <label className="text-xs font-bold text-foreground">
+                        Business / Company Name
                       </label>
                       <Building2 className="w-4 h-4 text-[#D41367]" />
                     </div>
@@ -372,8 +372,8 @@ export default function BusinessRegistrationPage() {
 
                   {/* Industry Sector Chips */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      SELECT INDUSTRY SECTOR
+                    <label className="text-xs font-bold text-foreground">
+                      Select Industry Sector
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {sectorOptions.map((sec) => {
@@ -409,8 +409,8 @@ export default function BusinessRegistrationPage() {
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                          CITY
+                        <label className="text-xs font-bold text-foreground">
+                          City
                         </label>
                         <MapPin className="w-4 h-4 text-[#D41367]" />
                       </div>
@@ -425,8 +425,8 @@ export default function BusinessRegistrationPage() {
 
                     <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center">
-                          WEBSITE URL <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold normal-case tracking-normal">Optional</span>
+                        <label className="text-xs font-bold text-foreground flex items-center">
+                          Website URL <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold">Optional</span>
                         </label>
                         <Globe className="w-4 h-4 text-[#D41367]" />
                       </div>
@@ -456,8 +456,8 @@ export default function BusinessRegistrationPage() {
                 <div className="grid sm:grid-cols-2 gap-6 pt-2">
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center">
-                        GST / TAX REG NO <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold normal-case tracking-normal">Optional</span>
+                      <label className="text-xs font-bold text-foreground flex items-center">
+                        GST / Tax Reg No <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold">Optional</span>
                       </label>
                       <FileText className="w-4 h-4 text-[#D41367]" />
                     </div>
@@ -472,8 +472,8 @@ export default function BusinessRegistrationPage() {
 
                   <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center">
-                        STATUTORY BUSINESS NO <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold normal-case tracking-normal">Optional</span>
+                      <label className="text-xs font-bold text-foreground flex items-center">
+                        Statutory Business No <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold">Optional</span>
                       </label>
                       <ShieldCheck className="w-4 h-4 text-[#D41367]" />
                     </div>

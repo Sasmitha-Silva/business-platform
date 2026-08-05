@@ -15,7 +15,7 @@ const photos = {
 
 export function FeaturedBusinessesShowcase() {
   return (
-    <section className="bg-background py-16 sm:py-24">
+    <section className="py-16 sm:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -228,9 +228,9 @@ export function FeaturedBusinessesShowcase() {
         </div>
 
         {/* Bottom Banner Card */}
-        <div className="bg-[#FAF6F4] border border-pink-100 rounded-3xl p-6 sm:p-8 lg:p-10 flex flex-col lg:flex-row items-center gap-8 shadow-sm">
+        <div className="bg-white border border-border shadow-md rounded-3xl p-6 sm:p-8 lg:p-10 flex flex-col lg:flex-row items-center gap-8 transition-shadow hover:shadow-lg">
           {/* Left Media Thumbnail */}
-          <div className="relative w-full lg:w-[380px] aspect-[16/10] rounded-2xl overflow-hidden shrink-0 shadow-md border border-border group">
+          <div className="relative w-full lg:w-[380px] aspect-[16/10] rounded-2xl overflow-hidden shrink-0 shadow-md group">
             <Image
               src={photos.tech}
               alt="Lumina Tech Labs"
@@ -269,7 +269,7 @@ export function FeaturedBusinessesShowcase() {
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
               <Link
                 href="/business/lumina-tech-labs"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-border hover:border-[#D41367] text-foreground hover:text-[#D41367] text-xs font-extrabold rounded-full transition-all shadow-sm"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#D41367] hover:bg-[#B80E56] text-white text-xs font-extrabold rounded-full transition-all shadow-md hover:shadow-lg"
               >
                 <span>Browse Enterprise Profile</span>
                 <ArrowUpRight className="w-4 h-4" />

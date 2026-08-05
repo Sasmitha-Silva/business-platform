@@ -5,9 +5,17 @@ import { UserPlus, Search, Download, Filter, UserMinus, ShieldCheck } from "luci
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
 import { mockModeratorAssignments, mockUsers } from "@/lib/mock-data";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ModeratorManagementPage() {
   const [selectedDistrict, setSelectedDistrict] = useState("3220");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   return (
     <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-12">
@@ -33,16 +41,17 @@ export default function ModeratorManagementPage() {
 
           <div className="space-y-1.5 pt-2">
             <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">ACTIVE DISTRICT</label>
-            <select
-              value={selectedDistrict}
-              onChange={(e) => setSelectedDistrict(e.target.value)}
-              className="w-full h-11 px-3 text-xs font-semibold bg-warm-bg border border-border rounded-xl outline-none focus:ring-2 focus:ring-crimson/20"
-            >
-              <option value="3220">District 3220 - Colombo, Sri Lanka</option>
-              <option value="9110">District 9110 - Lagos, Nigeria</option>
-              <option value="9125">District 9125 - Abuja, Nigeria</option>
-              <option value="3141">District 3141 - Mumbai, India</option>
-            </select>
+            <Select value={selectedDistrict} onValueChange={(val) => setSelectedDistrict(val ?? "3220")}>
+              <SelectTrigger className="w-full h-11 px-3 text-xs font-semibold bg-warm-bg border border-border rounded-xl">
+                <SelectValue placeholder="Select District" />
+              </SelectTrigger>
+              <SelectContent className="bg-white rounded-xl border border-border shadow-lg">
+                <SelectItem value="3220">District 3220 - Colombo, Sri Lanka</SelectItem>
+                <SelectItem value="9110">District 9110 - Lagos, Nigeria</SelectItem>
+                <SelectItem value="9125">District 9125 - Abuja, Nigeria</SelectItem>
+                <SelectItem value="3141">District 3141 - Mumbai, India</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="pt-4 border-t border-border space-y-2">
@@ -101,9 +110,19 @@ export default function ModeratorManagementPage() {
             <p className="text-xs text-muted-foreground">Manage roles and assign moderator status to verified members.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="rounded-xl text-xs gap-2 border-border bg-white">
-              <Filter className="w-3.5 h-3.5" /> All Roles ∨
-            </Button>
+            <Select value={roleFilter} onValueChange={(val) => setRoleFilter(val ?? "all")}>
+              <SelectTrigger className="rounded-xl text-xs font-bold gap-2 border-border bg-white h-9 px-3">
+                <Filter className="w-3.5 h-3.5" />
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent className="bg-white rounded-xl border border-border shadow-lg">
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="member">Member</SelectItem>
+                <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="super_admin">Super Admin</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Button variant="outline" className="rounded-xl text-xs gap-2 border-border bg-white">
               <Download className="w-3.5 h-3.5" /> Export
             </Button>

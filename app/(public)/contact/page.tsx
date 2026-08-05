@@ -1,15 +1,20 @@
-import Link from "next/link";
-import type { Metadata } from "next";
-import { Mail, Phone, MapPin, Send, MessageSquare, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Contact Us — Rotaract Business Network",
-  description:
-    "Get in touch with the Rotaract Business Network team or reach your District Representative.",
-};
+import Link from "next/link";
+import { useState } from "react";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ContactPage() {
+  const [topic, setTopic] = useState("Verification Status Inquiry");
+
   return (
     <div className="bg-[#FAF6F4] min-h-screen pb-16 pt-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -62,7 +67,7 @@ export default function ContactPage() {
           {/* Contact Form */}
           <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-border shadow-sm space-y-6">
             <h2 className="text-xl font-bold text-foreground">Send a Message</h2>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-foreground">Your Name</label>
@@ -76,12 +81,17 @@ export default function ContactPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-foreground">Subject / Topic</label>
-                <select className="w-full h-11 px-4 text-xs bg-warm-bg border border-border rounded-xl outline-none cursor-pointer">
-                  <option>Verification Status Inquiry</option>
-                  <option>District Partnership</option>
-                  <option>Technical Support</option>
-                  <option>General Question</option>
-                </select>
+                <Select value={topic} onValueChange={(val) => setTopic(val || "Verification Status Inquiry")}>
+                  <SelectTrigger className="w-full h-11 px-4 text-xs bg-warm-bg border border-border rounded-xl font-medium text-foreground">
+                    <SelectValue placeholder="Select topic" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white rounded-xl border border-border shadow-lg">
+                    <SelectItem value="Verification Status Inquiry">Verification Status Inquiry</SelectItem>
+                    <SelectItem value="District Partnership">District Partnership</SelectItem>
+                    <SelectItem value="Technical Support">Technical Support</SelectItem>
+                    <SelectItem value="General Question">General Question</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1">
