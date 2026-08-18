@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Building2, Store, ShieldCheck, Settings,
   FolderTree, Users, UserCog, ClipboardList, BarChart3,
-  HelpCircle, LogOut, Sparkles,
+  HelpCircle, LogOut, Sparkles, Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,7 @@ import type { UserRole } from "@/lib/types";
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, Store, ShieldCheck, Settings,
-  FolderTree, Users, UserCog, ClipboardList, BarChart3,
+  FolderTree, Users, UserCog, ClipboardList, BarChart3, Edit3,
 };
 
 interface SidebarLink {

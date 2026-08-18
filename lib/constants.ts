@@ -120,8 +120,8 @@ export const NAV_LINKS = [
 
 export const OWNER_SIDEBAR_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { href: '/directory', label: 'Directory', icon: 'Building2' },
-  { href: '/business/lumina-digital-solutions', label: 'My Business Profile', icon: 'Store' },
+  { href: '/dashboard/edit-profile', label: 'Edit Business Profile', icon: 'Edit3' },
+  { href: '/business/lumina-digital-solutions', label: 'Public View', icon: 'Store' },
   { href: '/verification', label: 'Verifications', icon: 'ShieldCheck' },
   { href: '/dashboard/enquiries', label: 'Enquiries', icon: 'ClipboardList' },
   { href: '/dashboard/settings', label: 'Settings', icon: 'Settings' },

@@ -27,7 +27,7 @@ export default function OwnerDashboardPage() {
             <Share2 className="w-4 h-4" /> Share Profile
           </Button>
           <Button className="bg-crimson hover:bg-crimson-dark text-white rounded-xl gap-2" asChild>
-            <Link href="/dashboard/settings"><Plus className="w-4 h-4" /> Edit Profile</Link>
+            <Link href="/dashboard/edit-profile"><Plus className="w-4 h-4" /> Edit Profile</Link>
           </Button>
         </div>
       </div>

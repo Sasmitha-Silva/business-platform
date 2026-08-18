@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { ArrowRight, Search, MapPin, ShieldCheck, CheckCircle2, Star, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FeaturedBusinessesShowcase } from "@/components/featured-businesses-showcase";
+import { FeaturedCategoriesShowcase } from "@/components/featured-categories-showcase";
 
 export const metadata: Metadata = {
   title: "Rotaract Business Network — Discover Verified Rotaract Professionals",
@@ -89,9 +89,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Interactive Featured Businesses Showcase */}
+      {/* Interactive Featured Categories Showcase */}
       <section className="bg-[#FFF5F8]">
-        <FeaturedBusinessesShowcase />
+        <FeaturedCategoriesShowcase />
       </section>
 
       {/* Spendesk-Style Curved Arrow Process Section */}
