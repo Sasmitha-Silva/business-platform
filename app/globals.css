@@ -55,8 +55,8 @@
   --color-gold-light: #FBC869;
   --color-tertiary-blue: #0050A2;
   --color-neutral-gray: #887176;
-  --color-warm-bg: #FAF6F4;
-  --color-warm-bg-dark: #F3ECE8;
+  --color-warm-bg: #FFFFFF;
+  --color-warm-bg-dark: #FFFFFF;
   --color-warm-pink: #FEE8F0;
 }
 
@@ -69,8 +69,8 @@
   --gold-light: #FBC869;
   --tertiary-blue: #0050A2;
   --neutral-gray: #887176;
-  --warm-bg: #FAF6F4;
-  --warm-bg-dark: #F3ECE8;
+  --warm-bg: #FFFFFF;
+  --warm-bg-dark: #FFFFFF;
   --warm-pink: #FEE8F0;
 
   /* Tier colors */
@@ -82,7 +82,7 @@
   --tier-bronze-bg: #FFF3E0;
 
   /* Clean crisp shadcn tokens */
-  --background: #FAF6F4;
+  --background: #FFFFFF;
   --foreground: #1A1A1A;
   --card: #FFFFFF;
   --card-foreground: #1A1A1A;
@@ -120,12 +120,16 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+
   html {
     @apply font-sans scroll-smooth;
   }
@@ -151,4 +155,68 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
+}
+
+/* =========================================================
+   Ultra-Sleek Brand Crimson Pill Scrollbar
+   ========================================================= */
+
+/* WebKit browsers (Chrome, Edge, Safari, Opera) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #D41367;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #B80E56;
+}
+
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox standard scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #D41367 transparent;
+}
+
+/* Lenis smooth scrolling rules */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }

@@ -87,11 +87,13 @@ export const SERVICE_AREAS = [
   { value: 'international', label: 'International' },
 ] as const;
 
-export const ENQUIRY_STATUSES = {
+export const INQUIRY_STATUSES = {
   new: { label: 'New', bgClass: 'bg-red-100 text-red-700' },
   read: { label: 'Read', bgClass: 'bg-blue-100 text-blue-700' },
   replied: { label: 'Replied', bgClass: 'bg-green-100 text-green-700' },
 } as const;
+
+export const ENQUIRY_STATUSES = INQUIRY_STATUSES;
 
 export const ADMIN_ACTION_BADGES: Record<string, { label: string; bgClass: string }> = {
   verified_business: { label: 'Verified Business', bgClass: 'bg-green-100 text-green-700' },
@@ -120,10 +122,9 @@ export const NAV_LINKS = [
 
 export const OWNER_SIDEBAR_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { href: '/dashboard/edit-profile', label: 'Edit Business Profile', icon: 'Edit3' },
-  { href: '/business/lumina-digital-solutions', label: 'Public View', icon: 'Store' },
+  { href: '/dashboard/edit-profile', label: 'Edit Profile', icon: 'Edit3' },
   { href: '/verification', label: 'Verifications', icon: 'ShieldCheck' },
-  { href: '/dashboard/enquiries', label: 'Enquiries', icon: 'ClipboardList' },
+  { href: '/dashboard/enquiries', label: 'Inquiries', icon: 'ClipboardList' },
   { href: '/dashboard/settings', label: 'Settings', icon: 'Settings' },
 ] as const;
 
@@ -141,7 +142,6 @@ export const ADMIN_SIDEBAR_LINKS = [
   { href: '/admin/categories', label: 'Categories', icon: 'FolderTree' },
   { href: '/admin/users', label: 'Users', icon: 'Users' },
   { href: '/admin/moderators', label: 'Moderators', icon: 'UserCog' },
-  { href: '/admin/audit-log', label: 'Audit Log', icon: 'ClipboardList' },
   { href: '/admin/analytics', label: 'Analytics', icon: 'BarChart3' },
   { href: '/admin/settings', label: 'Settings', icon: 'Settings' },
 ] as const;

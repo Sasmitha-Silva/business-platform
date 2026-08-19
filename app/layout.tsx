@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SmoothScroll } from "@/components/smooth-scroll";
 import "./globals.css";
 
 const inter = Inter({
@@ -16,11 +17,19 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Rotaract Business Network — Verified Business Directory for Rotaractors",
+    default: "Rotaract Business Network",
     template: "%s | Rotaract Business Network",
   },
   description:
-    "A premium directory connecting trusted Rotaract entrepreneurs and service leaders. Discover verified businesses, build professional connections, and grow within the Rotary community.",
+    "A verified directory connecting trusted Rotaract entrepreneurs, corporate leaders, and service-driven professionals across Rotary International districts.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
   keywords: [
     "Rotaract",
     "Business Directory",
@@ -50,6 +59,7 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <SmoothScroll />
         <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>

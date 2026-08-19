@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ArrowUpRight, ShieldCheck, Play, Star, MapPin, CheckCircle2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ShieldCheck, Play, MapPin, CheckCircle2 } from "lucide-react";
 
 const photos = {
   finance: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1200&q=85",
@@ -100,8 +100,8 @@ export function FeaturedBusinessesShowcase() {
                     <h3 className="text-xl font-black tracking-tight text-white mb-0.5">
                       Nexus Architecture Studio.
                     </h3>
-                    <p className="text-xs text-amber-300 font-bold flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> 4.9 Rating (29 Reviews)
+                    <p className="text-xs text-white/90 font-medium flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-pink-300" /> Colombo, Sri Lanka · Architecture
                     </p>
                   </div>
                   <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 transition-transform">
@@ -131,7 +131,7 @@ export function FeaturedBusinessesShowcase() {
                 <div className="self-start">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[11px] font-extrabold border border-white/30">
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                    ★ GOLD TIER
+                    GOLD TIER
                   </span>
                 </div>
 
@@ -179,8 +179,8 @@ export function FeaturedBusinessesShowcase() {
                     <h3 className="text-xl font-black tracking-tight text-white mb-0.5">
                       Apex Dental Studio.
                     </h3>
-                    <p className="text-xs text-amber-300 font-bold flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> 5.0 Rating (18 Reviews)
+                    <p className="text-xs text-white/90 font-medium flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-pink-300" /> Mumbai, India · Healthcare
                     </p>
                   </div>
                   <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 transition-transform">

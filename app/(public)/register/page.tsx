@@ -1,874 +1,946 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  Check,
-  ShieldCheck,
   ArrowRight,
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Check,
   Building2,
-  CheckCircle2,
-  Lock,
+  Users,
   User,
   Mail,
   Phone,
-  KeyRound,
-  IdCard,
-  Globe,
+  Lock,
   MapPin,
-  FileText,
-  Briefcase,
-  Stethoscope,
-  Palette,
-  Laptop,
-  Landmark,
-  Compass,
-  Camera,
-  ImageIcon,
+  Globe,
   MessageSquare,
-  Plus,
-  Trash2,
+  BadgeCheck,
   Share2,
-  AtSign,
-  Send,
-  ChevronDown,
-  Users,
+  Link2,
+  Image as ImageIcon,
+  Camera,
+  CornerDownLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ImageUploader } from "@/components/image-uploader";
+import { cn } from "@/lib/utils";
 
-const steps = [
-  { id: 1, label: "Account" },
-  { id: 2, label: "Business Info" },
-  { id: 3, label: "Locations & Contact" },
-  { id: 4, label: "Social Media Links" },
+const SECTOR_NAMES = [
+  "Technology & Software",
+  "Professional & Legal Services",
+  "Healthcare & Life Sciences",
+  "Creative & Design Agency",
+  "Industrial & Manufacturing",
+  "Real Estate & Construction",
+  "Finance & Advisory",
+  "Retail & Consumer Goods",
+  "Education & Training",
+  "Hospitality & Tourism",
 ];
 
-const sectorOptions = [
-  { id: "Legal & Corporate", label: "Legal & Corporate", icon: Briefcase },
-  { id: "Healthcare & Medicine", label: "Healthcare & Medicine", icon: Stethoscope },
-  { id: "Creative & Digital", label: "Creative & Digital", icon: Palette },
-  { id: "Technology & Software", label: "Technology & Software", icon: Laptop },
-  { id: "Finance & Audit", label: "Finance & Audit", icon: Landmark },
-  { id: "Architecture & Construction", label: "Architecture", icon: Compass },
+const POPULAR_CLUBS = [
+  { name: "Rotaract Club of Colombo Central", district: "District 3220" },
+  { name: "Rotaract Club of Achievers Lanka", district: "District 3220" },
+  { name: "Rotaract Club of Faculty of Science, UOC", district: "District 3220" },
+  { name: "Rotaract Club of Colombo Mid Town", district: "District 3220" },
+  { name: "Rotaract Club of Kandy", district: "District 3220" },
+  { name: "Rotaract Club of SLIIT", district: "District 3220" },
+  { name: "Rotaract Club of Mumbai Downtown", district: "District 3141" },
+  { name: "Rotaract Club of Delhi Elite", district: "District 3011" },
+  { name: "Rotaract Club of Kathmandu North", district: "District 3292" },
+  { name: "Rotaract Club of Bangalore West", district: "District 3190" },
+  { name: "Other Rotaract Club (International)", district: "International District" },
 ];
 
-export default function BusinessRegistrationPage() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+const TOTAL_STEPS = 4;
+
+interface CustomDropdownProps {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (val: string) => void;
+}
+
+function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "w-full flex items-center justify-between gap-3 text-left py-2.5 px-3.5 rounded-xl border text-xs sm:text-sm font-bold transition-all cursor-pointer bg-slate-50",
+          open
+            ? "border-[#D41367] ring-2 ring-[#D41367]/20 text-[#D41367] bg-white"
+            : "border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-white"
+        )}
+      >
+        <span className="truncate">{value || "Select an option..."}</span>
+        <ChevronDown className={cn("w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200", open && "rotate-180 text-[#D41367]")} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 right-0 mt-1.5 bg-white rounded-2xl border border-slate-200 shadow-2xl p-1.5 z-[100] space-y-0.5 max-h-56 overflow-y-auto overscroll-contain animate-in fade-in zoom-in-95 duration-150 select-auto"
+          onWheel={(e) => e.stopPropagation()}
+        >
+          {options.map((opt) => {
+            const isSelected = opt === value;
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-left transition-colors cursor-pointer",
+                  isSelected
+                    ? "bg-pink-50 text-[#D41367] font-extrabold"
+                    : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                )}
+              >
+                <span className="truncate">{opt}</span>
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#D41367] shrink-0 ml-1.5" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function HybridRegistrationPage() {
   const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    // Step 1: Account & Member Credentials
+    fullName: "",
     email: "",
     phone: "",
-    password: "",
-    rotaryId: "",
-    clubName: "",
+    clubName: "Rotaract Club of Colombo Central",
     district: "District 3220",
+    memberId: "",
+    password: "",
+
+    // Step 2: Enterprise Details & Logos
     businessName: "",
-    category: "Select Industry Sector...",
     tagline: "",
+    sector: "Technology & Software",
     description: "",
-    website: "",
-    address: "",
+    logoUrl: "",
+    bannerUrl: "",
+
+    // Step 3: Locations & Contact
     city: "",
-    country: "",
+    country: "Sri Lanka",
+    address: "",
     businessEmail: "",
     businessPhone: "",
-    pincode: "",
-    primaryLocation: "",
-    additionalLocations: [] as string[],
-    socialLinks: {
-      linkedin: "",
-      instagram: "",
-      facebook: "",
-      twitter: "",
-      whatsapp: "",
-    },
-    logoUrl: "",
-    coverUrl: "",
-    gstNumber: "",
-    statutoryNo: "",
+
+    // Step 4: Complete Social Channels & Publication
+    website: "",
+    linkedin: "",
+    instagram: "",
+    facebook: "",
+    twitter: "",
+    whatsapp: "",
     agreeTerms: false,
   });
 
-  const [newLocationInput, setNewLocationInput] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddLocation = () => {
-    if (newLocationInput.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        additionalLocations: [...prev.additionalLocations, newLocationInput.trim()],
-      }));
-      setNewLocationInput("");
-    }
-  };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current) inputRef.current.focus();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [currentStep]);
 
-  const handleRemoveLocation = (index: number) => {
+  // Keyboard navigation (Enter key helper)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey && e.target instanceof HTMLInputElement) {
+        if (currentStep === 1 && formData.fullName && formData.email && formData.phone && formData.memberId) {
+          e.preventDefault();
+          handleNext();
+        } else if (currentStep === 2 && formData.businessName) {
+          e.preventDefault();
+          handleNext();
+        } else if (currentStep === 3 && formData.city) {
+          e.preventDefault();
+          handleNext();
+        } else if (currentStep === 4 && formData.agreeTerms) {
+          e.preventDefault();
+          handleSubmit();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentStep, formData]);
+
+  const handleClubChange = (selectedClubName: string) => {
+    const matched = POPULAR_CLUBS.find((c) => c.name === selectedClubName);
     setFormData((prev) => ({
       ...prev,
-      additionalLocations: prev.additionalLocations.filter((_, i) => i !== index),
+      clubName: selectedClubName,
+      district: matched ? matched.district : "District 3220",
     }));
   };
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleNext = () => {
-    if (currentStep < 4) {
-      setCurrentStep((prev) => prev + 1);
-    } else {
-      router.push("/dashboard");
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setFormData((prev) => ({ ...prev, logoUrl: url }));
     }
   };
 
-  const handleBack = () => {
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setFormData((prev) => ({ ...prev, bannerUrl: url }));
+    }
+  };
+
+  const handleNext = () => {
+    if (currentStep < TOTAL_STEPS) {
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  const handlePrev = () => {
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
     }
   };
 
+  const handleSubmit = () => {
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setIsSuccess(true);
+      setTimeout(() => {
+        router.push("/directory");
+      }, 2500);
+    }, 1200);
+  };
+
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#FAF6F4] flex flex-col justify-between font-sans relative">
-      {/* Header Bar */}
-      <header className="relative z-10 bg-white/90 backdrop-blur-xl border-b border-pink-100 py-3.5 px-6 sm:px-12 flex items-center justify-between shrink-0 shadow-xs">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-[#D41367] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <Users className="w-5 h-5" />
-            </div>
-            <span className="text-lg sm:text-xl font-black tracking-tight text-foreground flex items-center gap-1 whitespace-nowrap">
+    <div className="relative min-h-screen w-full bg-white text-slate-900 flex flex-col justify-between font-sans select-none">
+
+      {/* Static Cranberry Hairline Grid (Calibrated Subtle Opacity Matching Hero) */}
+      <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
+        {/* Top-Left Static Cranberry Grid */}
+        <div
+          className="absolute top-0 left-0 w-[440px] sm:w-[560px] h-[440px] sm:h-[560px]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(212, 19, 103, 0.13) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(212, 19, 103, 0.13) 1px, transparent 1px)
+            `,
+            backgroundSize: "32px 32px",
+            maskImage: "radial-gradient(circle at top left, black 25%, transparent 75%)",
+            WebkitMaskImage: "radial-gradient(circle at top left, black 25%, transparent 75%)",
+          }}
+        />
+
+        {/* Bottom-Right Static Cranberry Grid */}
+        <div
+          className="absolute bottom-0 right-0 w-[440px] sm:w-[560px] h-[440px] sm:h-[560px]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(212, 19, 103, 0.13) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(212, 19, 103, 0.13) 1px, transparent 1px)
+            `,
+            backgroundSize: "32px 32px",
+            maskImage: "radial-gradient(circle at bottom right, black 25%, transparent 75%)",
+            WebkitMaskImage: "radial-gradient(circle at bottom right, black 25%, transparent 75%)",
+          }}
+        />
+      </div>
+
+      {/* ================= TOP NAVBAR ================= */}
+      <header className="shrink-0 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 py-3.5 px-4 sm:px-6 lg:px-10 flex items-center justify-between shadow-xs z-50">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center group shrink-0">
+            <span className="text-lg sm:text-[20px] font-black tracking-tight text-slate-900 flex items-center gap-1">
               Rotaract <span className="text-[#D41367]">Network</span>
             </span>
           </Link>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-bold">
+        {/* Right: Exit / Login Matching Main Navbar */}
+        <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+          <Link
+            href="/"
+            className="relative py-1 text-[15px] sm:text-base font-semibold text-slate-700 hover:text-[#D41367] transition-all duration-300 group inline-flex items-center gap-1.5"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:text-[#D41367] transition-colors" />
+            <span>Back to Home</span>
+            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#D41367] rounded-full transition-all duration-300 origin-center scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100" />
+          </Link>
+
+          <div className="w-px h-5 bg-slate-200 hidden sm:block" />
+
+          <span className="text-slate-500 hidden sm:inline text-[15px] font-semibold">Already registered?</span>
           <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-full text-xs font-bold text-muted-foreground hover:text-[#D41367] hover:bg-pink-50 gap-1.5 px-4"
+            variant="outline"
+            className="border-2 border-[#D41367] text-[#D41367] hover:bg-[#D41367] hover:text-white bg-transparent rounded-full px-5 py-2 text-xs sm:text-sm font-extrabold shadow-2xs hover:scale-105 active:scale-95 transition-all h-auto cursor-pointer"
             asChild
           >
-            <Link href="/">
-              <ArrowLeft className="w-4 h-4" /> Back to Home
-            </Link>
-          </Button>
-
-          <div className="w-px h-5 bg-pink-200/80" />
-
-          <span className="text-muted-foreground hidden sm:inline font-semibold">Already registered?</span>
-          <Button variant="outline" className="rounded-full border-pink-200 hover:border-[#D41367] hover:bg-pink-50 text-[#D41367] text-xs h-9 px-5 bg-white font-black shadow-2xs" asChild>
             <Link href="/auth/login">Login</Link>
           </Button>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="relative z-10 flex-1 flex flex-col justify-start pt-2 pb-6 max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 min-h-0">
-        {/* Step Tab Navigation Bar */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-1.5 shadow-sm border border-pink-100 max-w-4xl mx-auto mb-3 w-full shrink-0">
-          <div className="grid grid-cols-4 gap-1.5">
-            {steps.map((step) => {
-              const isActive = currentStep === step.id;
-              const isDone = currentStep > step.id;
+      {/* ================= 100VH HYBRID TYPEFORM WORKSPACE ================= */}
+      <main className="flex-1 flex flex-col justify-center max-w-3xl lg:max-w-4xl w-full mx-auto px-6 sm:px-10 py-3 relative z-10">
 
-              return (
-                <button
-                  key={step.id}
-                  onClick={() => isDone && setCurrentStep(step.id)}
-                  disabled={!isDone && !isActive}
-                  className={`py-2 px-3 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2 ${
-                    isActive
-                      ? "bg-[#D41367] text-white shadow-md font-bold"
-                      : isDone
-                      ? "bg-pink-50 text-[#D41367] hover:bg-pink-100/80 font-bold"
-                      : "bg-transparent text-muted-foreground font-medium opacity-60"
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 ${
-                      isActive
-                        ? "bg-white text-[#D41367]"
-                        : isDone
-                        ? "bg-[#D41367] text-white"
-                        : "bg-pink-100/70 text-[#D41367]"
-                    }`}
-                  >
-                    {isDone ? <Check className="w-3 h-3" /> : step.id}
-                  </div>
-                  <span className="text-xs truncate">{step.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        {!isSuccess ? (
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300" key={currentStep}>
 
-        {/* Form Layout Grid */}
-        <div className="grid lg:grid-cols-12 gap-6 items-stretch flex-1 min-h-0 pb-1">
-          {/* Left Column: Dynamic High-End Feature & Progress Hero Panel */}
-          <div className="lg:col-span-4 rounded-3xl overflow-hidden relative shadow-xl flex flex-col justify-between p-6 sm:p-7 text-white bg-gradient-to-br from-[#1E0510] via-[#420A25] to-[#910A47] border border-pink-500/20">
-            {/* Low Opacity Background Photo Overlay */}
-            <Image
-              src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=85"
-              alt="Rotaract Business Leaders"
-              fill
-              className="object-cover object-center opacity-20 pointer-events-none mix-blend-overlay"
-              priority
-              unoptimized
-            />
-
-            {/* Ambient Lighting Orbs */}
-            <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#D41367]/30 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
-
-            {/* Top Brand Badge */}
-            <div className="relative z-10 flex items-center justify-between">
-              <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md">
-                <span className="text-[11px] font-extrabold text-white tracking-wide uppercase">Rotaract Network</span>
-              </div>
-              <div className="text-[11px] font-bold text-pink-200/90 bg-pink-950/60 px-2.5 py-1 rounded-full border border-pink-500/30">
-                Step {currentStep} of 4
-              </div>
-            </div>
-
-            {/* Middle Step-Specific Dynamic Content Showcase */}
-            <div className="relative z-10 my-auto py-4 space-y-6">
-              {currentStep === 1 && (
-                <div className="space-y-3 animate-fade-in">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-pink-300 shadow-inner">
-                    <User className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                      Member & Club Credentials
-                    </h2>
-                    <p className="text-xs text-pink-100/80 mt-1.5 leading-relaxed font-medium">
-                      Authenticate your active Rotaract club membership and establish your network identity.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 2 && (
-                <div className="space-y-3 animate-fade-in">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-pink-300 shadow-inner">
-                    <Building2 className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                      Business & Brand Showcase
-                    </h2>
-                    <p className="text-xs text-pink-100/80 mt-1.5 leading-relaxed font-medium">
-                      Display your official logo, brand banner, and industry sector to Rotaract buyers worldwide.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 3 && (
-                <div className="space-y-3 animate-fade-in">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-pink-300 shadow-inner">
-                    <MapPin className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                      Operating Network & Contact
-                    </h2>
-                    <p className="text-xs text-pink-100/80 mt-1.5 leading-relaxed font-medium">
-                      Define primary and branch operations to connect with buyers across all districts.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 4 && (
-                <div className="space-y-3 animate-fade-in">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-pink-300 shadow-inner">
-                    <Share2 className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                      Social Profiles & Publishing
-                    </h2>
-                    <p className="text-xs text-pink-100/80 mt-1.5 leading-relaxed font-medium">
-                      Link LinkedIn, Instagram, and WhatsApp Business to receive direct B2B buyer leads.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Progress Stats Widget */}
-            <div className="relative z-10 bg-white/10 border border-white/20 rounded-2xl p-3.5 backdrop-blur-md space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-white">Profile Readiness</span>
-                <span className="font-black text-pink-300">{currentStep * 25}%</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-black/30 overflow-hidden p-0.5 border border-white/10">
-                <div
-                  className="h-full bg-gradient-to-r from-pink-400 to-emerald-400 rounded-full transition-all duration-500"
-                  style={{ width: `${currentStep * 25}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Clean Form Panel Standardized Typography */}
-          <div className="lg:col-span-8 bg-white border border-pink-100 rounded-3xl p-5 sm:p-6 flex flex-col justify-between overflow-hidden shadow-sm h-full">
-            {/* Step 1: Your Profile Form */}
+            {/* CONVERSATION 1: LET'S BUILD YOUR ACCOUNT FIRST */}
             {currentStep === 1 && (
-              <div className="flex-1 min-h-0 flex flex-col justify-start gap-4 sm:gap-5 animate-fade-in">
-                <div className="shrink-0 pb-1">
-                  <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">Step 1: Your Member Profile</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
-                    Enter your credentials and home club details.
-                  </p>
+              <div className="space-y-3.5">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-2 text-xs font-black text-[#D41367] uppercase tracking-wider">
+                    <span>01</span>
+                    <ArrowRight className="w-3 h-3" />
+                    <span>Member Identity</span>
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black text-slate-900 tracking-tight leading-[1.15]">
+                    Let&apos;s build you an account first
+                  </h1>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4 sm:gap-5 pt-1 overflow-y-auto pr-1">
-                  {/* First Name */}
-                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-foreground">
-                        First Name
-                      </label>
-                      <User className="w-4 h-4 text-[#D41367]" />
+                <div className="space-y-3 pt-3.5 sm:pt-4">
+                  {/* Full Name */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700">Full Legal Name *</label>
+                    <div className="relative">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={formData.fullName}
+                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        placeholder="e.g. Sasmitha Silva"
+                        className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                      />
+                      <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Input Your First Name"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange("firstName", e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                    />
                   </div>
 
-                  {/* Last Name */}
-                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-foreground">
-                        Last Name
-                      </label>
-                      <User className="w-4 h-4 text-[#D41367]" />
+                  {/* Email & Phone */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Email Address *</label>
+                      <div className="relative">
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          placeholder="sasmitha@example.com"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Input Your Last Name"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange("lastName", e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                    />
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Mobile Phone *</label>
+                      <div className="relative">
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          placeholder="+94 77 123 4567"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Email */}
-                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
+                  {/* Rotaract Club Selection (Auto-tracks District) */}
+                  <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-foreground">
-                        Email Address
-                      </label>
-                      <Mail className="w-4 h-4 text-[#D41367]" />
+                      <label className="text-xs font-bold text-slate-700">Rotaract Home Club *</label>
+                      <span className="text-[10px] font-extrabold text-[#D41367] bg-pink-50 px-2 py-0.5 rounded-md border border-pink-100">
+                        District: {formData.district}
+                      </span>
                     </div>
-                    <input
-                      type="email"
-                      placeholder="Input Your Email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                    />
-                  </div>
-
-                  {/* Phone */}
-                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-foreground flex items-center">
-                        Phone Number <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold">Optional</span>
-                      </label>
-                      <Phone className="w-4 h-4 text-[#D41367]" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Input Your Phone Number"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                    />
-                  </div>
-
-                  {/* Rotary Member ID */}
-                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-foreground">
-                        Rotary / Rotaract Member ID
-                      </label>
-                      <IdCard className="w-4 h-4 text-[#D41367]" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="e.g. ROT-10492"
-                      value={formData.rotaryId}
-                      onChange={(e) => handleInputChange("rotaryId", e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                    />
-                  </div>
-
-                  {/* Rotaract Home Club */}
-                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-foreground">
-                        Rotaract Home Club
-                      </label>
-                      <Building2 className="w-4 h-4 text-[#D41367]" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="e.g. Rotaract Club of Colombo"
+                    <CustomDropdown
+                      label="Select Your Rotaract Club"
                       value={formData.clubName}
-                      onChange={(e) => handleInputChange("clubName", e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
+                      options={POPULAR_CLUBS.map((c) => c.name)}
+                      onChange={handleClubChange}
                     />
                   </div>
 
-                  {/* Password */}
-                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors sm:col-span-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-foreground">
-                        Account Password
-                      </label>
-                      <KeyRound className="w-4 h-4 text-[#D41367]" />
-                    </div>
-                    <input
-                      type="password"
-                      placeholder="Create Password"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Business & Branding */}
-            {currentStep === 2 && (
-              <div className="flex-1 min-h-0 flex flex-col justify-start gap-4 sm:gap-5 animate-fade-in">
-                <div className="shrink-0 pb-1">
-                  <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">Step 2: Business & Branding</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
-                    Provide basic business identity details and brand images.
-                  </p>
-                </div>
-
-                <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4 pt-1">
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    {/* Business Name */}
-                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground">
-                          Business / Company Name
-                        </label>
-                        <Building2 className="w-4 h-4 text-[#D41367]" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Skyline Legal Associates"
-                        value={formData.businessName}
-                        onChange={(e) => handleInputChange("businessName", e.target.value)}
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
-                    </div>
-
-                    {/* Website URL */}
-                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground flex items-center">
-                          Website URL <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100/80 border border-pink-200 text-[#D41367] text-[10px] font-bold">Optional</span>
-                        </label>
-                        <Globe className="w-4 h-4 text-[#D41367]" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="https://yourcompany.com"
-                        value={formData.website}
-                        onChange={(e) => handleInputChange("website", e.target.value)}
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Custom Industry Sector Dropdown */}
-                  <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-foreground">
-                        Industry Sector / Category
-                      </label>
-                      <Briefcase className="w-4 h-4 text-[#D41367]" />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                      className="w-full flex items-center justify-between text-left text-sm font-medium text-foreground mt-2.5 pb-1 cursor-pointer outline-none"
-                    >
-                      <span className="truncate">{formData.category}</span>
-                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isCategoryOpen ? "rotate-180 text-[#D41367]" : ""}`} />
-                    </button>
-
-                    {/* Custom Popover Menu */}
-                    {isCategoryOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-pink-100 p-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 max-h-60 overflow-y-auto space-y-1">
-                        {sectorOptions.map((sec) => {
-                          const isSelected = formData.category === sec.id;
-                          const Icon = sec.icon;
-
-                          return (
-                            <button
-                              type="button"
-                              key={sec.id}
-                              onClick={() => {
-                                handleInputChange("category", sec.id);
-                                setIsCategoryOpen(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
-                                isSelected
-                                  ? "bg-pink-50 text-[#D41367] font-bold"
-                                  : "text-foreground hover:bg-pink-50/60 hover:text-[#D41367]"
-                              }`}
-                            >
-                              <span className="flex items-center gap-2 truncate">
-                                <Icon className="w-3.5 h-3.5 text-[#D41367] shrink-0" />
-                                <span>{sec.label}</span>
-                              </span>
-                              {isSelected && <Check className="w-3.5 h-3.5 text-[#D41367] shrink-0" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Business Logo & Cover Photo Upload */}
-                  <div className="bg-pink-50/50 border border-pink-100 rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-extrabold text-foreground flex items-center gap-1.5">
-                        <Camera className="w-4 h-4 text-[#D41367]" /> Business Logo & Cover Banner
-                        <span className="ml-2 px-2 py-0.5 rounded-md bg-pink-100 border border-pink-200 text-[#D41367] text-[10px] font-bold">Optional</span>
-                      </label>
-                      <span className="text-[11px] text-muted-foreground">Select local image files</span>
-                    </div>
-
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <ImageUploader
-                        label="Upload Business Logo"
-                        value={formData.logoUrl}
-                        onChange={(url) => handleInputChange("logoUrl", url)}
-                        heightClass="h-24"
-                      />
-
-                      <ImageUploader
-                        label="Upload Cover Banner Photo"
-                        value={formData.coverUrl}
-                        onChange={(url) => handleInputChange("coverUrl", url)}
-                        heightClass="h-24"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Location & Contact */}
-            {currentStep === 3 && (
-              <div className="flex-1 min-h-0 flex flex-col justify-start gap-4 sm:gap-5 animate-fade-in">
-                <div className="shrink-0 pb-1">
-                  <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">Step 3: Locations & Contact</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
-                    Specify operating places, registered address, and official business contact.
-                  </p>
-                </div>
-
-                <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-5 pt-1">
-                  {/* Business Phone & Business Email */}
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground">
-                          Business Phone Number
-                        </label>
-                        <Phone className="w-4 h-4 text-[#D41367]" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="+94 11 234 5678"
-                        value={formData.businessPhone}
-                        onChange={(e) => handleInputChange("businessPhone", e.target.value)}
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
-                    </div>
-
-                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground">
-                          Official Business Email
-                        </label>
-                        <Mail className="w-4 h-4 text-[#D41367]" />
-                      </div>
-                      <input
-                        type="email"
-                        placeholder="contact@company.com"
-                        value={formData.businessEmail}
-                        onChange={(e) => handleInputChange("businessEmail", e.target.value)}
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Physical Address & Pincode */}
-                  <div className="grid sm:grid-cols-3 gap-6">
-                    <div className="sm:col-span-2 relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground">
-                          Full Registered Business Address
-                        </label>
-                        <MapPin className="w-4 h-4 text-[#D41367]" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="123 Galle Road, Colombo 03"
-                        value={formData.address}
-                        onChange={(e) => handleInputChange("address", e.target.value)}
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
-                    </div>
-
-                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground">
-                          Pincode / Postal Zip
-                        </label>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="00300"
-                        value={formData.pincode}
-                        onChange={(e) => handleInputChange("pincode", e.target.value)}
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Primary & Additional Places of Operation */}
-                  <div className="bg-white border border-pink-100 rounded-2xl p-4 space-y-4 shadow-xs">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-extrabold text-foreground flex items-center gap-1.5">
-                          <MapPin className="w-4 h-4 text-[#D41367]" /> Primary Place of Operations
-                        </label>
+                  {/* Rotary Member ID & Password */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Member ID *</label>
+                      <div className="relative">
                         <input
                           type="text"
-                          placeholder="e.g. Colombo (District 3220)"
-                          value={formData.primaryLocation}
-                          onChange={(e) => handleInputChange("primaryLocation", e.target.value)}
-                          className="w-full text-xs p-2.5 bg-pink-50/40 rounded-xl border border-pink-100 outline-none focus:border-[#D41367]"
+                          value={formData.memberId}
+                          onChange={(e) => setFormData({ ...formData, memberId: e.target.value })}
+                          placeholder="e.g. RID-89210"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
                         />
+                        <BadgeCheck className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
+                    </div>
 
-                      <div className="space-y-1">
-                        <label className="text-xs font-extrabold text-foreground flex items-center justify-between">
-                          <span className="flex items-center gap-1.5">
-                            <Building2 className="w-4 h-4 text-[#D41367]" /> Additional Places of Operation
-                          </span>
-                        </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="e.g. Kandy Branch"
-                            value={newLocationInput}
-                            onChange={(e) => setNewLocationInput(e.target.value)}
-                            className="flex-1 text-xs p-2.5 bg-pink-50/40 rounded-xl border border-pink-100 outline-none focus:border-[#D41367]"
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Account Password *</label>
+                      <div className="relative">
+                        <input
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          placeholder="••••••••••••"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center gap-3">
+                  <Button
+                    onClick={handleNext}
+                    disabled={!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.memberId.trim()}
+                    className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-6 py-2.5 text-xs sm:text-sm font-extrabold shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-40 h-auto"
+                  >
+                    <span>Continue to Business Details</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-400 font-medium pl-1">
+                    press <strong className="font-extrabold text-slate-700 inline-flex items-center gap-0.5">Enter <CornerDownLeft className="w-3 h-3" /></strong>
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* CONVERSATION 2: ENTERPRISE & BRAND LOGOS */}
+            {currentStep === 2 && (
+              <div className="space-y-3.5">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-2 text-xs font-black text-[#D41367] uppercase tracking-wider">
+                    <span>02</span>
+                    <ArrowRight className="w-3 h-3" />
+                    <span>Brand &amp; Enterprise</span>
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black text-slate-900 tracking-tight leading-[1.15]">
+                    Tell us about your enterprise
+                  </h1>
+                </div>
+
+                <div className="space-y-3 pt-3.5 sm:pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Enterprise Name *</label>
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={formData.businessName}
+                        onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                        placeholder="e.g. Apex Digital Solutions"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Industry Sector *</label>
+                      <CustomDropdown
+                        label="Select Industry Sector"
+                        value={formData.sector}
+                        options={SECTOR_NAMES}
+                        onChange={(val) => setFormData({ ...formData, sector: val })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700">Headline Tagline</label>
+                    <input
+                      type="text"
+                      value={formData.tagline}
+                      onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
+                      placeholder="e.g. Enterprise Cloud Architecture & AI Automation"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* 2 LOGO UPLOADERS: BRAND LOGO + COVER EMBLEM */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
+
+                    {/* 1. Company Brand Logo */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                        <span>1. Company Brand Logo</span>
+                        <span className="text-[10px] text-slate-400 font-normal">Square / 1:1</span>
+                      </label>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                      <div
+                        onClick={() => logoInputRef.current?.click()}
+                        className="flex items-center gap-3 p-2.5 rounded-xl border border-dashed border-slate-300 hover:border-[#D41367] bg-slate-50 hover:bg-white transition-all cursor-pointer group shadow-2xs"
+                      >
+                        {formData.logoUrl ? (
+                          <img
+                            src={formData.logoUrl}
+                            alt="Logo preview"
+                            className="w-9 h-9 rounded-lg object-cover border border-slate-200"
                           />
-                          <Button
-                            type="button"
-                            onClick={handleAddLocation}
-                            className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl text-xs font-bold gap-1 px-4 h-9"
-                          >
-                            <Plus className="w-3.5 h-3.5" /> Add
-                          </Button>
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-pink-50 text-[#D41367] flex items-center justify-center font-black text-xs shrink-0 group-hover:scale-105 transition-transform">
+                            {formData.businessName ? formData.businessName.charAt(0).toUpperCase() : <Camera className="w-4 h-4" />}
+                          </div>
+                        )}
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {formData.logoUrl ? "Logo Selected ✓" : "Upload Brand Logo"}
+                          </p>
+                          <p className="text-[10px] text-slate-400 truncate">PNG, JPG or monogram</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {formData.additionalLocations.map((loc, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-pink-100/70 border border-pink-200 text-[#D41367] text-xs font-bold shadow-xs"
-                        >
-                          <MapPin className="w-3.5 h-3.5" />
-                          {loc}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveLocation(idx)}
-                            className="hover:text-red-700 ml-1 text-pink-400"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
+                    {/* 2. Cover / Charter Emblem */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                        <span>2. Header Cover / Banner</span>
+                        <span className="text-[10px] text-slate-400 font-normal">Landscape / 16:9</span>
+                      </label>
+                      <input
+                        ref={bannerInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerUpload}
+                        className="hidden"
+                      />
+                      <div
+                        onClick={() => bannerInputRef.current?.click()}
+                        className="flex items-center gap-3 p-2.5 rounded-xl border border-dashed border-slate-300 hover:border-[#D41367] bg-slate-50 hover:bg-white transition-all cursor-pointer group shadow-2xs"
+                      >
+                        {formData.bannerUrl ? (
+                          <img
+                            src={formData.bannerUrl}
+                            alt="Banner preview"
+                            className="w-12 h-9 rounded-lg object-cover border border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-9 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 group-hover:text-[#D41367] group-hover:bg-pink-50 transition-colors">
+                            <ImageIcon className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {formData.bannerUrl ? "Cover Selected ✓" : "Upload Cover Banner"}
+                          </p>
+                          <p className="text-[10px] text-slate-400 truncate">PNG, JPG banner</p>
+                        </div>
+                      </div>
                     </div>
+
                   </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700">Company Overview (Optional)</label>
+                    <textarea
+                      rows={2}
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Briefly describe your products, corporate solutions, or capabilities..."
+                      className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none resize-none leading-relaxed"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center gap-3">
+                  <Button
+                    onClick={handlePrev}
+                    variant="outline"
+                    className="rounded-full border-slate-200 text-slate-700 hover:bg-slate-50 px-5 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer h-auto"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
+                  </Button>
+
+                  <Button
+                    onClick={handleNext}
+                    disabled={!formData.businessName.trim()}
+                    className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-6 py-2 text-xs sm:text-sm font-extrabold shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-40 h-auto"
+                  >
+                    <span>Continue to Location</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-400 font-medium pl-1">
+                    press <strong className="font-extrabold text-slate-700 inline-flex items-center gap-0.5">Enter <CornerDownLeft className="w-3 h-3" /></strong>
+                  </span>
                 </div>
               </div>
             )}
 
-            {/* Step 4: Social Media Links */}
+            {/* CONVERSATION 3: WHERE CAN CLIENTS FIND YOU? */}
+            {currentStep === 3 && (
+              <div className="space-y-3.5">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-2 text-xs font-black text-[#D41367] uppercase tracking-wider">
+                    <span>03</span>
+                    <ArrowRight className="w-3 h-3" />
+                    <span>Operations &amp; Location</span>
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black text-slate-900 tracking-tight leading-[1.15]">
+                    Where can clients find you?
+                  </h1>
+                </div>
+
+                <div className="space-y-3 pt-3.5 sm:pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Primary Operating City *</label>
+                      <div className="relative">
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          placeholder="e.g. Colombo / Mumbai"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Country Jurisdiction *</label>
+                      <input
+                        type="text"
+                        value={formData.country}
+                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                        placeholder="e.g. Sri Lanka"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700">Street / Registered Office Address</label>
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="e.g. Level 14, World Trade Centre, Colombo 01"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Official Business Email</label>
+                      <div className="relative">
+                        <input
+                          type="email"
+                          value={formData.businessEmail}
+                          onChange={(e) => setFormData({ ...formData, businessEmail: e.target.value })}
+                          placeholder="contact@enterprise.com"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Direct Inquiries Phone</label>
+                      <div className="relative">
+                        <input
+                          type="tel"
+                          value={formData.businessPhone}
+                          onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })}
+                          placeholder="+94 11 234 5678"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center gap-3">
+                  <Button
+                    onClick={handlePrev}
+                    variant="outline"
+                    className="rounded-full border-slate-200 text-slate-700 hover:bg-slate-50 px-5 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer h-auto"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
+                  </Button>
+
+                  <Button
+                    onClick={handleNext}
+                    disabled={!formData.city.trim()}
+                    className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-6 py-2 text-xs sm:text-sm font-extrabold shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-40 h-auto"
+                  >
+                    <span>Continue to Socials</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-400 font-medium pl-1">
+                    press <strong className="font-extrabold text-slate-700 inline-flex items-center gap-0.5">Enter <CornerDownLeft className="w-3 h-3" /></strong>
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* CONVERSATION 4: COMPLETE SOCIAL MEDIA PROFILES & SUBMIT */}
             {currentStep === 4 && (
-              <div className="flex-1 min-h-0 flex flex-col justify-start gap-4 sm:gap-5 animate-fade-in">
-                <div className="shrink-0 pb-1">
-                  <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tight">Step 4: Social Media Links</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
-                    Connect your official social channels and messaging handles for buyers.
-                  </p>
+              <div className="space-y-3.5">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-2 text-xs font-black text-[#D41367] uppercase tracking-wider">
+                    <span>04</span>
+                    <ArrowRight className="w-3 h-3" />
+                    <span>Social Channels &amp; Submit</span>
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black text-slate-900 tracking-tight leading-[1.15]">
+                    Connect all your social channels
+                  </h1>
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-5 pt-1">
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    {/* LinkedIn */}
-                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground">
-                          LinkedIn Profile URL
-                        </label>
-                        <Globe className="w-4 h-4 text-[#D41367]" />
+                <div className="space-y-3 pt-3.5 sm:pt-4">
+                  {/* Row 1: Website & LinkedIn */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Official Website URL</label>
+                      <div className="relative">
+                        <input
+                          ref={inputRef}
+                          type="url"
+                          value={formData.website}
+                          onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                          placeholder="https://apexdigital.com"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Globe className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
-                      <input
-                        type="text"
-                        placeholder="https://linkedin.com/in/yourcompany"
-                        value={formData.socialLinks.linkedin}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            socialLinks: { ...formData.socialLinks, linkedin: e.target.value },
-                          })
-                        }
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
                     </div>
 
-                    {/* Instagram */}
-                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground">
-                          Instagram Handle / URL
-                        </label>
-                        <AtSign className="w-4 h-4 text-[#D41367]" />
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">LinkedIn Company / Profile</label>
+                      <div className="relative">
+                        <input
+                          type="url"
+                          value={formData.linkedin}
+                          onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+                          placeholder="https://linkedin.com/in/..."
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Share2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
-                      <input
-                        type="text"
-                        placeholder="https://instagram.com/yourhandle"
-                        value={formData.socialLinks.instagram}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            socialLinks: { ...formData.socialLinks, instagram: e.target.value },
-                          })
-                        }
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
-                    </div>
-
-                    {/* Facebook */}
-                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground">
-                          Facebook Page URL
-                        </label>
-                        <Send className="w-4 h-4 text-[#D41367]" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="https://facebook.com/yourpage"
-                        value={formData.socialLinks.facebook}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            socialLinks: { ...formData.socialLinks, facebook: e.target.value },
-                          })
-                        }
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
-                    </div>
-
-                    {/* WhatsApp */}
-                    <div className="relative border-b-2 border-border/80 focus-within:border-[#D41367] pb-1 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-foreground">
-                          WhatsApp Business Number
-                        </label>
-                        <MessageSquare className="w-4 h-4 text-[#D41367]" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="+94771234567"
-                        value={formData.socialLinks.whatsapp}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            socialLinks: { ...formData.socialLinks, whatsapp: e.target.value },
-                          })
-                        }
-                        className="w-full bg-transparent text-sm font-medium outline-none text-foreground mt-2.5 pb-1 placeholder:text-muted-foreground/50"
-                      />
                     </div>
                   </div>
 
-                  <div className="bg-pink-50/80 border border-pink-200 rounded-2xl p-4 flex items-start gap-3">
-                    <ShieldCheck className="w-5 h-5 text-[#D41367] shrink-0 mt-0.5" />
-                    <div className="text-xs">
-                      <h4 className="font-extrabold text-foreground">District Business Directory Standing</h4>
-                      <p className="text-muted-foreground mt-0.5 leading-relaxed font-normal">
-                        Your business profile will be instantly published and assigned to your Rotaract District Representative for directory badge verification.
-                      </p>
+                  {/* Row 2: Instagram & WhatsApp */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Instagram Profile / Handle</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formData.instagram}
+                          onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                          placeholder="@apex.digital"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Link2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">WhatsApp Business Number</label>
+                      <div className="relative">
+                        <input
+                          type="tel"
+                          value={formData.whatsapp}
+                          onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                          placeholder="+94 77 123 4567"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <MessageSquare className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
                     </div>
                   </div>
+
+                  {/* Row 3: Facebook & X (Twitter) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Facebook Page URL</label>
+                      <div className="relative">
+                        <input
+                          type="url"
+                          value={formData.facebook}
+                          onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
+                          placeholder="https://facebook.com/..."
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Globe className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">X (Twitter) Profile</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formData.twitter}
+                          onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
+                          placeholder="@apex_digital"
+                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        />
+                        <Link2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Terms Declaration */}
+                  <label
+                    onClick={() => setFormData((prev) => ({ ...prev, agreeTerms: !prev.agreeTerms }))}
+                    className="flex items-start gap-2.5 pt-1 cursor-pointer group select-none"
+                  >
+                    <div
+                      className={cn(
+                        "w-4 h-4 rounded-md border mt-[2px] flex items-center justify-center transition-all shrink-0",
+                        formData.agreeTerms
+                          ? "bg-[#D41367] border-[#D41367] text-white shadow-xs"
+                          : "bg-slate-50 border-slate-300 group-hover:border-[#D41367] group-hover:bg-white"
+                      )}
+                    >
+                      {formData.agreeTerms && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <span className="text-xs text-slate-600 font-medium leading-snug group-hover:text-slate-900 transition-colors">
+                      I declare that I am an active Rotary or Rotaract member, and authorize RSAMDIO District administrators to verify and list my business credentials in the directory.
+                    </span>
+                  </label>
+                </div>
+
+                <div className="pt-2 flex items-center gap-3">
+                  <Button
+                    onClick={handlePrev}
+                    variant="outline"
+                    className="rounded-full border-slate-200 text-slate-700 hover:bg-slate-50 px-5 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer h-auto"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
+                  </Button>
+
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting || !formData.agreeTerms}
+                    className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-8 py-2.5 text-xs sm:text-sm font-extrabold shadow-lg shadow-pink-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer disabled:opacity-40 h-auto"
+                  >
+                    <span>{isSubmitting ? "Submitting..." : "Submit"}</span>
+                  </Button>
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-400 font-medium pl-1">
+                    press <strong className="font-extrabold text-slate-700 inline-flex items-center gap-0.5">Enter <CornerDownLeft className="w-3 h-3" /></strong>
+                  </span>
                 </div>
               </div>
             )}
 
-            {/* Bottom Footer Action Controls */}
-            <div className="pt-4 border-t border-pink-100 flex items-center justify-between mt-4 shrink-0">
-              {currentStep > 1 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleBack}
-                  className="rounded-full border-pink-200 text-foreground hover:bg-pink-50 text-xs font-bold px-5 h-10"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Previous Step
-                </Button>
-              ) : (
-                <div />
-              )}
+          </div>
+        ) : (
+          /* ================= SUCCESS CELEBRATION SCREEN ================= */
+          <div className="text-center space-y-4 max-w-lg mx-auto py-6 animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-md">
+              <Check className="w-8 h-8 stroke-[3]" />
+            </div>
 
+            <div className="space-y-1.5">
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Enterprise Published!
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                <strong className="text-slate-900">{formData.businessName || "Your business"}</strong> has been submitted to the RSAMDIO Directory and assigned for verification.
+              </p>
+            </div>
+
+            <div className="pt-2">
               <Button
-                type="button"
-                onClick={handleNext}
-                className="rounded-full bg-[#D41367] hover:bg-[#B80E56] text-white text-xs font-extrabold px-7 h-10 shadow-md gap-1"
+                asChild
+                className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-8 py-2.5 text-xs font-extrabold shadow-md hover:scale-105 transition-all"
               >
-                <span>{currentStep === 4 ? "Complete Business Registration" : "Next Step"}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <Link href="/directory">
+                  <span>Explore in Directory</span>
+                  <ArrowRight className="w-4 h-4 ml-1.5" />
+                </Link>
               </Button>
             </div>
           </div>
-        </div>
+        )}
+
       </main>
+
+      {/* ================= BOTTOM NAVIGATION DOCK ================= */}
+      <footer className="shrink-0 bg-white/90 backdrop-blur-md border-t border-slate-100 py-2.5 px-4 sm:px-6 lg:px-10 flex items-center justify-between z-40">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+          <span>Part {currentStep} of {TOTAL_STEPS}</span>
+        </div>
+
+        {/* Up / Down Chevrons */}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={handlePrev}
+            disabled={currentStep === 1}
+            className="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors cursor-pointer"
+            title="Previous step"
+          >
+            <ChevronUp className="w-4 h-4 text-slate-700" />
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={currentStep === TOTAL_STEPS}
+            className="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors cursor-pointer"
+            title="Next step"
+          >
+            <ChevronDown className="w-4 h-4 text-slate-700" />
+          </button>
+        </div>
+      </footer>
+
     </div>
   );
 }

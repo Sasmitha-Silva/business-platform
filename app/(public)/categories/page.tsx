@@ -45,7 +45,7 @@ const categoryImages: Record<string, string> = {
 
 export default function CategoriesPage() {
   return (
-    <div className="min-h-screen bg-[#FAF6F4] text-foreground pt-6 pb-24">
+    <div className="min-h-screen bg-white text-foreground pt-6 pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Compact Header */}
         <div className="space-y-4 pb-6 border-b border-border/60">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ArrowUpRight, Sparkles, Building2, Briefcase, Laptop, Stethoscope, Palette, Compass, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Building2, Briefcase, Laptop, Stethoscope, Palette, Compass, ShieldCheck } from "lucide-react";
 
 const categoryPhotos = {
   finance: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1200&q=85",
@@ -43,7 +43,7 @@ export function FeaturedCategoriesShowcase() {
           <div className="lg:col-span-4 flex flex-col gap-6 justify-between">
             {/* Category 1: Finance & Audit */}
             <Link
-              href="/categories/finance-audit"
+              href="/categories/professional-services"
               className="relative rounded-3xl overflow-hidden block flex-1 min-h-[200px] shadow-md group border border-border/80"
             >
               <Image

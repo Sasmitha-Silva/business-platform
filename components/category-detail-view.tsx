@@ -15,36 +15,64 @@ import {
   ArrowRight,
   Check,
   ChevronLeft,
+  Factory,
+  ShoppingBag,
+  Briefcase,
+  Cpu,
+  Heart,
+  GraduationCap,
+  UtensilsCrossed,
+  Building,
+  Palette,
+  MoreHorizontal,
+  Layers,
+  ShieldCheck,
+  PhoneCall,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
-import { mockBusinesses } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import type { Business, Category } from "@/lib/types";
 
-const categoryImages: Record<string, string> = {
-  manufacturing: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80",
-  retail: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=600&q=80",
-  "professional-services": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80",
-  technology: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80",
-  healthcare: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=600&q=80",
-  "education-training": "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=600&q=80",
-  "food-beverage": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80",
-  "real-estate-construction": "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=600&q=80",
-  "creative-services": "https://images.unsplash.com/photo-1542744094-3a31f272c490?auto=format&fit=crop&w=600&q=80",
-  "events-entertainment": "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=600&q=80",
-  others: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=80",
+const iconMap: Record<string, React.ElementType> = {
+  manufacturing: Factory,
+  retail: ShoppingBag,
+  "professional-services": Briefcase,
+  technology: Cpu,
+  healthcare: Heart,
+  education: GraduationCap,
+  hospitality: UtensilsCrossed,
+  "real-estate-construction": Building,
+  "creative-services": Palette,
+  others: MoreHorizontal,
 };
 
-const sectorFilters = [
-  { label: "All Sectors", value: "all" },
-  { label: "Technology", value: "technology" },
-  { label: "Professional Services", value: "professional-services" },
-  { label: "Creative Services", value: "creative-services" },
-  { label: "Healthcare", value: "healthcare" },
-  { label: "Manufacturing", value: "manufacturing" },
-  { label: "Real Estate", value: "real-estate-construction" },
-  { label: "Retail", value: "retail" },
-];
+const categoryImages: Record<string, string> = {
+  "professional-services": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
+  technology: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80",
+  healthcare: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
+  "creative-services": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
+  "real-estate-construction": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+  manufacturing: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80",
+  retail: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80",
+  education: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80",
+  hospitality: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+  others: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80",
+};
+
+const categoryDescriptions: Record<string, string> = {
+  technology: "Discover certified software development agencies, SaaS innovators, AI & ML specialists, and cloud engineering leaders.",
+  "professional-services": "Connect with verified legal counsel, chartered accountants, management consultants, and corporate strategists.",
+  "creative-services": "Explore top-tier visual branding agencies, UI/UX designers, videographers, and digital media production studios.",
+  healthcare: "Access trusted healthcare clinics, dental studios, diagnostic centers, and wellness facilities led by Rotaractors.",
+  "real-estate-construction": "Partner with accredited architects, civil builders, interior decorators, and real estate developers.",
+  manufacturing: "Source high-precision engineering, industrial machinery, textile garments, and food production enterprises.",
+  retail: "Shop from verified fashion boutiques, consumer goods brands, electronics retailers, and specialized suppliers.",
+  education: "Engage with progressive coaching academies, professional training institutes, and EdTech platforms.",
+  hospitality: "Book boutique hotels, gourmet catering services, restaurants, and premier event management specialists.",
+  others: "Explore emerging industry leaders across logistics, agro-business, trade finance, and non-profit initiatives.",
+};
 
 const districtOptions = [
   { label: "All Districts", value: "all" },
@@ -52,6 +80,8 @@ const districtOptions = [
   { label: "District 3141 (Mumbai)", value: "3141" },
   { label: "District 3011 (Delhi NCR)", value: "3011" },
   { label: "District 3292 (Nepal)", value: "3292" },
+  { label: "District 9110 (Lagos)", value: "9110" },
+  { label: "District 9675 (Sydney)", value: "9675" },
 ];
 
 const verificationTiers = [
@@ -67,7 +97,7 @@ const sortOptions = [
   { label: "Newest First", value: "newest" },
 ];
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 8;
 
 interface CustomDropdownProps {
   label: string;
@@ -142,36 +172,57 @@ function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps
   );
 }
 
-export default function DirectoryPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedDistrict, setSelectedDistrict] = useState("all");
-  const [selectedLevel, setSelectedLevel] = useState("all");
+interface CategoryDetailViewProps {
+  category: Category;
+  businesses: Business[];
+  allCategories: Category[];
+}
+
+export function CategoryDetailView({
+  category,
+  businesses,
+  allCategories,
+}: CategoryDetailViewProps) {
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedDistrict, setSelectedDistrict] = useState<string>("all");
+  const [selectedLevel, setSelectedLevel] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"tier" | "name" | "newest">("tier");
   const [viewMode, setViewMode] = useState<"cards" | "list">("cards");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const IconComponent = iconMap[category.slug] || Layers;
+  const bgImage = categoryImages[category.slug] || categoryImages["others"];
+  const descriptionText =
+    categoryDescriptions[category.slug] ||
+    `Explore verified Rotaract businesses, founders, and enterprises in ${category.name}.`;
+
+  const subcategories = category.children || [];
 
   // Filter businesses
   const filteredBusinesses = useMemo(() => {
-    return mockBusinesses.filter((biz) => {
+    return businesses.filter((biz) => {
+      // Subcategory filter
+      if (selectedSubcategory !== "all") {
+        if (
+          biz.subcategory?.slug !== selectedSubcategory &&
+          biz.subcategory_id !== selectedSubcategory &&
+          biz.subcategory?.id !== selectedSubcategory
+        ) {
+          return false;
+        }
+      }
+
       // Keyword search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesName = biz.name.toLowerCase().includes(q);
         const matchesTagline = biz.tagline?.toLowerCase().includes(q) || false;
         const matchesDesc = biz.description?.toLowerCase().includes(q) || false;
-        const matchesCat = biz.category?.name.toLowerCase().includes(q) || false;
         const matchesSubcat = biz.subcategory?.name.toLowerCase().includes(q) || false;
         const matchesCity = biz.location?.city?.toLowerCase().includes(q) || false;
         const matchesClub = biz.rotaract_profile?.club_name?.toLowerCase().includes(q) || false;
-        if (!matchesName && !matchesTagline && !matchesDesc && !matchesCat && !matchesSubcat && !matchesCity && !matchesClub) {
-          return false;
-        }
-      }
-
-      // Sector filter
-      if (selectedCategory !== "all") {
-        if (biz.category?.slug !== selectedCategory && biz.subcategory?.slug !== selectedCategory) {
+        if (!matchesName && !matchesTagline && !matchesDesc && !matchesSubcat && !matchesCity && !matchesClub) {
           return false;
         }
       }
@@ -192,17 +243,23 @@ export default function DirectoryPage() {
 
       return true;
     });
-  }, [searchQuery, selectedCategory, selectedDistrict, selectedLevel]);
+  }, [businesses, selectedSubcategory, searchQuery, selectedDistrict, selectedLevel]);
 
   // Sort businesses
   const sortedBusinesses = useMemo(() => {
     return [...filteredBusinesses].sort((a, b) => {
       if (sortBy === "tier") {
-        if (b.verification_level !== a.verification_level) return b.verification_level - a.verification_level;
+        if (b.verification_level !== a.verification_level) {
+          return b.verification_level - a.verification_level;
+        }
         return (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0);
       }
-      if (sortBy === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "newest") {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      if (sortBy === "name") {
+        return a.name.localeCompare(b.name);
+      }
       return 0;
     });
   }, [filteredBusinesses, sortBy]);
@@ -210,9 +267,9 @@ export default function DirectoryPage() {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, selectedDistrict, selectedLevel, sortBy]);
+  }, [searchQuery, selectedSubcategory, selectedDistrict, selectedLevel, sortBy]);
 
-  // Paginated businesses (10 per page)
+  // Paginated businesses
   const totalPages = Math.ceil(sortedBusinesses.length / ITEMS_PER_PAGE) || 1;
   const paginatedBusinesses = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -220,43 +277,178 @@ export default function DirectoryPage() {
   }, [sortedBusinesses, currentPage]);
 
   const clearAll = () => {
+    setSelectedSubcategory("all");
     setSearchQuery("");
-    setSelectedCategory("all");
     setSelectedDistrict("all");
     setSelectedLevel("all");
     setCurrentPage(1);
   };
 
   const hasFilters =
+    selectedSubcategory !== "all" ||
     searchQuery !== "" ||
-    selectedCategory !== "all" ||
     selectedDistrict !== "all" ||
     selectedLevel !== "all";
+
+  // Other categories for bottom cross-navigation
+  const otherCategories = useMemo(() => {
+    return allCategories.filter((c) => c.slug !== category.slug).slice(0, 4);
+  }, [allCategories, category.slug]);
+
+  // Calculate count per subcategory
+  const subcategoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    subcategories.forEach((sub) => {
+      counts[sub.slug] = businesses.filter(
+        (b) => b.subcategory?.slug === sub.slug || b.subcategory_id === sub.id
+      ).length;
+    });
+    return counts;
+  }, [subcategories, businesses]);
 
   return (
     <div className="min-h-screen bg-white text-foreground pt-6 pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-        {/* Compact Header (Matching Categories Page) */}
-        <div className="space-y-4 pb-6 border-b border-border/60">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-2">
-            <Link href="/" className="hover:text-[#D41367] transition-colors">
-              Home
-            </Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-[#D41367] font-bold">Directory</span>
+        {/* ================= BREADCRUMBS ================= */}
+        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-2">
+          <Link href="/" className="hover:text-[#D41367] transition-colors">
+            Home
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5" />
+          <Link href="/categories" className="hover:text-[#D41367] transition-colors">
+            Categories
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5" />
+          <span className="text-[#D41367] font-bold">{category.name}</span>
+        </div>
+
+        {/* ================= SECTOR HERO BANNER CARD ================= */}
+        <div className="relative rounded-3xl overflow-hidden shadow-lg border border-pink-100/60 min-h-[260px] sm:min-h-[290px] flex flex-col justify-between p-6 sm:p-9 bg-slate-950 text-white">
+          <Image
+            src={bgImage}
+            alt={category.name}
+            fill
+            unoptimized
+            sizes="100vw"
+            className="object-cover object-center opacity-45 transition-transform duration-700 hover:scale-105"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30 pointer-events-none" />
+
+          {/* Top Row: Icon Badge & Sector Label */}
+          <div className="relative z-10 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center shadow-md">
+                <IconComponent className="w-6 h-6 text-white" />
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-xs font-semibold text-white">
+                <ShieldCheck className="w-3.5 h-3.5 text-pink-200" />
+                <span>Verified Sector Directory</span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2">
-              Verified <span className="text-[#D41367]">Enterprises</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-1">
-              Discover certified Rotaract entrepreneurs, service firms, and business leaders
-            </p>
+
+          {/* Bottom Row: Heading, Description & Quick Metrics */}
+          <div className="relative z-10 space-y-3 mt-8">
+            <div className="max-w-3xl space-y-1.5">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
+                {category.name}
+              </h1>
+              <p className="text-xs sm:text-sm text-white/85 font-medium leading-relaxed max-w-2xl">
+                {descriptionText}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{businesses.length} Verified {businesses.length === 1 ? "Enterprise" : "Enterprises"}</span>
+              </div>
+              {subcategories.length > 0 && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold">
+                  <Layers className="w-3.5 h-3.5 text-pink-300" />
+                  <span>{subcategories.length} Specializations</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ================= STREAMLINED FILTER DOCK WITH CUSTOM DROPDOWNS ================= */}
+        {/* ================= SPECIALIZATIONS FILTER PILLS ================= */}
+        {subcategories.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                Specializations in {category.name}
+              </span>
+              {selectedSubcategory !== "all" && (
+                <button
+                  onClick={() => setSelectedSubcategory("all")}
+                  className="text-xs font-bold text-[#D41367] hover:underline cursor-pointer"
+                >
+                  Show All ({businesses.length})
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setSelectedSubcategory("all")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border",
+                  selectedSubcategory === "all"
+                    ? "bg-[#D41367] text-white border-[#D41367] shadow-sm"
+                    : "bg-slate-100 hover:bg-pink-50 text-slate-700 hover:text-[#D41367] border-transparent"
+                )}
+              >
+                <span>All Specializations</span>
+                <span
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-full font-black",
+                    selectedSubcategory === "all" ? "bg-white/25 text-white" : "bg-slate-200 text-slate-600"
+                  )}
+                >
+                  {businesses.length}
+                </span>
+              </button>
+
+              {subcategories.map((sub) => {
+                const isSelected = selectedSubcategory === sub.slug || selectedSubcategory === sub.id;
+                const count = subcategoryCounts[sub.slug] ?? 0;
+
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => setSelectedSubcategory(sub.slug)}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border",
+                      isSelected
+                        ? "bg-[#D41367] text-white border-[#D41367] shadow-sm"
+                        : "bg-slate-100 hover:bg-pink-50 text-slate-700 hover:text-[#D41367] border-transparent"
+                    )}
+                  >
+                    <span>{sub.name}</span>
+                    {count > 0 && (
+                      <span
+                        className={cn(
+                          "text-[10px] px-1.5 py-0.2 rounded-full font-black",
+                          isSelected ? "bg-white/25 text-white" : "bg-slate-200 text-slate-600"
+                        )}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ================= STREAMLINED FILTER DOCK ================= */}
         <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3 sm:p-3.5 shadow-2xs">
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
             {/* Search Input */}
@@ -266,7 +458,7 @@ export default function DirectoryPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search Enterprise, Founder, Industry, or City"
+                placeholder={`Search enterprises, founders, or services in ${category.name}...`}
                 className="w-full pl-9.5 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367]"
               />
               {searchQuery && (
@@ -281,13 +473,6 @@ export default function DirectoryPage() {
 
             {/* Custom Dropdown Filters */}
             <div className="flex flex-wrap items-center gap-2">
-              <CustomDropdown
-                label="Industry Sector"
-                value={selectedCategory}
-                options={sectorFilters}
-                onChange={setSelectedCategory}
-              />
-
               <CustomDropdown
                 label="District Region"
                 value={selectedDistrict}
@@ -325,6 +510,12 @@ export default function DirectoryPage() {
             {hasFilters && (
               <>
                 <span className="text-slate-300">•</span>
+                {selectedSubcategory !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-50 text-[#D41367] font-bold border border-pink-200 text-[10px]">
+                    {subcategories.find((s) => s.slug === selectedSubcategory || s.id === selectedSubcategory)?.name || selectedSubcategory}
+                    <X className="w-2.5 h-2.5 cursor-pointer hover:opacity-80" onClick={() => setSelectedSubcategory("all")} />
+                  </span>
+                )}
                 {searchQuery && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-50 text-[#D41367] font-bold border border-pink-200 text-[10px]">
                     &ldquo;{searchQuery}&rdquo;
@@ -376,16 +567,16 @@ export default function DirectoryPage() {
           </div>
         </div>
 
-        {/* ================= LISTINGS (10 PER PAGE) ================= */}
+        {/* ================= BUSINESSES LISTINGS ================= */}
         {paginatedBusinesses.length > 0 ? (
           <>
             {viewMode === "cards" ? (
-              /* COMPACT CARDS WITH MINIMAP (3-4 COLUMNS) */
+              /* COMPACT CARDS (3-4 COLUMNS) */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {paginatedBusinesses.map((biz) => {
                   const city = biz.location?.city || "National";
                   const district = biz.rotaract_profile?.district_number;
-                  const catSlug = biz.category?.slug || "others";
+                  const catSlug = biz.category?.slug || category.slug || "others";
                   const imageUrl = categoryImages[catSlug] || categoryImages["others"];
 
                   return (
@@ -408,14 +599,23 @@ export default function DirectoryPage() {
 
                           {/* Floating Top Badges */}
                           <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-                            {biz.category ? (
+                            {biz.subcategory ? (
                               <span className="px-2 py-0.5 rounded-md bg-white/95 backdrop-blur-md text-[10px] font-extrabold text-slate-900 shadow-xs">
-                                {biz.category.name}
+                                {biz.subcategory.name}
                               </span>
-                            ) : <span />}
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-md bg-white/95 backdrop-blur-md text-[10px] font-extrabold text-slate-900 shadow-xs">
+                                {category.name}
+                              </span>
+                            )}
 
                             <div className="flex items-center gap-1 pointer-events-auto">
                               <VerificationBadge level={biz.verification_level} size="sm" />
+                              {biz.is_featured && (
+                                <span className="inline-flex items-center text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-pink-50 text-[#D41367] border border-pink-200 shadow-xs">
+                                  Featured
+                                </span>
+                              )}
                             </div>
                           </div>
 
@@ -463,7 +663,7 @@ export default function DirectoryPage() {
                 {paginatedBusinesses.map((biz) => {
                   const city = biz.location?.city || "National";
                   const district = biz.rotaract_profile?.district_number;
-                  const catSlug = biz.category?.slug || "others";
+                  const catSlug = biz.category?.slug || category.slug || "others";
                   const imageUrl = categoryImages[catSlug] || categoryImages["others"];
 
                   return (
@@ -494,6 +694,11 @@ export default function DirectoryPage() {
                               {biz.name}
                             </Link>
                             <VerificationBadge level={biz.verification_level} size="sm" />
+                            {biz.is_featured && (
+                              <span className="inline-flex items-center text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-pink-50 text-[#D41367] border border-pink-200">
+                                Featured
+                              </span>
+                            )}
                           </div>
 
                           {biz.tagline && (
@@ -503,9 +708,13 @@ export default function DirectoryPage() {
                           )}
 
                           <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[11px]">
-                            {biz.category && (
+                            {biz.subcategory ? (
                               <span className="px-2 py-0.5 rounded-md bg-pink-50 text-[#D41367] font-extrabold text-[10px]">
-                                {biz.category.name}
+                                {biz.subcategory.name}
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-md bg-pink-50 text-[#D41367] font-extrabold text-[10px]">
+                                {category.name}
                               </span>
                             )}
                             {district && (
@@ -514,7 +723,7 @@ export default function DirectoryPage() {
                               </span>
                             )}
                             <span className="inline-flex items-center gap-1 text-slate-500 font-semibold">
-                              <MapPin className="w-3 h-3 text-[#D41367] shrink-0" />
+                              <MapPin className="w-3 h-3 text-[#D41367]" />
                               <span>{city}</span>
                             </span>
                           </div>
@@ -537,7 +746,7 @@ export default function DirectoryPage() {
               </div>
             )}
 
-            {/* ================= PAGINATION BAR (10 PER PAGE) ================= */}
+            {/* ================= PAGINATION BAR ================= */}
             {totalPages > 1 && (
               <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p className="text-xs text-slate-500 font-medium">
@@ -588,19 +797,114 @@ export default function DirectoryPage() {
             )}
           </>
         ) : (
-          /* EMPTY STATE */
-          <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-10 text-center max-w-md mx-auto space-y-3">
-            <Search className="w-8 h-8 text-[#D41367] mx-auto" />
-            <h3 className="text-sm font-black text-slate-900">No Enterprises Found</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              No accredited enterprises match your selected filters. Reset to browse the complete directory.
-            </p>
-            <Button
-              onClick={clearAll}
-              className="bg-[#D41367] text-white rounded-full px-5 py-1.5 text-xs font-extrabold"
-            >
-              Reset Filters
-            </Button>
+          /* ================= EMPTY STATE ================= */
+          <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-10 sm:p-12 text-center max-w-lg mx-auto space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-pink-50 text-[#D41367] flex items-center justify-center mx-auto shadow-2xs">
+              <Search className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-slate-900">
+                No Enterprises Found in this Selection
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+                {hasFilters
+                  ? "No businesses currently match your search criteria or specialization filter. Try resetting filters to explore all listings."
+                  : `Be the first certified Rotaract entrepreneur to list your enterprise under ${category.name}.`}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+              {hasFilters && (
+                <Button
+                  onClick={clearAll}
+                  variant="outline"
+                  className="border-slate-200 text-slate-700 hover:text-slate-900 rounded-full px-5 text-xs font-extrabold h-9"
+                >
+                  Reset Filters
+                </Button>
+              )}
+              <Button
+                asChild
+                className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-5 text-xs font-extrabold h-9"
+              >
+                <Link href="/register">
+                  <span>Register Enterprise</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ================= EXPLORE OTHER CATEGORIES ================= */}
+        {otherCategories.length > 0 && (
+          <div className="pt-12 border-t border-slate-100 space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                  Explore Other Industry Sectors
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Browse verified Rotaract enterprises across other industry categories
+                </p>
+              </div>
+
+              <Link
+                href="/categories"
+                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#D41367] hover:underline shrink-0"
+              >
+                <span>View All Categories</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {otherCategories.map((otherCat) => {
+                const OtherIcon = iconMap[otherCat.slug] || Layers;
+                const otherImg = categoryImages[otherCat.slug] || categoryImages["others"];
+
+                return (
+                  <Link
+                    key={otherCat.id}
+                    href={`/categories/${otherCat.slug}`}
+                    className="group relative rounded-2xl overflow-hidden min-h-[140px] shadow-sm hover:shadow-md transition-all duration-300 border border-slate-200/80 block"
+                  >
+                    <Image
+                      src={otherImg}
+                      alt={otherCat.name}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, 300px"
+                      className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20 p-4 flex flex-col justify-between text-white">
+                      <div className="flex items-center justify-between">
+                        <div className="w-7 h-7 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center">
+                          <OtherIcon className="w-3.5 h-3.5 text-white" />
+                        </div>
+                        <span className="text-[10px] font-extrabold bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/25">
+                          {otherCat.business_count || "100+"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-end justify-between gap-2">
+                        <div>
+                          <h3 className="text-sm font-black text-white group-hover:text-pink-200 transition-colors line-clamp-1">
+                            {otherCat.name}
+                          </h3>
+                          <p className="text-[10px] text-white/80 font-medium">
+                            {otherCat.children?.length || 0} Specializations
+                          </p>
+                        </div>
+                        <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center shrink-0 group-hover:bg-[#D41367] group-hover:text-white transition-all">
+                          <ArrowRight className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
 

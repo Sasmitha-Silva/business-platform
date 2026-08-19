@@ -1,107 +1,238 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { Mail, Phone, MapPin, Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Mail,
+  Phone,
+  MapPin,
+  Send,
+  CheckCircle2,
+  Clock,
+  ChevronDown,
+  Check,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const TOPIC_OPTIONS = [
+  "Verification Status Inquiry",
+  "District Partnership & Moderation",
+  "Business Listing Technical Support",
+  "General Rotary Network Inquiries",
+];
 
 export default function ContactPage() {
   const [topic, setTopic] = useState("Verification Status Inquiry");
+  const [isTopicOpen, setIsTopicOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sent, setSent] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email || !message) return;
+    setSent(true);
+    setName("");
+    setEmail("");
+    setMessage("");
+    setTimeout(() => setSent(false), 4000);
+  };
 
   return (
-    <div className="bg-[#FAF6F4] min-h-screen pb-16 pt-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs font-bold text-[#D41367] uppercase tracking-wider">GET IN TOUCH</span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight mt-1">
-            We&apos;re Here to Help
+    <div className="relative bg-white min-h-screen pb-16 pt-6 overflow-hidden animate-fade-in">
+      {/* Background Precision Mesh Grid */}
+      <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
+        <div
+          className="absolute top-0 left-0 w-[500px] sm:w-[680px] h-[500px] sm:h-[680px]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(212, 19, 103, 0.12) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(212, 19, 103, 0.12) 1px, transparent 1px)
+            `,
+            backgroundSize: "36px 36px",
+            maskImage: "radial-gradient(circle at top left, black 30%, transparent 75%)",
+            WebkitMaskImage: "radial-gradient(circle at top left, black 30%, transparent 75%)",
+          }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-[500px] sm:w-[680px] h-[500px] sm:h-[680px]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(212, 19, 103, 0.12) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(212, 19, 103, 0.12) 1px, transparent 1px)
+            `,
+            backgroundSize: "36px 36px",
+            maskImage: "radial-gradient(circle at bottom right, black 30%, transparent 75%)",
+            WebkitMaskImage: "radial-gradient(circle at bottom right, black 30%, transparent 75%)",
+          }}
+        />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-pink-50/60 rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      {/* Toast Alert */}
+      {sent && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>Your message has been dispatched to the District Secretariat.</span>
+        </div>
+      )}
+
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        {/* ================= HERO HEADER BANNER ================= */}
+        <div className="bg-white/90 backdrop-blur-xs rounded-2xl border border-slate-200 p-8 sm:p-12 shadow-2xs text-center max-w-3xl mx-auto space-y-3">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight leading-tight">
+            Get in Touch with Our Team
           </h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Have questions about directory listing, verification tiers, or district partnerships? Contact our support team.
+          <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed max-w-xl mx-auto">
+            Have questions regarding directory accreditation, document compliance, or district partnership inquiries? We&apos;re here to assist.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Contact Details Cards */}
+        {/* ================= 2-COLUMN CONTACT LAYOUT ================= */}
+        <div className="grid lg:grid-cols-3 gap-6 items-start">
+          {/* Left Column: Contact Channel Cards (1 col) */}
           <div className="space-y-4">
-            <div className="bg-white rounded-3xl p-6 border border-border shadow-sm flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-pink-100 text-[#D41367] flex items-center justify-center shrink-0">
-                <Mail className="w-6 h-6" />
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center shrink-0 border border-pink-100/60">
+                <Mail className="w-5 h-5" />
               </div>
-              <div>
-                <h3 className="font-bold text-foreground text-sm">Email Support</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">support@rotaractnetwork.org</p>
-                <p className="text-[10px] text-emerald-600 font-semibold mt-1">Response within 24 hours</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-6 border border-border shadow-sm flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                <Phone className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-bold text-foreground text-sm">District Helpdesk</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">+91 11 2345 6789</p>
-                <p className="text-[10px] text-muted-foreground font-semibold mt-1">Mon-Fri: 9 AM - 6 PM IST</p>
+              <div className="space-y-1 min-w-0">
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base">Email Helpdesk</h3>
+                <p className="text-xs text-slate-500 font-normal truncate">support@rotaractnetwork.org</p>
+                <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium pt-1">
+                  <Clock className="w-3 h-3" />
+                  <span>Response within 24 hours</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 border border-border shadow-sm flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-100 text-[#0050A2] flex items-center justify-center shrink-0">
-                <MapPin className="w-6 h-6" />
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-100/80">
+                <Phone className="w-5 h-5" />
               </div>
-              <div>
-                <h3 className="font-bold text-foreground text-sm">Global Secretariat</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Rotary International Center, District 3220 Secretariat, Colombo.</p>
+              <div className="space-y-1 min-w-0">
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base">District Helpdesk</h3>
+                <p className="text-xs text-slate-500 font-normal">+94 77 123 4567</p>
+                <p className="text-[11px] text-slate-400 font-normal pt-1">Mon–Fri: 9:00 AM – 6:00 PM</p>
+              </div>
+            </div>
+
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center shrink-0 border border-slate-200">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div className="space-y-1 min-w-0">
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base">Global Secretariat</h3>
+                <p className="text-xs text-slate-600 font-normal leading-relaxed">
+                  Rotary International District 3220 Secretariat, Colombo, Sri Lanka.
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Contact Form */}
-          <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-border shadow-sm space-y-6">
-            <h2 className="text-xl font-bold text-foreground">Send a Message</h2>
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          {/* Right Column: Contact Message Form (2 cols) */}
+          <div className="lg:col-span-2 bg-white/95 backdrop-blur-xs rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-6">
+            <div className="pb-4 border-b border-slate-100">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                Send an Official Message
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
+                Fill in your details below and our secretariat will respond promptly.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground">Your Name</label>
-                  <input type="text" placeholder="John Doe" className="w-full h-11 px-4 text-xs bg-warm-bg border border-border rounded-xl outline-none" required />
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-semibold text-slate-700">Your Full Name *</Label>
+                  <Input
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Rtr. Sarah Perera"
+                    className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
+                  />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground">Email Address</label>
-                  <input type="email" placeholder="john@company.com" className="w-full h-11 px-4 text-xs bg-warm-bg border border-border rounded-xl outline-none" required />
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-semibold text-slate-700">Official Email *</Label>
+                  <Input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="sarah@example.com"
+                    className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
+                  />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Subject / Topic</label>
-                <Select value={topic} onValueChange={(val) => setTopic(val || "Verification Status Inquiry")}>
-                  <SelectTrigger className="w-full h-11 px-4 text-xs bg-warm-bg border border-border rounded-xl font-medium text-foreground">
-                    <SelectValue placeholder="Select topic" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white rounded-xl border border-border shadow-lg">
-                    <SelectItem value="Verification Status Inquiry">Verification Status Inquiry</SelectItem>
-                    <SelectItem value="District Partnership">District Partnership</SelectItem>
-                    <SelectItem value="Technical Support">Technical Support</SelectItem>
-                    <SelectItem value="General Question">General Question</SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Subject Dropdown matching platform standards */}
+              <div className="space-y-1.5 relative">
+                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Subject / Inquiry Type</Label>
+                <button
+                  type="button"
+                  onClick={() => setIsTopicOpen(!isTopicOpen)}
+                  className="w-full h-10 px-3.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between font-medium text-slate-800 hover:bg-slate-100/70 transition-colors cursor-pointer outline-none focus:bg-white focus:border-[#D41367]"
+                >
+                  <span>{topic}</span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isTopicOpen ? "rotate-180 text-[#D41367]" : ""}`} />
+                </button>
+
+                {isTopicOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsTopicOpen(false)}
+                    />
+                    <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                      {TOPIC_OPTIONS.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            setTopic(opt);
+                            setIsTopicOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer text-left ${
+                            topic === opt
+                              ? "bg-pink-50 text-[#D41367]"
+                              : "text-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          <span>{opt}</span>
+                          {topic === opt && <Check className="w-3.5 h-3.5 text-[#D41367]" />}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Message</label>
-                <textarea rows={4} placeholder="How can we assist you?" className="w-full p-4 text-xs bg-warm-bg border border-border rounded-xl outline-none" required />
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Message Content *</Label>
+                <textarea
+                  rows={4}
+                  required
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Provide details about your query or district verification ticket..."
+                  className="w-full text-xs sm:text-sm p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:bg-white focus:border-[#D41367] focus:ring-2 focus:ring-pink-100 transition-all placeholder:text-slate-400 resize-none"
+                />
               </div>
 
-              <Button type="submit" className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl h-11 text-xs font-bold gap-2 px-8 shadow-md">
-                Send Message <Send className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center justify-end pt-2">
+                <Button
+                  type="submit"
+                  className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl h-10 px-6 text-xs sm:text-sm font-semibold gap-2 shadow-xs cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Send Message</span>
+                </Button>
+              </div>
             </form>
           </div>
         </div>

@@ -46,43 +46,46 @@ export function EnquiryForm({ businessName, onSubmit }: EnquiryFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="font-semibold text-foreground">Send an Enquiry</h3>
+      <h3 className="font-bold text-base text-foreground">Send an Inquiry</h3>
       <div className="space-y-2">
-        <Label htmlFor="enquiry-name" className="text-sm">Your Name</Label>
+        <Label htmlFor="inquiry-name" className="text-xs font-bold text-slate-700">Your Name</Label>
         <Input
-          id="enquiry-name"
-          placeholder="John Doe"
+          id="inquiry-name"
+          placeholder="e.g. John Doe"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          className="rounded-xl border-slate-200 text-xs"
           required
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="enquiry-contact" className="text-sm">Email or Phone</Label>
+        <Label htmlFor="inquiry-contact" className="text-xs font-bold text-slate-700">Email or Phone</Label>
         <Input
-          id="enquiry-contact"
+          id="inquiry-contact"
           placeholder="you@example.com"
           value={contact}
           onChange={(e) => setContact(e.target.value)}
+          className="rounded-xl border-slate-200 text-xs"
           required
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="enquiry-message" className="text-sm">Message</Label>
+        <Label htmlFor="inquiry-message" className="text-xs font-bold text-slate-700">Inquiry Details</Label>
         <Textarea
-          id="enquiry-message"
-          placeholder="How can we help?"
+          id="inquiry-message"
+          placeholder="Describe your requirements or questions..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={4}
+          className="rounded-xl border-slate-200 text-xs resize-none"
           required
         />
       </div>
       <Button
         type="submit"
-        className="w-full bg-crimson hover:bg-crimson-dark text-white rounded-xl"
+        className="w-full bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl text-xs font-bold h-10 shadow-xs"
       >
-        Send Message
+        Send Inquiry
       </Button>
     </form>
   );

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone, MessageCircle, Mail, MapPin, Share2, ChevronRight, ShoppingBag, Info, Flag, Award, ShieldCheck, CheckCircle2, Globe, Building2, Calendar, FileText, Sparkles } from "lucide-react";
+import { Phone, MessageCircle, Mail, MapPin, Share2, ChevronRight, ShoppingBag, Info, Flag, Award, ShieldCheck, CheckCircle2, Globe, Building2, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
 import { EnquiryForm } from "@/components/enquiry-form";
@@ -34,7 +34,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
   const tags = ["IT Consulting", "Cloud Migration", "Enterprise Security", "API Architecture", "SaaS Development"];
 
   return (
-    <div className="bg-[#FAF6F4] min-h-screen pb-20">
+    <div className="bg-white min-h-screen pb-20">
       {/* Sleek Compact Header Container (Zero Navbar Overlap) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="relative min-h-[220px] sm:min-h-[250px] rounded-3xl overflow-hidden shadow-xl bg-slate-950 p-6 sm:p-8 flex flex-col justify-between border border-border">
@@ -51,8 +51,8 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
 
           {/* Action buttons floating top-right */}
           <div className="relative z-20 flex justify-end items-center gap-3">
-            <Button className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-5 h-9 text-xs font-bold shadow-md gap-1.5">
-              <Mail className="w-3.5 h-3.5" /> Send Enquiry
+            <Button className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-5 h-9 text-xs font-bold shadow-md gap-1.5" asChild>
+              <a href="#inquire"><Mail className="w-3.5 h-3.5" /> Send Inquiry</a>
             </Button>
             <Button variant="outline" size="icon" className="rounded-full bg-white/10 border-white/30 hover:bg-white/20 h-9 w-9 text-white">
               <Share2 className="w-3.5 h-3.5" />
@@ -289,8 +289,8 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
               </div>
             </div>
 
-            {/* Send Enquiry Form Card */}
-            <div className="bg-white rounded-3xl border border-border p-6 shadow-sm">
+            {/* Send Inquiry Form Card */}
+            <div id="inquire" className="bg-white rounded-3xl border border-border p-6 shadow-sm scroll-mt-28">
               <EnquiryForm businessName={business.name} />
             </div>
           </div>

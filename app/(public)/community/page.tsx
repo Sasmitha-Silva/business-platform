@@ -1,6 +1,5 @@
 import Link from "next/link";
-import type { Metadata } from "next";
-import { Users, Globe, MapPin, ShieldCheck, Award, ArrowRight, Flag, Calendar, Sparkles } from "lucide-react";
+import { Users, Globe, MapPin, ShieldCheck, Award, ArrowRight, Flag, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -80,7 +79,7 @@ const fellowshipChapters = [
 
 export default function CommunityPage() {
   return (
-    <div className="bg-[#FAF6F4] min-h-screen pb-16 pt-6">
+    <div className="bg-white min-h-screen pb-16 pt-6">
       {/* Hero Banner */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-gradient-to-r from-[#D41367] via-[#C20E5B] to-[#9E002B] rounded-[2.5rem] p-8 sm:p-14 text-white shadow-2xl relative overflow-hidden">

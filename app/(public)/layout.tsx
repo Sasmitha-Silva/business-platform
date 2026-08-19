@@ -11,15 +11,15 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isStandalonePage = pathname.startsWith("/auth") || pathname.startsWith("/register");
+  const isLandingOrStandalone = pathname === "/" || pathname.startsWith("/auth") || pathname.startsWith("/register");
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
-      <main className={cn("flex-1", isStandalonePage ? "pt-0" : "pt-24")}>
+      <main className={cn("flex-1 bg-white", isLandingOrStandalone ? "pt-0" : "pt-24")}>
         {children}
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

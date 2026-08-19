@@ -10,7 +10,6 @@ import {
   FileText,
   HelpCircle,
   ChevronDown,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
@@ -34,8 +33,8 @@ const steps = [
     num: "03",
     title: "Get Badge & Go Live",
     subtitle: "Global B2B Visibility",
-    desc: "Once verified, your trust badge goes live on the directory, opening direct B2B enquiries across 45+ global districts.",
-    details: ["Verified Badge Activation", "Top Search Ranking", "Direct Buyer Enquiries"],
+    desc: "Once verified, your trust badge goes live on the directory, opening direct B2B inquiries across 45+ global districts.",
+    details: ["Verified Badge Activation", "Top Search Ranking", "Direct Buyer Inquiries"],
   },
 ];
 
@@ -61,7 +60,7 @@ const tiers = [
       "Everything in Bronze Tier",
       "Verified Business Entity Badge",
       "Priority Category Placement",
-      "Direct Enquiry Form Routing",
+      "Direct Inquiry Form Routing",
       "Social Media Link Integration",
     ],
   },
@@ -105,18 +104,18 @@ const faqs = [
 ];
 
 export default function HowItWorksPage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const toggleFaq = (idx: number) => {
     setOpenFaq(openFaq === idx ? null : idx);
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF6F4] text-foreground pt-6 pb-24">
+    <div className="min-h-screen bg-white text-foreground pt-6 pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Seamless Header */}
         <div className="space-y-4 pb-6 border-b border-border/60">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-2">
             <Link href="/" className="hover:text-[#D41367] transition-colors">
               Home
             </Link>
@@ -201,13 +200,12 @@ export default function HowItWorksPage() {
             {tiers.map((tier) => (
               <div
                 key={tier.name}
-                className={`rounded-3xl border p-7 flex flex-col justify-between relative bg-white ${
-                  tier.popular ? "border-[#F7A81B] shadow-lg ring-2 ring-[#F7A81B]/30" : "border-border/80 shadow-xs"
-                }`}
+                className={`rounded-3xl border p-7 flex flex-col justify-between relative bg-white ${tier.popular ? "border-[#F7A81B] shadow-lg ring-2 ring-[#F7A81B]/30" : "border-border/80 shadow-xs"
+                  }`}
               >
                 {tier.popular && (
                   <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#F7A81B] text-slate-950 font-black text-[10px] uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
-                    ★ MOST POPULAR
+                    MOST POPULAR
                   </span>
                 )}
 
@@ -237,19 +235,6 @@ export default function HowItWorksPage() {
                     </ul>
                   </div>
                 </div>
-
-                <div className="pt-6 mt-6 border-t border-border/60">
-                  <Button
-                    className={`w-full rounded-2xl h-11 text-xs font-extrabold ${
-                      tier.popular
-                        ? "bg-[#D41367] hover:bg-[#B80E56] text-white shadow-md"
-                        : "bg-warm-bg text-foreground hover:bg-pink-50 hover:text-[#D41367] border border-border"
-                    }`}
-                    asChild
-                  >
-                    <Link href="/register">Apply for {tier.name}</Link>
-                  </Button>
-                </div>
               </div>
             ))}
           </div>
@@ -277,9 +262,8 @@ export default function HowItWorksPage() {
                   >
                     <span>{faq.q}</span>
                     <ChevronDown
-                      className={`w-4 h-4 text-[#D41367] shrink-0 transition-transform duration-200 ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 text-[#D41367] shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
                   {isOpen && (

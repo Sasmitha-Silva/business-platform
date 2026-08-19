@@ -1,5 +1,4 @@
 import { Sidebar } from "@/components/sidebar";
-import { Footer } from "@/components/footer";
 import type { UserRole } from "@/lib/types";
 
 interface DashboardLayoutProps {
@@ -20,7 +19,7 @@ export function DashboardLayout({
   districtInfo,
 }: DashboardLayoutProps) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-slate-50/50">
       <Sidebar
         role={role}
         links={links}
@@ -29,8 +28,7 @@ export function DashboardLayout({
         districtInfo={districtInfo}
       />
       <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">{children}</main>
-        <Footer />
+        <main className="flex-1 p-5 sm:p-6 lg:p-8 pb-12">{children}</main>
       </div>
     </div>
   );
