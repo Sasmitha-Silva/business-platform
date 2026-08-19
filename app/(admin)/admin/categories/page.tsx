@@ -45,11 +45,12 @@ export default function CategoryManagerPage() {
     e.preventDefault();
     if (!newCatName.trim()) return;
 
-    const newCat = {
+    const newCat: Category = {
       id: `cat-${Date.now()}`,
       name: newCatName.trim(),
       slug: newCatName.toLowerCase().replace(/\s+/g, "-"),
-      description: newCatDescription.trim() || "New Business Classification",
+      parent_id: null,
+      sort_order: categories.length + 1,
       is_active: true,
       children: [],
     };
