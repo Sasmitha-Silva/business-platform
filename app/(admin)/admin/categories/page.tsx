@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { mockCategories } from "@/lib/mock-data";
+import type { Category } from "@/lib/types";
 
 export default function CategoryManagerPage() {
   const [categories, setCategories] = useState(mockCategories);

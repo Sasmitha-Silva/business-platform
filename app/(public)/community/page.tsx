@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Users, Globe, MapPin, ShieldCheck, Award, ArrowRight, Flag, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
