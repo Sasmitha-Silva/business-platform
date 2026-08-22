@@ -286,32 +286,31 @@ export default function HybridRegistrationPage() {
       </div>
 
       {/* ================= TOP NAVBAR ================= */}
-      <header className="shrink-0 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 py-3.5 px-4 sm:px-6 lg:px-10 flex items-center justify-between shadow-xs z-50">
-        <div className="flex items-center gap-3">
+      <header className="shrink-0 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 py-2.5 sm:py-3.5 px-4 sm:px-6 lg:px-10 flex items-center justify-between shadow-xs z-50">
+        <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center group shrink-0">
-            <span className="text-lg sm:text-[20px] font-black tracking-tight text-slate-900 flex items-center gap-1">
+            <span className="text-base sm:text-[20px] font-black tracking-tight text-slate-900 flex items-center gap-1">
               Rotaract <span className="text-[#D41367]">Network</span>
             </span>
           </Link>
         </div>
 
         {/* Right: Exit / Login Matching Main Navbar */}
-        <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-6 shrink-0">
           <Link
             href="/"
-            className="relative py-1 text-[15px] sm:text-base font-semibold text-slate-700 hover:text-[#D41367] transition-all duration-300 group inline-flex items-center gap-1.5"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 sm:border-transparent text-xs sm:text-base font-bold sm:font-semibold text-slate-700 hover:text-[#D41367] hover:bg-slate-50 sm:hover:bg-transparent transition-all"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:text-[#D41367] transition-colors" />
-            <span>Back to Home</span>
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#D41367] rounded-full transition-all duration-300 origin-center scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100" />
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-hover:text-[#D41367] transition-colors" />
+            <span>Back</span>
           </Link>
 
           <div className="w-px h-5 bg-slate-200 hidden sm:block" />
 
-          <span className="text-slate-500 hidden sm:inline text-[15px] font-semibold">Already registered?</span>
+          <span className="text-slate-500 hidden sm:inline text-sm font-semibold">Already registered?</span>
           <Button
             variant="outline"
-            className="border-2 border-[#D41367] text-[#D41367] hover:bg-[#D41367] hover:text-white bg-transparent rounded-full px-5 py-2 text-xs sm:text-sm font-extrabold shadow-2xs hover:scale-105 active:scale-95 transition-all h-auto cursor-pointer"
+            className="hidden sm:inline-flex border-2 border-[#D41367] text-[#D41367] hover:bg-[#D41367] hover:text-white bg-transparent rounded-full px-5 py-2 text-xs sm:text-sm font-extrabold shadow-2xs hover:scale-105 active:scale-95 transition-all h-auto cursor-pointer"
             asChild
           >
             <Link href="/auth/login">Login</Link>

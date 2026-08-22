@@ -22,17 +22,6 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Hide navbar on auth, dashboard, admin, moderator, and register routes
-  if (
-    pathname.startsWith("/auth") ||
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/moderator") ||
-    pathname.startsWith("/register")
-  ) {
-    return null;
-  }
-
   // Lock background scrolling when mobile splash menu is open
   useEffect(() => {
     if (mobileOpen) {
@@ -44,6 +33,17 @@ export function Navbar() {
       document.body.style.overflow = "unset";
     };
   }, [mobileOpen]);
+
+  // Hide navbar on auth, dashboard, admin, moderator, and register routes
+  if (
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/moderator") ||
+    pathname.startsWith("/register")
+  ) {
+    return null;
+  }
 
   return (
     <>
@@ -133,7 +133,7 @@ export function Navbar() {
       {/* ================= FULLSCREEN ANIMATED SPLASH MENU OVERLAY ================= */}
       <div
         className={cn(
-          "fixed inset-0 z-[999] w-screen h-screen min-h-[100dvh] bg-gradient-to-br from-[#D41367] via-[#BE0E58] to-[#800028] text-white flex flex-col justify-between p-6 sm:p-10 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-y-auto overscroll-contain",
+          "fixed inset-0 z-[999] w-screen h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-[#D41367] via-[#BE0E58] to-[#800028] text-white flex flex-col justify-between p-4 sm:p-8 pb-[max(1.25rem,env(safe-area-inset-bottom))] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-y-auto overscroll-contain",
           mobileOpen
             ? "opacity-100 pointer-events-auto [clip-path:circle(150%_at_calc(100%-2.5rem)_2.5rem)] scale-100"
             : "opacity-0 pointer-events-none [clip-path:circle(0%_at_calc(100%-2.5rem)_2.5rem)] scale-95"
@@ -156,9 +156,9 @@ export function Navbar() {
         </div>
 
         {/* Top Header Row with Brand & Close Button */}
-        <div className="relative z-10 w-full flex items-center justify-between pb-4 border-b border-white/20 shrink-0">
+        <div className="relative z-10 w-full flex items-center justify-between pb-3 sm:pb-4 border-b border-white/20 shrink-0">
           <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center">
-            <span className="text-xl font-black tracking-tight text-white">
+            <span className="text-lg sm:text-xl font-black tracking-tight text-white">
               Rotaract <span className="text-pink-200">Network</span>
             </span>
           </Link>
@@ -167,14 +167,14 @@ export function Navbar() {
             type="button"
             onClick={() => setMobileOpen(false)}
             aria-label="Close Navigation Menu"
-            className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 active:scale-90 border border-white/30 text-white flex items-center justify-center transition-all cursor-pointer shadow-lg hover:rotate-90"
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/15 hover:bg-white/25 active:scale-90 border border-white/30 text-white flex items-center justify-center transition-all cursor-pointer shadow-lg hover:rotate-90"
           >
-            <span className="text-xl font-black leading-none">✕</span>
+            <span className="text-lg sm:text-xl font-black leading-none">✕</span>
           </button>
         </div>
 
         {/* Center Nav Links - Clean & Minimalist */}
-        <div className="relative z-10 my-auto py-6 space-y-2.5 max-w-sm w-full mx-auto">
+        <div className="relative z-10 my-auto py-3 sm:py-6 space-y-2 max-w-sm w-full mx-auto">
           {[
             { href: "/directory", label: "Directory" },
             { href: "/categories", label: "Categories" },
@@ -188,15 +188,16 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "group flex items-center justify-between px-5 py-3.5 rounded-2xl transition-all duration-300 cursor-pointer border text-base sm:text-lg font-black tracking-tight",
+                  "group flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-2xl transition-all duration-300 cursor-pointer border text-sm sm:text-base font-black tracking-tight",
                   isActive
                     ? "bg-white text-[#D41367] border-white shadow-lg translate-x-1.5"
                     : "bg-white/10 hover:bg-white/20 border-white/15 text-white hover:translate-x-1.5"
                 )}
                 style={{
-                  transitionDelay: mobileOpen ? `${idx * 40}ms` : "0ms",
+                  transitionDelay: mobileOpen ? `${idx * 30}ms` : "0ms",
                 }}
               >
                 <span>{item.label}</span>
@@ -212,30 +213,30 @@ export function Navbar() {
         </div>
 
         {/* Bottom Actions CTA */}
-        <div className="relative z-10 pt-4 border-t border-white/20 space-y-3 shrink-0 max-w-md w-full mx-auto">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="relative z-10 pt-3 sm:pt-4 border-t border-white/20 space-y-2 sm:space-y-3 shrink-0 max-w-md w-full mx-auto">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
             <Button
-              className="w-full bg-white hover:bg-pink-50 text-[#D41367] font-black text-xs sm:text-sm rounded-2xl py-3.5 shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 h-auto cursor-pointer"
+              className="w-full bg-white hover:bg-pink-50 text-[#D41367] font-black text-xs sm:text-sm rounded-2xl py-2.5 sm:py-3.5 shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 h-auto cursor-pointer"
               asChild
             >
-              <Link href="/register" onClick={() => setMobileOpen(false)}>
-                <span>Register Business</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+              <Link href="/register" prefetch={true} onClick={() => setMobileOpen(false)}>
+                <span className="truncate">Register</span>
+                <ArrowRight className="w-3.5 h-3.5 shrink-0" />
               </Link>
             </Button>
 
             <Button
               variant="outline"
-              className="w-full border-white/40 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm rounded-2xl py-3.5 flex items-center justify-center gap-1.5 h-auto cursor-pointer"
+              className="w-full border-white/40 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm rounded-2xl py-2.5 sm:py-3.5 flex items-center justify-center gap-1.5 h-auto cursor-pointer"
               asChild
             >
-              <Link href="/auth/login" onClick={() => setMobileOpen(false)}>
-                <span>Member Login</span>
+              <Link href="/auth/login" prefetch={true} onClick={() => setMobileOpen(false)}>
+                <span className="truncate">Member Login</span>
               </Link>
             </Button>
           </div>
 
-          <div className="text-center text-[11px] text-white/70 font-medium">
+          <div className="text-center text-[10px] sm:text-[11px] text-white/70 font-medium">
             Rotaract South Asia MDIO Enterprise Network &copy; {new Date().getFullYear()}
           </div>
         </div>
