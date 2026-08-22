@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Rotaract Business Network",
+  title: "Terms of Service",
   description: "Terms and conditions governing membership and listing on Rotaract Business Network.",
 };
 

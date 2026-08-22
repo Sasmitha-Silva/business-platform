@@ -260,7 +260,7 @@ export default function ModeratorVerificationPage() {
             className="rounded-xl text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 gap-2 h-9.5 px-3.5"
             asChild
           >
-            <Link href="/moderator">
+            <Link href="/moderator-dashboard">
               <span>Back to Desk</span>
             </Link>
           </Button>

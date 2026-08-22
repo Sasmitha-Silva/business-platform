@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const category = mockCategories.find((c) => c.slug === slug);
   if (!category) return { title: "Category Not Found" };
   return {
-    title: `${category.name} — Rotaract Business Network`,
+    title: category.name,
     description: `Discover verified ${category.name.toLowerCase()} enterprises and certified Rotaract professionals.`,
   };
 }

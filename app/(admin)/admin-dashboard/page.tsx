@@ -167,7 +167,7 @@ export default function SuperAdminDashboardPage() {
             className="bg-red-700 hover:bg-red-800 text-white rounded-xl text-xs sm:text-sm font-semibold shrink-0 h-9.5 px-4.5 shadow-xs"
             asChild
           >
-            <Link href="/admin/moderators">Assign Moderators</Link>
+            <Link href="/admin-dashboard/moderators">Assign Moderators</Link>
           </Button>
         </div>
       )}
@@ -198,7 +198,7 @@ export default function SuperAdminDashboardPage() {
             className="bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs sm:text-sm font-semibold shrink-0 h-9.5 px-4.5 shadow-xs"
             asChild
           >
-            <Link href="/admin/verifications">Review Escalations</Link>
+            <Link href="/admin-dashboard/verifications">Review Escalations</Link>
           </Button>
         </div>
       )}
@@ -274,7 +274,7 @@ export default function SuperAdminDashboardPage() {
             </div>
             <div className="text-xs font-medium text-slate-500 mt-1">
               <Link
-                href="/admin/verifications"
+                href="/admin-dashboard/verifications"
                 className="text-[#D41367] hover:text-[#B80E56] font-semibold inline-flex items-center gap-1"
               >
                 <span>Audit Queue</span>
@@ -299,7 +299,7 @@ export default function SuperAdminDashboardPage() {
               </p>
             </div>
             <Link
-              href="/admin/verifications"
+              href="/admin-dashboard/verifications"
               className="text-xs sm:text-sm font-semibold text-[#D41367] hover:text-[#B80E56] transition-colors inline-flex items-center gap-1"
             >
               <span>View All Queue</span>

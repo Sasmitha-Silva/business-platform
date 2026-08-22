@@ -537,7 +537,7 @@ export default function AdminVerificationsPage() {
             className="rounded-xl text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 gap-2 h-9.5 px-3.5"
             asChild
           >
-            <Link href="/admin">
+            <Link href="/admin-dashboard">
               <span>Back to Overview</span>
             </Link>
           </Button>

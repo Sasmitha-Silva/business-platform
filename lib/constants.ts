@@ -169,29 +169,29 @@ export const NAV_LINKS = [
 ] as const;
 
 export const OWNER_SIDEBAR_LINKS = [
-  { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { href: '/dashboard/edit-profile', label: 'Edit Profile', icon: 'Edit3' },
-  { href: '/verification', label: 'Verifications', icon: 'ShieldCheck' },
-  { href: '/dashboard/enquiries', label: 'Inquiries', icon: 'ClipboardList' },
-  { href: '/dashboard/settings', label: 'Settings', icon: 'Settings' },
+  { href: '/business-dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { href: '/business-dashboard/edit-profile', label: 'Edit Profile', icon: 'Edit3' },
+  { href: '/business-dashboard/verification', label: 'Verifications', icon: 'ShieldCheck' },
+  { href: '/business-dashboard/enquiries', label: 'Inquiries', icon: 'ClipboardList' },
+  { href: '/business-dashboard/settings', label: 'Settings', icon: 'Settings' },
 ] as const;
 
 export const MODERATOR_SIDEBAR_LINKS = [
-  { href: '/moderator', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { href: '/moderator/verification', label: 'Verification Queue', icon: 'ShieldCheck' },
-  { href: '/moderator/directory', label: 'District Directory', icon: 'Building2' },
-  { href: '/moderator/history', label: 'Audit History', icon: 'ClipboardList' },
-  { href: '/moderator/settings', label: 'Settings', icon: 'Settings' },
+  { href: '/moderator-dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { href: '/moderator-dashboard/verification', label: 'Verification Queue', icon: 'ShieldCheck' },
+  { href: '/moderator-dashboard/directory', label: 'District Directory', icon: 'Building2' },
+  { href: '/moderator-dashboard/history', label: 'Audit History', icon: 'ClipboardList' },
+  { href: '/moderator-dashboard/settings', label: 'Settings', icon: 'Settings' },
 ] as const;
 
 export const ADMIN_SIDEBAR_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { href: '/admin/verifications', label: 'Verifications', icon: 'ShieldCheck' },
-  { href: '/admin/categories', label: 'Categories', icon: 'FolderTree' },
-  { href: '/admin/users', label: 'Users', icon: 'Users' },
-  { href: '/admin/moderators', label: 'Moderators', icon: 'UserCog' },
-  { href: '/admin/analytics', label: 'Analytics', icon: 'BarChart3' },
-  { href: '/admin/settings', label: 'Settings', icon: 'Settings' },
+  { href: '/admin-dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { href: '/admin-dashboard/verifications', label: 'Verifications', icon: 'ShieldCheck' },
+  { href: '/admin-dashboard/categories', label: 'Categories', icon: 'FolderTree' },
+  { href: '/admin-dashboard/users', label: 'Users', icon: 'Users' },
+  { href: '/admin-dashboard/moderators', label: 'Moderators', icon: 'UserCog' },
+  { href: '/admin-dashboard/analytics', label: 'Analytics', icon: 'BarChart3' },
+  { href: '/admin-dashboard/settings', label: 'Settings', icon: 'Settings' },
 ] as const;
 
 export const WIZARD_STEPS = [

@@ -6,7 +6,7 @@ import { HeroSection } from "@/components/hero-section";
 import { FeaturedCategoriesShowcase } from "@/components/featured-categories-showcase";
 
 export const metadata: Metadata = {
-  title: "Rotaract Business Network — Discover Verified Rotaract Professionals",
+  title: "Rotaract Business Network",
   description:
     "A premium directory connecting trusted Rotaract entrepreneurs and service leaders committed to excellence and professional integrity.",
 };

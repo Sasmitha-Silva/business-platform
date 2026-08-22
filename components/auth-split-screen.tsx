@@ -20,7 +20,7 @@ export function AuthSplitScreen({ type = "login", isSignUp: isSignUpProp }: Auth
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/dashboard");
+    router.push("/business-dashboard");
   };
 
   return (
@@ -200,7 +200,7 @@ export function AuthSplitScreen({ type = "login", isSignUp: isSignUpProp }: Auth
             <Button
               variant="outline"
               type="button"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/business-dashboard")}
               className="h-11 text-xs bg-white border-pink-100/80 rounded-2xl font-extrabold hover:bg-pink-50 hover:text-[#D41367] flex items-center justify-center gap-2 transition-all shadow-2xs"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -214,7 +214,7 @@ export function AuthSplitScreen({ type = "login", isSignUp: isSignUpProp }: Auth
             <Button
               variant="outline"
               type="button"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/business-dashboard")}
               className="h-11 text-xs bg-white border-pink-100/80 rounded-2xl font-extrabold hover:bg-pink-50 hover:text-[#D41367] flex items-center justify-center gap-2 transition-all shadow-2xs"
             >
               <svg className="w-4 h-4 shrink-0 fill-[#0A66C2]" viewBox="0 0 24 24">

@@ -67,14 +67,14 @@ export function HeroSection() {
           </p>
         </div>
 
-        {/* Integrated Quick Search Command Bar */}
-        <div className="w-full max-w-3xl mx-auto">
+        {/* Integrated Quick Search Command Bar - Concept 2: Segmented Mobile Card / Desktop Pill */}
+        <div className="w-full max-w-3xl mx-auto px-1 sm:px-0">
           <form
             onSubmit={handleSearch}
-            className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-full border-2 border-slate-200 shadow-lg shadow-slate-900/5 p-2 sm:p-2.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 transition-all focus-within:border-[#D41367] focus-within:ring-4 focus-within:ring-[#D41367]/10"
+            className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-full border-2 border-slate-200/90 shadow-xl shadow-slate-900/5 p-3 sm:p-2 sm:px-2.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2 transition-all focus-within:border-[#D41367] focus-within:ring-4 focus-within:ring-[#D41367]/10"
           >
             {/* Keyword Input */}
-            <div className="flex items-center gap-2.5 flex-1 px-3 py-1.5 sm:py-0">
+            <div className="flex items-center gap-2.5 flex-1 px-3.5 py-2.5 sm:py-0 rounded-xl sm:rounded-none bg-slate-50/90 sm:bg-transparent border border-slate-200/80 sm:border-0 focus-within:bg-white focus-within:border-[#D41367] sm:focus-within:border-0 transition-all">
               <Search className="w-4 h-4 text-[#D41367] shrink-0" />
               <input
                 type="text"
@@ -88,7 +88,7 @@ export function HeroSection() {
             <div className="hidden sm:block w-px h-6 bg-slate-200 shrink-0" />
 
             {/* Location Input */}
-            <div className="flex items-center gap-2.5 sm:w-48 px-3 py-1.5 sm:py-0">
+            <div className="flex items-center gap-2.5 sm:w-48 px-3.5 py-2.5 sm:py-0 rounded-xl sm:rounded-none bg-slate-50/90 sm:bg-transparent border border-slate-200/80 sm:border-0 focus-within:bg-white focus-within:border-[#D41367] sm:focus-within:border-0 transition-all">
               <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
               <input
                 type="text"
@@ -102,7 +102,7 @@ export function HeroSection() {
             {/* Search Action Button */}
             <Button
               type="submit"
-              className="bg-[#D41367] hover:bg-[#B80E56] text-white font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-full px-6 py-2.5 h-10 shadow-sm transition-all shrink-0 cursor-pointer"
+              className="bg-[#D41367] hover:bg-[#B80E56] text-white font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-full px-6 py-3 sm:py-2.5 h-auto sm:h-10 shadow-md shadow-[#D41367]/15 transition-all shrink-0 cursor-pointer active:scale-98"
             >
               <span>Search Directory</span>
               <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -110,24 +110,15 @@ export function HeroSection() {
           </form>
         </div>
 
-        {/* Primary Action Buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
+        {/* Single Focused Founder CTA */}
+        <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
           <Button
-            className="bg-[#D41367] hover:bg-[#B80E56] text-white font-extrabold text-xs sm:text-sm rounded-full px-7 py-3 shadow-sm hover:scale-105 active:scale-95 transition-all h-auto cursor-pointer"
+            className="w-full sm:w-auto bg-white hover:bg-pink-50/60 text-[#D41367] font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-full px-7 py-3 border-2 border-[#D41367]/40 hover:border-[#D41367] shadow-xs hover:shadow-md hover:shadow-pink-500/10 hover:scale-105 active:scale-95 transition-all h-auto cursor-pointer"
             asChild
           >
-            <Link href="/directory">
-              <span>Browse Full Directory</span>
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
-          </Button>
-
-          <Button
-            className="bg-white hover:bg-slate-50 text-slate-800 hover:text-[#D41367] font-extrabold text-xs sm:text-sm rounded-full px-7 py-3 border border-slate-300 shadow-2xs hover:scale-105 active:scale-95 transition-all h-auto cursor-pointer"
-            asChild
-          >
-            <Link href="/register">
+            <Link href="/register" className="flex items-center justify-center gap-2">
               <span>Register Your Business</span>
+              <ArrowRight className="w-4 h-4 text-[#D41367]" />
             </Link>
           </Button>
         </div>

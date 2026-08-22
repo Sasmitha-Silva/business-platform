@@ -11,8 +11,11 @@ export function Footer() {
   if (
     pathname.startsWith("/auth") ||
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/business-dashboard") ||
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/admin-dashboard") ||
     pathname.startsWith("/moderator") ||
+    pathname.startsWith("/moderator-dashboard") ||
     pathname.startsWith("/register")
   ) {
     return null;

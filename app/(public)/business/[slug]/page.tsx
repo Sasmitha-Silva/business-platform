@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const biz = mockBusinesses.find((b) => b.slug === slug);
   if (!biz) return { title: "Business Not Found" };
   return {
-    title: `${biz.name} — Rotaract Business Network`,
+    title: biz.name,
     description: biz.description?.slice(0, 160),
   };
 }

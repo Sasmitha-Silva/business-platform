@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { ADMIN_SIDEBAR_LINKS } from "@/lib/constants";
+
+export const metadata: Metadata = {
+  title: "Admin Dashboard",
+  description: "Rotaract Business Network district management and administrative portal.",
+};
 
 export default function AdminLayout({
   children,

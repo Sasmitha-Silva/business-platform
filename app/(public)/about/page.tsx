@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "About Us — Rotaract Business Network",
+  title: "About Us",
   description:
     "Empowering Rotaract entrepreneurs globally through trusted verification, fellowship, and ethical business standards.",
 };

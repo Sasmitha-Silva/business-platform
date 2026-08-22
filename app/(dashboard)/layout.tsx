@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { OWNER_SIDEBAR_LINKS } from "@/lib/constants";
+
+export const metadata: Metadata = {
+  title: "Business Dashboard",
+  description: "Manage your Rotaract business profile, verification, and inquiries.",
+};
 
 export default function OwnerDashboardLayout({
   children,

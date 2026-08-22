@@ -99,7 +99,15 @@ export function Sidebar({
           const Icon = iconMap[link.icon] || LayoutDashboard;
 
           // Match exact route for base paths, prefix matching for nested paths
-          const isBasePortalRoute = ["/", "/dashboard", "/admin", "/moderator"].includes(link.href);
+          const isBasePortalRoute = [
+            "/",
+            "/dashboard",
+            "/admin",
+            "/moderator",
+            "/business-dashboard",
+            "/admin-dashboard",
+            "/moderator-dashboard",
+          ].includes(link.href);
           const isActive = isBasePortalRoute
             ? pathname === link.href
             : pathname === link.href || pathname.startsWith(link.href + "/");

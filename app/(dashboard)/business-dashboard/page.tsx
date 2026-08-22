@@ -79,7 +79,7 @@ export default function OwnerDashboardPage() {
             className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl text-xs sm:text-sm font-semibold gap-2 h-9.5 px-4 shadow-xs"
             asChild
           >
-            <Link href="/dashboard/edit-profile">
+            <Link href="/business-dashboard/edit-profile">
               <Edit3 className="w-3.5 h-3.5" />
               <span>Edit Profile</span>
             </Link>
@@ -165,7 +165,7 @@ export default function OwnerDashboardPage() {
               </span>
             </div>
             <Link
-              href="/verification"
+              href="/business-dashboard/verification"
               className="text-xs font-semibold text-[#D41367] hover:text-[#B80E56] transition-colors inline-flex items-center gap-1 mt-1"
             >
               <span>{business.verification_level < 2 ? "Apply for DRR Verification" : "Manage Documents"}</span>
@@ -189,7 +189,7 @@ export default function OwnerDashboardPage() {
               </p>
             </div>
             <Link
-              href="/dashboard/enquiries"
+              href="/business-dashboard/enquiries"
               className="text-xs sm:text-sm font-semibold text-[#D41367] hover:text-[#B80E56] transition-colors inline-flex items-center gap-1"
             >
               <span>View all ({stats.total_enquiries})</span>
@@ -244,7 +244,7 @@ export default function OwnerDashboardPage() {
                       className="text-xs font-semibold text-slate-600 hover:text-[#D41367] hover:bg-pink-50 rounded-xl px-2.5 h-8"
                       asChild
                     >
-                      <Link href="/dashboard/enquiries">
+                      <Link href="/business-dashboard/enquiries">
                         <span>Details</span>
                         <ArrowRight className="w-3.5 h-3.5 ml-1" />
                       </Link>
@@ -273,7 +273,7 @@ export default function OwnerDashboardPage() {
               className="w-full justify-between text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-pink-50 hover:text-[#D41367] hover:border-pink-200 rounded-xl h-10 px-3.5"
               asChild
             >
-              <Link href="/dashboard/edit-profile#services">
+              <Link href="/business-dashboard/edit-profile#services">
                 <span className="flex items-center gap-2.5">
                   <Package className="w-4 h-4 text-[#D41367]" />
                   <span>Manage Services &amp; Products</span>
@@ -287,7 +287,7 @@ export default function OwnerDashboardPage() {
               className="w-full justify-between text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-pink-50 hover:text-[#D41367] hover:border-pink-200 rounded-xl h-10 px-3.5"
               asChild
             >
-              <Link href="/dashboard/edit-profile">
+              <Link href="/business-dashboard/edit-profile">
                 <span className="flex items-center gap-2.5">
                   <MapPinCheck className="w-4 h-4 text-[#D41367]" />
                   <span>Edit Contact &amp; Location</span>
@@ -301,7 +301,7 @@ export default function OwnerDashboardPage() {
               className="w-full justify-between text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-pink-50 hover:text-[#D41367] hover:border-pink-200 rounded-xl h-10 px-3.5"
               asChild
             >
-              <Link href="/verification">
+              <Link href="/business-dashboard/verification">
                 <span className="flex items-center gap-2.5">
                   <ShieldCheck className="w-4 h-4 text-[#D41367]" />
                   <span>Verification &amp; Tier Upgrades</span>

@@ -16,10 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "Rotaract Business Network",
-    template: "%s | Rotaract Business Network",
-  },
+  title: "Rotaract Business Network",
   description:
     "A verified directory connecting trusted Rotaract entrepreneurs, corporate leaders, and service-driven professionals across Rotary International districts.",
   icons: {

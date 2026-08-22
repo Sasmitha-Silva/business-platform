@@ -357,7 +357,7 @@ export default function VerificationUploadsPage() {
             className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 text-xs sm:text-sm font-semibold h-9.5 px-4"
             asChild
           >
-            <Link href="/verification-standards">Standards Guide</Link>
+            <Link href="/how-it-works">How It Works</Link>
           </Button>
           <Button
             className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl text-xs sm:text-sm font-semibold h-9.5 px-4.5 shadow-xs"

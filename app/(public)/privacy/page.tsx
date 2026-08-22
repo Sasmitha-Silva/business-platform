@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Rotaract Business Network",
+  title: "Privacy Policy",
   description: "Privacy policy and data protection standards of the Rotaract Business Network.",
 };
 

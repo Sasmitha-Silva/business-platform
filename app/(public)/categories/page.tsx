@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { Metadata } from "next";
 import {
   Factory,
   ShoppingBag,
@@ -16,6 +17,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { mockCategories } from "@/lib/mock-data";
+
+export const metadata: Metadata = {
+  title: "Categories",
+  description: "Browse verified Rotaract enterprises categorized by commercial industry and sector.",
+};
 
 const iconMap: Record<string, React.ElementType> = {
   manufacturing: Factory,

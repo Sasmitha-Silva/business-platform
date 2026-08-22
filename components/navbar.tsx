@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, ChevronRight, Users, ArrowUpRight, ArrowRight } from "lucide-react";
+import {
+  Menu,
+  ChevronRight,
+  Users,
+  ArrowUpRight,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { NAV_LINKS } from "@/lib/constants";
@@ -38,8 +44,11 @@ export function Navbar() {
   if (
     pathname.startsWith("/auth") ||
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/business-dashboard") ||
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/admin-dashboard") ||
     pathname.startsWith("/moderator") ||
+    pathname.startsWith("/moderator-dashboard") ||
     pathname.startsWith("/register")
   ) {
     return null;
@@ -139,21 +148,7 @@ export function Navbar() {
             : "opacity-0 pointer-events-none [clip-path:circle(0%_at_calc(100%-2.5rem)_2.5rem)] scale-95"
         )}
       >
-        {/* Animated Background Mesh & Light Glows */}
-        <div className="absolute inset-0 pointer-events-none select-none overflow-hidden opacity-25">
-          <div
-            className="w-full h-full"
-            style={{
-              backgroundImage: `
-                linear-gradient(to right, rgba(255, 255, 255, 0.2) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.2) 1px, transparent 1px)
-              `,
-              backgroundSize: "40px 40px",
-            }}
-          />
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/20 rounded-full blur-3xl" />
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-pink-300/20 rounded-full blur-3xl" />
-        </div>
+
 
         {/* Top Header Row with Brand & Close Button */}
         <div className="relative z-10 w-full flex items-center justify-between pb-3 sm:pb-4 border-b border-white/20 shrink-0">
@@ -173,17 +168,18 @@ export function Navbar() {
           </button>
         </div>
 
-        {/* Center Nav Links - Clean & Minimalist */}
-        <div className="relative z-10 my-auto py-3 sm:py-6 space-y-2 max-w-sm w-full mx-auto">
+        {/* Center Nav Links - Pure Editorial Typography with Underline & Bold */}
+        <div className="relative z-10 my-auto py-4 sm:py-6 space-y-1 max-w-sm w-full mx-auto">
           {[
-            { href: "/directory", label: "Directory" },
-            { href: "/categories", label: "Categories" },
-            { href: "/how-it-works", label: "How It Works" },
-            { href: "/about", label: "About Us" },
-            { href: "/verification-standards", label: "Verification Standards" },
-            { href: "/contact", label: "Contact Us" },
+            { href: "/directory", label: "Directory", num: "01" },
+            { href: "/categories", label: "Categories", num: "02" },
+            { href: "/how-it-works", label: "How It Works", num: "03" },
+            { href: "/about", label: "About Us", num: "04" },
+            { href: "/contact", label: "Contact Us", num: "05" },
           ].map((item, idx) => {
-            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href));
             return (
               <Link
                 key={item.href}
@@ -191,22 +187,37 @@ export function Navbar() {
                 prefetch={true}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "group flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-2xl transition-all duration-300 cursor-pointer border text-sm sm:text-base font-black tracking-tight",
+                  "group flex items-center py-3.5 sm:py-4 px-1.5 border-b transition-all duration-300 cursor-pointer",
                   isActive
-                    ? "bg-white text-[#D41367] border-white shadow-lg translate-x-1.5"
-                    : "bg-white/10 hover:bg-white/20 border-white/15 text-white hover:translate-x-1.5"
+                    ? "border-white"
+                    : "border-white/15 hover:border-white/50"
                 )}
                 style={{
-                  transitionDelay: mobileOpen ? `${idx * 30}ms` : "0ms",
+                  transitionDelay: mobileOpen ? `${idx * 40}ms` : "0ms",
                 }}
               >
-                <span>{item.label}</span>
-                <ArrowRight
-                  className={cn(
-                    "w-4 h-4 transition-transform group-hover:translate-x-1",
-                    isActive ? "text-[#D41367]" : "text-white/80"
-                  )}
-                />
+                <div className="flex items-center gap-4">
+                  <span
+                    className={cn(
+                      "text-xs font-mono font-bold tracking-widest transition-colors duration-300",
+                      isActive
+                        ? "text-pink-200"
+                        : "text-pink-200/50 group-hover:text-pink-200"
+                    )}
+                  >
+                    {item.num}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-2xl sm:text-3xl tracking-tight transition-all duration-300 group-hover:translate-x-2",
+                      isActive
+                        ? "text-white font-black translate-x-1"
+                        : "text-white/75 font-bold group-hover:text-white"
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                </div>
               </Link>
             );
           })}

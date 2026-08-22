@@ -78,6 +78,7 @@ interface CustomDropdownProps {
 
 function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps) {
   const [open, setOpen] = useState(false);
+  const [placement, setPlacement] = useState<"left" | "right" | "center">("left");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,6 +90,25 @@ function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const menuWidth = 230;
+
+      const overflowRight = rect.left + menuWidth > viewportWidth - 10;
+      const overflowLeft = rect.right - menuWidth < 10;
+
+      if (overflowRight && !overflowLeft) {
+        setPlacement("right");
+      } else if (overflowRight && overflowLeft) {
+        setPlacement("center");
+      } else {
+        setPlacement("left");
+      }
+    }
+  }, [open]);
 
   const selectedOption = options.find((o) => o.value === value) || options[0];
 
@@ -110,8 +130,17 @@ function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps
       </button>
 
       {open && (
-        <div className="absolute right-0 sm:left-0 sm:right-auto mt-1.5 w-56 bg-white rounded-2xl border border-slate-200 shadow-xl p-1.5 z-50 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
-          <div className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
+        <div
+          className={cn(
+            "absolute mt-1.5 w-56 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl border border-slate-200 shadow-xl p-1.5 z-50 space-y-0.5 max-h-[70vh] overflow-y-auto overscroll-contain animate-in fade-in zoom-in-95 duration-150",
+            placement === "right"
+              ? "right-0 left-auto"
+              : placement === "center"
+              ? "left-1/2 -translate-x-1/2"
+              : "left-0 right-auto"
+          )}
+        >
+          <div className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1 sticky top-0 bg-white z-10">
             {label}
           </div>
           {options.map((opt) => {
@@ -131,8 +160,8 @@ function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps
                     : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                 )}
               >
-                <span>{opt.label}</span>
-                {isSelected && <Check className="w-3.5 h-3.5 text-[#D41367]" />}
+                <span className="truncate">{opt.label}</span>
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#D41367] shrink-0 ml-1.5" />}
               </button>
             );
           })}

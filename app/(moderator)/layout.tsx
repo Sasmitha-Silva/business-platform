@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { MODERATOR_SIDEBAR_LINKS } from "@/lib/constants";
+
+export const metadata: Metadata = {
+  title: "Moderator Desk",
+  description: "Rotaract Business Network district accreditation and review desk.",
+};
 
 export default function ModeratorLayout({
   children,
