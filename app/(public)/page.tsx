@@ -27,7 +27,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight whitespace-nowrap">
+            <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
               Three Steps to Verified Standing
             </h2>
           </div>

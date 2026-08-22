@@ -23,15 +23,13 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-white/20">
           {/* Brand Logo & Tagline */}
-          <div className="flex items-center">
-            <div>
-              <span className="text-lg font-black tracking-tight text-white block leading-tight">
-                Rotaract Network
-              </span>
-              <span className="text-xs text-pink-100/90 font-medium">
-                Verified Rotaract Business &amp; Professional Directory
-              </span>
-            </div>
+          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+            <span className="text-lg font-black tracking-tight text-white block leading-tight">
+              Rotaract Network
+            </span>
+            <span className="text-xs text-pink-100/90 font-medium">
+              Verified Rotaract Business &amp; Professional Directory
+            </span>
           </div>
 
           {/* Clean Streamlined Nav Links */}

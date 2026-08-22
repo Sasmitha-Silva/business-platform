@@ -1,7 +1,26 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone, MessageCircle, Mail, MapPin, Share2, ChevronRight, ShoppingBag, Info, Flag, Award, ShieldCheck, CheckCircle2, Globe, Building2, Calendar, FileText } from "lucide-react";
+import {
+  Phone,
+  MessageCircle,
+  Mail,
+  MapPin,
+  Share2,
+  ChevronRight,
+  ShoppingBag,
+  Info,
+  Flag,
+  Award,
+  ShieldCheck,
+  CheckCircle2,
+  Globe,
+  Building2,
+  Calendar,
+  FileText,
+  ArrowLeft,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
 import { EnquiryForm } from "@/components/enquiry-form";
@@ -31,105 +50,181 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
   const products = mockProducts.filter((p) => p.business_id === business.id);
   const contact = business.contact;
 
-  const tags = ["IT Consulting", "Cloud Migration", "Enterprise Security", "API Architecture", "SaaS Development"];
+  const tags = [
+    business.subcategory?.name || "Professional Services",
+    "Enterprise Solutions",
+    "Verified Rotary Member",
+    "B2B Partner",
+    "Statutory Compliant",
+  ];
+
+  const phoneNum = contact?.mobile || "+94771234567";
+  const waNum = (contact?.whatsapp || phoneNum).replace(/[^0-9]/g, "");
+  const emailAddr = contact?.email || "contact@rotaractbusiness.com";
 
   return (
-    <div className="bg-white min-h-screen pb-20">
-      {/* Sleek Compact Header Container (Zero Navbar Overlap) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
-        <div className="relative min-h-[220px] sm:min-h-[250px] rounded-3xl overflow-hidden shadow-xl bg-slate-950 p-6 sm:p-8 flex flex-col justify-between border border-border">
-          {/* Background Sample Image with Dark Gradient Overlay */}
-          <Image
-            src="/images/biz-cover.png"
-            alt="Business Cover"
-            fill
-            sizes="100vw"
-            className="object-cover opacity-40"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-transparent" />
+    <div className="bg-white min-h-screen pb-20 pt-4 sm:pt-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-          {/* Action buttons floating top-right */}
-          <div className="relative z-20 flex justify-end items-center gap-3">
-            <Button className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-5 h-9 text-xs font-bold shadow-md gap-1.5" asChild>
-              <a href="#inquire"><Mail className="w-3.5 h-3.5" /> Send Inquiry</a>
-            </Button>
-            <Button variant="outline" size="icon" className="rounded-full bg-white/10 border-white/30 hover:bg-white/20 h-9 w-9 text-white">
-              <Share2 className="w-3.5 h-3.5" />
-            </Button>
+        {/* Top Breadcrumb Navigation */}
+        <div className="flex items-center justify-between gap-2 text-xs font-semibold text-muted-foreground pb-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Link href="/" className="hover:text-[#D41367] transition-colors">
+              Home
+            </Link>
+            <ChevronRight className="w-3.5 h-3.5" />
+            <Link href="/directory" className="hover:text-[#D41367] transition-colors">
+              Directory
+            </Link>
+            <ChevronRight className="w-3.5 h-3.5" />
+            <span className="text-[#D41367] font-bold truncate max-w-[140px] sm:max-w-xs">
+              {business.name}
+            </span>
           </div>
 
-          {/* Compact Bottom Info Row */}
-          <div className="relative z-20 flex flex-col sm:flex-row items-start sm:items-end gap-5 mt-4">
+          <Link
+            href="/directory"
+            className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-[#D41367] bg-slate-50 hover:bg-pink-50 px-3 py-1.5 rounded-xl border border-slate-200 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Back to Directory</span>
+          </Link>
+        </div>
+
+        {/* ================= HERO PROFILE BANNER CARD ================= */}
+        <div className="relative rounded-3xl overflow-hidden shadow-lg bg-slate-950 p-5 sm:p-8 text-white border border-slate-800 flex flex-col justify-between min-h-[260px] sm:min-h-[290px]">
+          {/* Background Cover Image */}
+          <Image
+            src="/images/biz-cover.png"
+            alt={business.name}
+            fill
+            sizes="100vw"
+            className="object-cover opacity-35"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-slate-950 via-slate-950/80 to-slate-950/40 pointer-events-none" />
+
+          {/* Top Row: Floating District & Verification Badges */}
+          <div className="relative z-10 flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className="bg-white/15 backdrop-blur-md text-pink-200 border border-white/20 text-[10px] sm:text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                District 3220
+              </span>
+              {business.category && (
+                <span className="bg-white/10 backdrop-blur-md text-white border border-white/15 text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full">
+                  {business.category.name}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <VerificationBadge level={business.verification_level} size="sm" />
+            </div>
+          </div>
+
+          {/* Bottom Row: Avatar, Title, Tagline & Location */}
+          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-6 mt-6 sm:mt-8">
             {/* Logo Avatar */}
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white p-2 shadow-xl flex items-center justify-center border-2 border-white/30 shrink-0">
-              <div className="w-full h-full bg-gradient-to-br from-[#D41367] to-[#B80E56] rounded-xl flex items-center justify-center text-white font-extrabold text-3xl shadow-inner">
+            <div className="w-16 h-16 sm:w-22 sm:h-22 rounded-2xl bg-white p-1.5 shadow-xl flex items-center justify-center border-2 border-white/30 shrink-0">
+              <div className="w-full h-full bg-gradient-to-br from-[#D41367] to-[#B80E56] rounded-xl flex items-center justify-center text-white font-black text-2xl sm:text-3xl shadow-inner">
                 {business.name.charAt(0)}
               </div>
             </div>
 
             {/* Business Info */}
-            <div className="space-y-2 flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <VerificationBadge level={business.verification_level} size="sm" />
-                <span className="bg-white/15 backdrop-blur-md text-amber-300 border border-white/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  District 3220
-                </span>
-              </div>
-
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+            <div className="space-y-1.5 flex-1 min-w-0">
+              <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
                 {business.name}
               </h1>
 
-              <p className="text-white/80 text-xs max-w-xl truncate">
-                {business.tagline || "Innovating digital connectivity and enterprise architecture for global organizations."}
+              <p className="text-white/85 text-xs sm:text-sm max-w-2xl line-clamp-2 font-medium leading-relaxed">
+                {business.tagline || business.description || "Innovating enterprise architecture and certified commercial solutions for global clients."}
               </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-white/75 font-semibold">
+                <span className="inline-flex items-center gap-1 text-pink-200">
+                  <MapPin className="w-3.5 h-3.5 text-[#D41367]" />
+                  <span>{business.location?.city || "Colombo"}, {business.location?.country || "Sri Lanka"}</span>
+                </span>
+                <span>•</span>
+                <span>Est. {business.year_established || 2020}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Grid Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <div className="grid lg:grid-cols-12 gap-8">
-          {/* Left Column (8 cols) */}
-          <div className="lg:col-span-8 space-y-8">
-            {/* Stats Summary Bar */}
-            <div className="bg-white rounded-3xl border border-border p-6 shadow-sm grid grid-cols-2 sm:grid-cols-4 gap-4 text-center divide-x divide-border">
-              <div>
-                <p className="text-xl font-extrabold text-[#D41367]">10+ Yrs</p>
+        {/* ================= MOBILE QUICK ACTION CONTACT BAR ================= */}
+        <div className="grid grid-cols-3 gap-2.5 sm:hidden">
+          <a
+            href={`tel:${phoneNum}`}
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-pink-50 text-[#D41367] border border-pink-200/80 font-bold text-xs shadow-2xs text-center active:scale-95 transition-all"
+          >
+            <Phone className="w-4 h-4 mb-1 text-[#D41367]" />
+            <span>Call</span>
+          </a>
+
+          <a
+            href={`https://wa.me/${waNum}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-bold text-xs shadow-2xs text-center active:scale-95 transition-all"
+          >
+            <MessageCircle className="w-4 h-4 mb-1 text-emerald-600" />
+            <span>WhatsApp</span>
+          </a>
+
+          <a
+            href={`mailto:${emailAddr}`}
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-100 text-slate-800 border border-slate-200 font-bold text-xs shadow-2xs text-center active:scale-95 transition-all"
+          >
+            <Mail className="w-4 h-4 mb-1 text-slate-700" />
+            <span>Email</span>
+          </a>
+        </div>
+
+        {/* ================= MAIN CONTENT 2-COLUMN GRID ================= */}
+        <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 pt-2">
+
+          {/* Left Column (8 cols): Stats, Overview, Offerings */}
+          <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+
+            {/* Stats Summary Grid (2x2 on Mobile, 4 Cols on Desktop) */}
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-border p-4 sm:p-6 shadow-2xs grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 text-center">
+              <div className="p-2.5 sm:p-0 rounded-xl bg-slate-50/80 sm:bg-transparent border sm:border-0 border-slate-100">
+                <p className="text-base sm:text-xl font-extrabold text-[#D41367]">10+ Yrs</p>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">ESTABLISHED</p>
               </div>
-              <div>
-                <p className="text-xl font-extrabold text-[#F7A81B]">50+</p>
-                <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">PROJECTS DELIVERED</p>
+              <div className="p-2.5 sm:p-0 rounded-xl bg-slate-50/80 sm:bg-transparent border sm:border-0 border-slate-100 sm:border-l sm:border-border">
+                <p className="text-base sm:text-xl font-extrabold text-[#F7A81B]">50+</p>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">DELIVERED</p>
               </div>
-              <div>
-                <p className="text-xl font-extrabold text-[#0050A2]">100%</p>
+              <div className="p-2.5 sm:p-0 rounded-xl bg-slate-50/80 sm:bg-transparent border sm:border-0 border-slate-100 sm:border-l sm:border-border">
+                <p className="text-base sm:text-xl font-extrabold text-[#0050A2]">100%</p>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">ROTARY COMPLIANT</p>
               </div>
-              <div>
-                <p className="text-xl font-extrabold text-emerald-600">4.9 / 5</p>
-                <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">CLIENT RATING</p>
+              <div className="p-2.5 sm:p-0 rounded-xl bg-slate-50/80 sm:bg-transparent border sm:border-0 border-slate-100 sm:border-l sm:border-border">
+                <p className="text-base sm:text-xl font-extrabold text-emerald-600">4.9 / 5</p>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">RATING</p>
               </div>
             </div>
 
             {/* About the Business */}
-            <div className="bg-white rounded-3xl border border-border p-8 shadow-sm space-y-4">
-              <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
-                <Info className="w-5 h-5 text-[#D41367]" /> Executive Overview
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-border p-5 sm:p-8 shadow-2xs space-y-4">
+              <h2 className="text-base sm:text-lg font-extrabold text-foreground flex items-center gap-2">
+                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#D41367]" />
+                <span>Executive Overview</span>
               </h2>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {business.description}
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                {business.description || "Leading provider of certified corporate services, engineering consultations, and specialized enterprise products within the Rotaract international trade network."}
               </p>
 
-              <div className="pt-4 border-t border-border/60">
-                <p className="text-xs font-bold text-foreground mb-2.5">Core Services & Expertise:</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="pt-3 border-t border-border/60">
+                <p className="text-xs font-bold text-foreground mb-2">Specializations & Capabilities:</p>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {tags.map((tag) => (
                     <span
                       key={tag}
-                      className="px-3 py-1 bg-pink-50 text-[#D41367] text-xs font-bold rounded-xl border border-pink-200/60"
+                      className="px-2.5 sm:px-3 py-1 bg-pink-50 text-[#D41367] text-[11px] sm:text-xs font-bold rounded-xl border border-pink-200/60"
                     >
                       {tag}
                     </span>
@@ -138,123 +233,144 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
               </div>
             </div>
 
-            {/* Products & Solutions Showcase with Sample Images */}
-            <div className="bg-white rounded-3xl border border-border p-8 shadow-sm space-y-6">
+            {/* Products & Solutions Showcase */}
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-border p-5 sm:p-8 shadow-2xs space-y-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-[#D41367]" /> Solutions & Offerings
+                <h2 className="text-base sm:text-lg font-extrabold text-foreground flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[#D41367]" />
+                  <span>Solutions & Offerings</span>
                 </h2>
-                <span className="text-xs font-bold text-[#D41367]">2 Listings</span>
+                <span className="text-xs font-bold text-[#D41367] bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-200/60">
+                  {products.length > 0 ? products.length : 2} Listings
+                </span>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-6">
-                {/* Product Card 1 with Sample Image */}
-                <div className="rounded-2xl border border-border overflow-hidden bg-white shadow-sm flex flex-col justify-between">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {/* Product Card 1 */}
+                <div className="rounded-2xl border border-border overflow-hidden bg-white shadow-2xs flex flex-col justify-between hover:border-pink-300 transition-all">
                   <div>
-                    <div className="relative h-40 w-full overflow-hidden bg-slate-900">
+                    <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-slate-900">
                       <Image
                         src="/images/product-tech.png"
                         alt="Cloud Transition Suite"
                         fill
-                        sizes="(max-width: 768px) 100vw, 50vw"
+                        sizes="(max-width: 768px) 100vw, 400px"
                         className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <span className="absolute top-3 left-3 bg-[#D41367] text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                      <span className="absolute top-2.5 left-2.5 bg-[#D41367] text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xs">
                         ENTERPRISE
                       </span>
                     </div>
-                    <div className="p-5 space-y-1.5">
-                      <h3 className="font-bold text-sm text-foreground">Cloud Migration & Transition Suite</h3>
+                    <div className="p-4 sm:p-5 space-y-1.5">
+                      <h3 className="font-bold text-xs sm:text-sm text-foreground">
+                        Cloud Migration & Transition Suite
+                      </h3>
                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                         Complete end-to-end cloud infrastructure transition, security audit, and 24/7 monitoring.
                       </p>
-                      <p className="text-sm font-extrabold text-[#D41367] pt-2">From $4,999</p>
+                      <p className="text-xs sm:text-sm font-extrabold text-[#D41367] pt-1">From $4,999</p>
                     </div>
                   </div>
-                  <div className="p-5 pt-0">
-                    <Button className="w-full bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl h-9 text-xs font-bold shadow-sm">
-                      Request Quote
+                  <div className="p-4 sm:p-5 pt-0">
+                    <Button
+                      className="w-full bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl h-9 text-xs font-bold shadow-xs cursor-pointer"
+                      asChild
+                    >
+                      <a href="#inquire">Request Quote</a>
                     </Button>
                   </div>
                 </div>
 
-                {/* Product Card 2 with Sample Image */}
-                <div className="rounded-2xl border border-border overflow-hidden bg-white shadow-sm flex flex-col justify-between">
+                {/* Product Card 2 */}
+                <div className="rounded-2xl border border-border overflow-hidden bg-white shadow-2xs flex flex-col justify-between hover:border-pink-300 transition-all">
                   <div>
-                    <div className="relative h-40 w-full overflow-hidden bg-slate-900">
+                    <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-slate-900">
                       <Image
                         src="/images/hero-meeting.png"
                         alt="Cybersecurity Audit"
                         fill
-                        sizes="(max-width: 768px) 100vw, 50vw"
+                        sizes="(max-width: 768px) 100vw, 400px"
                         className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <span className="absolute top-3 left-3 bg-[#0050A2] text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                      <span className="absolute top-2.5 left-2.5 bg-[#0050A2] text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-xs">
                         AUDIT PRO
                       </span>
                     </div>
-                    <div className="p-5 space-y-1.5">
-                      <h3 className="font-bold text-sm text-foreground">Cybersecurity & Vulnerability Audit Pro</h3>
+                    <div className="p-4 sm:p-5 space-y-1.5">
+                      <h3 className="font-bold text-xs sm:text-sm text-foreground">
+                        Cybersecurity & Compliance Audit
+                      </h3>
                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                         Comprehensive vulnerability assessment, compliance mapping, and executive security reports.
                       </p>
-                      <p className="text-sm font-extrabold text-[#D41367] pt-2">$1,250</p>
+                      <p className="text-xs sm:text-sm font-extrabold text-[#D41367] pt-1">$1,250</p>
                     </div>
                   </div>
-                  <div className="p-5 pt-0">
-                    <Button className="w-full bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl h-9 text-xs font-bold shadow-sm">
-                      Request Quote
+                  <div className="p-4 sm:p-5 pt-0">
+                    <Button
+                      className="w-full bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl h-9 text-xs font-bold shadow-xs cursor-pointer"
+                      asChild
+                    >
+                      <a href="#inquire">Request Quote</a>
                     </Button>
                   </div>
                 </div>
               </div>
             </div>
+
           </div>
 
-          {/* Right Column (4 cols) */}
+          {/* Right Column (4 cols): Rotary Pass, Direct Channels, Inquiry Form */}
           <div className="lg:col-span-4 space-y-6">
+
             {/* ROTARY IDENTITY Pass Card */}
-            <div className="bg-[#D41367] rounded-3xl p-7 text-white shadow-xl space-y-4 relative overflow-hidden">
+            <div className="bg-[#D41367] rounded-2xl sm:rounded-3xl p-6 sm:p-7 text-white shadow-lg space-y-4 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
-              <p className="text-[10px] font-extrabold tracking-widest uppercase text-white/80">
-                ROTARY IDENTITY PASS
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-extrabold tracking-widest uppercase text-white/80">
+                  ROTARY IDENTITY PASS
+                </p>
+                <ShieldCheck className="w-4 h-4 text-pink-200" />
+              </div>
+
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-extrabold text-lg border border-white/30 text-white shrink-0">
-                  AV
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-extrabold text-base sm:text-lg border border-white/30 text-white shrink-0">
+                  {business.owner?.name ? business.owner.name.split(" ").map(w => w[0]).slice(0, 2).join("") : "RO"}
                 </div>
                 <div>
-                  <p className="font-extrabold text-base">Anand Vardhan</p>
-                  <p className="text-xs text-white/85">Verified Business Owner</p>
+                  <p className="font-extrabold text-sm sm:text-base leading-tight">
+                    {business.owner?.name || "Rtr. Sarah Perera"}
+                  </p>
+                  <p className="text-[11px] text-white/85">Verified Enterprise Founder</p>
                 </div>
               </div>
 
-              <div className="space-y-2.5 pt-3 text-xs border-t border-white/20">
+              <div className="space-y-2 pt-3 text-xs border-t border-white/20">
                 <div className="flex items-center gap-2 text-white/90">
                   <Flag className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                  <span>Rotaract Club of Downtown</span>
+                  <span className="truncate">{business.rotaract_profile?.club_name || "Rotaract Club of Colombo Central"}</span>
                 </div>
                 <div className="flex items-center gap-2 text-white/90">
                   <MapPin className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                  <span>District 3220, Central</span>
+                  <span>District 3220, Sri Lanka</span>
                 </div>
                 <div className="flex items-center gap-2 text-white/90">
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                  <Award className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                   <span>Rotary ID: <strong className="font-mono text-white">ROT-3220-8841</strong></span>
                 </div>
               </div>
             </div>
 
-            {/* Direct Channels */}
-            <div className="bg-white rounded-3xl border border-border p-6 shadow-sm space-y-3">
-              <h3 className="font-extrabold text-foreground text-sm">Direct Contact Channels</h3>
+            {/* Direct Contact Channels (Desktop & Tablet) */}
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-border p-5 sm:p-6 shadow-2xs space-y-3">
+              <h3 className="font-extrabold text-foreground text-xs sm:text-sm">Direct Contact Channels</h3>
               <div className="space-y-2">
                 <a
-                  href={`tel:${contact?.mobile || "+919876543210"}`}
-                  className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-pink-50/60 transition-colors group"
+                  href={`tel:${phoneNum}`}
+                  className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-pink-50/60 hover:border-pink-200 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5">
                     <Phone className="w-4 h-4 text-[#D41367]" />
@@ -264,10 +380,10 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
                 </a>
 
                 <a
-                  href={`https://wa.me/${contact?.whatsapp?.replace(/[^0-9]/g, "") || "919876543210"}`}
+                  href={`https://wa.me/${waNum}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-pink-50/60 transition-colors group"
+                  className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-emerald-50/60 hover:border-emerald-200 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5">
                     <MessageCircle className="w-4 h-4 text-emerald-600" />
@@ -277,8 +393,8 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
                 </a>
 
                 <a
-                  href={`mailto:${contact?.email || "info@lumina.com"}`}
-                  className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-pink-50/60 transition-colors group"
+                  href={`mailto:${emailAddr}`}
+                  className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-blue-50/60 hover:border-blue-200 transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5">
                     <Mail className="w-4 h-4 text-[#0050A2]" />
@@ -290,11 +406,14 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
             </div>
 
             {/* Send Inquiry Form Card */}
-            <div id="inquire" className="bg-white rounded-3xl border border-border p-6 shadow-sm scroll-mt-28">
+            <div id="inquire" className="bg-white rounded-2xl sm:rounded-3xl border border-border p-5 sm:p-6 shadow-2xs scroll-mt-24">
               <EnquiryForm businessName={business.name} />
             </div>
+
           </div>
+
         </div>
+
       </div>
     </div>
   );

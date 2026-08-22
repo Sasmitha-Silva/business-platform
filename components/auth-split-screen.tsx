@@ -24,9 +24,9 @@ export function AuthSplitScreen({ type = "login", isSignUp: isSignUpProp }: Auth
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-white font-sans">
+    <div className="min-h-screen w-full flex bg-white font-sans">
       {/* Left Photo Column with Rich Cranberry Overlay */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#D41367] via-[#B80E56] to-[#800A3C] flex-col justify-between p-12 overflow-hidden select-none">
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#D41367] via-[#B80E56] to-[#800A3C] flex-col justify-between p-12 overflow-hidden select-none min-h-screen">
         <Image
           src="/images/hero-meeting-hq.jpg"
           alt="Rotaract Business Networking"

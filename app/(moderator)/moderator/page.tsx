@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -16,7 +16,6 @@ import {
   ArrowRight,
   Eye,
   FileText,
-  AlertTriangle,
   AlertCircle,
   X,
 } from "lucide-react";
@@ -36,6 +35,18 @@ export default function ModeratorDashboardPage() {
   // Modals state
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
+
+  // Lock background scrolling and prevent Lenis capture when any modal is open
+  useEffect(() => {
+    if (showApproveModal || showReturnModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showApproveModal, showReturnModal]);
 
   const activeClaim = pendingQueue.find((b) => b.id === activeClaimId) || pendingQueue[0];
 
@@ -74,8 +85,14 @@ export default function ModeratorDashboardPage() {
 
       {/* ================= APPROVE CONFIRMATION MODAL ================= */}
       {showApproveModal && activeClaim && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200 relative">
+        <div
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto overscroll-contain animate-in fade-in duration-200"
+        >
+          <div
+            data-lenis-prevent="true"
+            className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200 relative overscroll-contain"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shrink-0">
@@ -137,8 +154,14 @@ export default function ModeratorDashboardPage() {
 
       {/* ================= RETURN / REVISE CONFIRMATION MODAL ================= */}
       {showReturnModal && activeClaim && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200 relative">
+        <div
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto overscroll-contain animate-in fade-in duration-200"
+        >
+          <div
+            data-lenis-prevent="true"
+            className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200 relative overscroll-contain"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">

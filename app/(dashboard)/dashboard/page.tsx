@@ -156,13 +156,19 @@ export default function OwnerDashboardPage() {
           <div>
             <div className="flex items-center gap-2">
               <VerificationBadge level={business.verification_level} size="sm" />
-              <span className="text-sm font-bold text-slate-900">Silver Tier</span>
+              <span className="text-sm font-bold text-slate-900">
+                {business.verification_level === 2 || business.verification_level === 3
+                  ? "DRR Endorsed"
+                  : business.verification_level === 1
+                  ? "GST Verified"
+                  : "Standard Listing"}
+              </span>
             </div>
             <Link
               href="/verification"
               className="text-xs font-semibold text-[#D41367] hover:text-[#B80E56] transition-colors inline-flex items-center gap-1 mt-1"
             >
-              <span>Apply for Gold Tier</span>
+              <span>{business.verification_level < 2 ? "Apply for DRR Verification" : "Manage Documents"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

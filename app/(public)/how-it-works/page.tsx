@@ -40,42 +40,42 @@ const steps = [
 
 const tiers = [
   {
-    level: 1,
-    name: "Bronze Tier",
-    badgeLabel: "BRONZE TIER",
+    level: 0,
+    name: "Standard Listing",
+    badgeLabel: "NO BADGE",
     req: "Active Rotaract Club Membership",
     features: [
       "Directory Search Listing",
-      "Club Standing Verification Badge",
-      "Public Contact Details",
+      "Public Contact Details & WhatsApp",
+      "Product & Service Catalog",
       "Standard Search Placement",
     ],
   },
   {
-    level: 2,
-    name: "Silver Tier",
-    badgeLabel: "SILVER TIER",
-    req: "GST / Udyam / Business Registration",
+    level: 1,
+    name: "GST Verified",
+    badgeLabel: "GST VERIFIED",
+    req: "Valid GST / Business Registration (BRN)",
     features: [
-      "Everything in Bronze Tier",
-      "Verified Business Entity Badge",
-      "Priority Category Placement",
-      "Direct Inquiry Form Routing",
+      "Official GST Verified Trust Badge",
+      "Tax & Legal Identity Confirmation",
+      "Enhanced Directory Search Visibility",
+      "Direct Buyer Inquiries",
       "Social Media Link Integration",
     ],
   },
   {
-    level: 3,
-    name: "Gold Tier",
-    badgeLabel: "GOLD TIER",
-    req: "Full Audit + DRR Endorsement",
+    level: 2,
+    name: "DRR Verified",
+    badgeLabel: "DRR VERIFIED",
+    req: "Official DRR Endorsement Letter (+ GST)",
     popular: true,
     features: [
-      "Everything in Silver Tier",
-      "Official Gold Shield Verification",
-      "Featured Homepage Showcase",
-      "District Spotlight Banner Placement",
-      "DRR Certified Entity Standing",
+      "Signature DRR Verified Badge",
+      "District Leadership Official Endorsement",
+      "Top Directory & Sector Ranking",
+      "Featured Deals & Homepage Showcase",
+      "Highest Trust & B2B Credibility",
     ],
   },
 ];
@@ -83,11 +83,11 @@ const tiers = [
 const faqs = [
   {
     q: "How long does the verification process take?",
-    a: "Initial review by your District Moderator typically takes 24 to 48 hours. Once your documents or club standing are confirmed, your profile and verified badge go live immediately.",
+    a: "Initial audit by your District Moderator and Super Admin typically takes 24 to 48 hours. Once your documents are confirmed, your verified badge is activated immediately.",
   },
   {
-    q: "What documents are required for Silver and Gold verification?",
-    a: "Silver verification requires official business registration (such as GST, Udyam, or Certificate of Incorporation). Gold verification requires Silver documents plus an active DRR or Club President endorsement letter.",
+    q: "What is the difference between GST Verified and DRR Verified?",
+    a: "A GST Verified badge confirms your business is registered with the government. A DRR Verified badge is the highest community accreditation, endorsed directly by your District Rotaract Representative.",
   },
   {
     q: "Who conducts the verification?",
@@ -182,17 +182,17 @@ export default function HowItWorksPage() {
           </div>
         </div>
 
-        {/* Verification Tiers Comparative Grid */}
+        {/* Verification Levels Comparative Grid */}
         <div className="space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-1">
             <span className="text-xs font-extrabold text-[#D41367] uppercase tracking-wider">
               VERIFICATION STANDING
             </span>
             <h2 className="text-2xl sm:text-4xl font-black text-foreground tracking-tight">
-              Directory Verification Tiers
+              Directory Verification Badges
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Choose the standing tier that fits your business stage and statutory credentials.
+              Choose the verification standing that fits your business stage and statutory credentials.
             </p>
           </div>
 
@@ -200,32 +200,41 @@ export default function HowItWorksPage() {
             {tiers.map((tier) => (
               <div
                 key={tier.name}
-                className={`rounded-3xl border p-7 flex flex-col justify-between relative bg-white ${tier.popular ? "border-[#F7A81B] shadow-lg ring-2 ring-[#F7A81B]/30" : "border-border/80 shadow-xs"
-                  }`}
+                className={`rounded-3xl border p-7 flex flex-col justify-between relative bg-white ${
+                  tier.popular ? "border-[#D41367] shadow-lg ring-2 ring-pink-100" : "border-border/80 shadow-xs"
+                }`}
               >
                 {tier.popular && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#F7A81B] text-slate-950 font-black text-[10px] uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#D41367] text-white font-black text-[10px] uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
                     MOST POPULAR
                   </span>
                 )}
 
                 <div className="space-y-6">
-                  {/* Tier Header */}
+                  {/* Card Header: Title on Left, Badge on Right */}
                   <div className="space-y-2 pb-4 border-b border-border/60">
-                    <VerificationBadge level={tier.level} size="lg" />
-                    <h3 className="text-xl font-black text-foreground pt-1">{tier.name}</h3>
+                    <div className="flex items-center justify-between gap-2 min-h-[32px]">
+                      <h3 className="text-lg sm:text-xl font-black text-foreground">{tier.name}</h3>
+                      {tier.level > 0 ? (
+                        <VerificationBadge level={tier.level} size="md" />
+                      ) : (
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+                          Standard
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-[#D41367]" />
-                      <span>{tier.req}</span>
+                      <FileText className="w-3.5 h-3.5 text-[#D41367] shrink-0" />
+                      <span className="truncate">{tier.req}</span>
                     </p>
                   </div>
 
                   {/* Feature Checklist */}
-                  <div className="space-y-3">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                  <div className="space-y-4 pt-1">
+                    <span className="block text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                       Included Directory Benefits:
                     </span>
-                    <ul className="space-y-2.5 text-xs font-medium text-foreground">
+                    <ul className="space-y-3 text-xs font-medium text-foreground">
                       {tier.features.map((feat) => (
                         <li key={feat} className="flex items-start gap-2.5">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />

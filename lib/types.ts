@@ -201,13 +201,43 @@ export interface Enquiry {
   business?: Business;
 }
 
+export type DeactivationReasonCategory =
+  | 'inactivity'
+  | 'policy_violation'
+  | 'fraudulent_info'
+  | 'ceased_operations'
+  | 'unresponsive'
+  | 'other';
+
+export interface BusinessDeactivationRequest {
+  id: string;
+  business_id: string;
+  business_name: string;
+  business_slug: string;
+  business_category?: string;
+  business_location?: string;
+  owner_name: string;
+  moderator_id: string;
+  moderator_name: string;
+  district_number: number;
+  reason_category: DeactivationReasonCategory;
+  reason_details: string;
+  evidence_notes?: string;
+  urgency: 'low' | 'medium' | 'high' | 'critical';
+  status: 'pending' | 'approved' | 'rejected';
+  admin_notes?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  created_at: string;
+}
+
 export interface AdminAction {
   id: string;
   admin_id: string;
   admin_name: string;
   admin_role: string;
   action: string;
-  action_type: 'verified_business' | 'tier_upgraded' | 'verification_denied' | 'profile_edit' | 'new_member' | 'suspended' | 'unsuspended' | 'featured' | 'unfeatured' | 'moderator_assigned' | 'moderator_removed' | 'category_added' | 'category_edited';
+  action_type: 'verified_business' | 'tier_upgraded' | 'verification_denied' | 'profile_edit' | 'new_member' | 'suspended' | 'unsuspended' | 'featured' | 'unfeatured' | 'moderator_assigned' | 'moderator_removed' | 'category_added' | 'category_edited' | 'deactivation_approved' | 'deactivation_dismissed';
   target_table: string;
   target_id: string;
   target_name: string;

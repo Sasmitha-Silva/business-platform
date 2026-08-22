@@ -28,7 +28,7 @@ export function BusinessCard({ business, className }: BusinessCardProps) {
   return (
     <div
       className={cn(
-        "bg-white rounded-3xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow duration-200 group flex flex-col justify-between relative overflow-hidden",
+        "bg-white rounded-3xl border-2 border-[#D41367]/40 hover:border-[#D41367] p-6 shadow-sm hover:shadow-md transition-all duration-200 group flex flex-col justify-between relative overflow-hidden",
         className
       )}
     >

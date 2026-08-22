@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -16,6 +16,8 @@ import {
   X,
   Building2,
   AlertTriangle,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,11 +89,24 @@ export default function AdminUsersPage() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserRole, setNewUserRole] = useState<AdminUser["role"]>("Business Owner");
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const [newUserDistrict, setNewUserDistrict] = useState("District 3220");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Status toggle confirmation modal
   const [statusModalUser, setStatusModalUser] = useState<AdminUser | null>(null);
+
+  // Lock background scrolling and prevent Lenis capture when any modal is open
+  useEffect(() => {
+    if (showAddModal || statusModalUser) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showAddModal, statusModalUser]);
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
@@ -157,8 +172,14 @@ export default function AdminUsersPage() {
 
       {/* ================= SUSPEND / ACTIVATE CONFIRMATION MODAL ================= */}
       {statusModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200 relative">
+        <div
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto overscroll-contain animate-in fade-in duration-200"
+        >
+          <div
+            data-lenis-prevent="true"
+            className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200 relative overscroll-contain"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div
@@ -269,9 +290,16 @@ export default function AdminUsersPage() {
 
       {/* Add User Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200 relative">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto overscroll-contain animate-in fade-in duration-200"
+        >
+          <div
+            data-lenis-prevent="true"
+            className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-xl border border-slate-200 relative my-auto max-h-[88vh] flex flex-col overscroll-contain animate-in zoom-in-95 duration-200"
+          >
+            {/* Header (Pinned) */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center border border-pink-100 shrink-0">
                   <Users className="w-4 h-4" />
@@ -290,56 +318,105 @@ export default function AdminUsersPage() {
               </button>
             </div>
 
-            <form onSubmit={handleAddUser} className="space-y-3.5">
-              <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Full Name *</Label>
-                <Input
-                  required
-                  value={newUserName}
-                  onChange={(e) => setNewUserName(e.target.value)}
-                  placeholder="e.g. Rtr. Dilshan Wickramasinghe"
-                  className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Email Address *</Label>
-                <Input
-                  type="email"
-                  required
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  placeholder="dilshan@example.com"
-                  className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
-                />
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-3.5">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleAddUser} className="flex-1 flex flex-col min-h-0">
+              <div
+                data-lenis-prevent="true"
+                className="flex-1 overflow-y-auto space-y-3.5 py-3.5 pr-1 overscroll-contain"
+              >
                 <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm font-semibold text-slate-700">Role</Label>
-                  <select
-                    value={newUserRole}
-                    onChange={(e) => setNewUserRole(e.target.value as AdminUser["role"])}
-                    className="h-10 w-full text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 outline-none focus:bg-white focus:border-[#D41367]"
-                  >
-                    <option value="Business Owner">Business Owner</option>
-                    <option value="District Moderator">District Moderator</option>
-                    <option value="Super Admin">Super Admin</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm font-semibold text-slate-700">District</Label>
+                  <Label className="text-xs sm:text-sm font-semibold text-slate-700">Full Name *</Label>
                   <Input
-                    value={newUserDistrict}
-                    onChange={(e) => setNewUserDistrict(e.target.value)}
-                    placeholder="District 3220"
+                    required
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    placeholder="e.g. Rtr. Dilshan Wickramasinghe"
                     className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
                   />
                 </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm font-semibold text-slate-700">Email Address *</Label>
+                  <Input
+                    type="email"
+                    required
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="dilshan@example.com"
+                    className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
+                  />
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-3.5">
+                  {/* Custom Role Dropdown */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Role</Label>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                        className="h-10 w-full text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 flex items-center justify-between text-left outline-none focus:bg-white focus:border-[#D41367] transition-colors cursor-pointer"
+                      >
+                        <span className="font-medium text-slate-800 truncate">{newUserRole}</span>
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
+                            isRoleDropdownOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {isRoleDropdownOpen && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setIsRoleDropdownOpen(false)}
+                          />
+                          <div className="absolute left-0 right-0 mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                            {(["Business Owner", "District Moderator", "Super Admin"] as const).map(
+                              (role) => {
+                                const isSelected = newUserRole === role;
+                                return (
+                                  <button
+                                    key={role}
+                                    type="button"
+                                    onClick={() => {
+                                      setNewUserRole(role);
+                                      setIsRoleDropdownOpen(false);
+                                    }}
+                                    className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left ${
+                                      isSelected
+                                        ? "bg-pink-50 text-[#D41367]"
+                                        : "text-slate-700 hover:bg-slate-100"
+                                    }`}
+                                  >
+                                    <span>{role}</span>
+                                    {isSelected && (
+                                      <Check className="w-3.5 h-3.5 text-[#D41367] shrink-0" />
+                                    )}
+                                  </button>
+                                );
+                              }
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">District</Label>
+                    <Input
+                      value={newUserDistrict}
+                      onChange={(e) => setNewUserDistrict(e.target.value)}
+                      placeholder="District 3220"
+                      className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              {/* Footer (Pinned) */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 shrink-0">
                 <Button
                   type="button"
                   variant="outline"
@@ -350,7 +427,7 @@ export default function AdminUsersPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl text-xs sm:text-sm font-semibold h-9.5 px-5 shadow-xs"
+                  className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl text-xs sm:text-sm font-semibold h-9.5 px-5 shadow-xs cursor-pointer"
                 >
                   Enroll Member
                 </Button>

@@ -9,39 +9,37 @@ export const metadata: Metadata = {
 
 const tiers = [
   {
-    tier: "Gold Tier",
-    badge: "bg-[#F7A81B] text-slate-950",
-    border: "border-[#F7A81B]",
-    title: "Gold Certified (Level 3)",
-    desc: "Highest level verification for established enterprises with statutory compliance and District Representative endorsement.",
+    tier: "DRR Verified",
+    badge: "bg-[#D41367] text-white",
+    border: "border-pink-300",
+    title: "DRR Verified Badge",
+    desc: "The highest official accreditation awarded to enterprises with valid statutory compliance and an active District Rotaract Representative endorsement.",
     docs: [
-      "GST / Government Tax Certificate",
-      "Official DRR Endorsement Letter",
-      "MSME / Udyam Certificate",
-      "Rotary Member ID & Active Standing",
+      "Official DRR Recommendation Letter",
+      "GST / Business Registration Certificate",
+      "Active Rotaract Club Standing",
     ],
   },
   {
-    tier: "Silver Tier",
+    tier: "GST Verified",
+    badge: "bg-blue-600 text-white",
+    border: "border-blue-300",
+    title: "GST Verified Badge",
+    desc: "For commercially registered businesses and service providers verified through government Goods & Services Tax (GST) or Business Registration documentation.",
+    docs: [
+      "Government GST / BRN Certificate",
+      "Active Rotaractor Membership Standing",
+    ],
+  },
+  {
+    tier: "Standard Listing",
     badge: "bg-slate-700 text-white",
     border: "border-slate-300",
-    title: "Silver Certified (Level 2)",
-    desc: "For registered businesses and independent professionals verified via official business registration or GST documentation.",
+    title: "Standard Rotaract Listing",
+    desc: "Open to all verified Rotaractors to showcase their business, services, and contact details without statutory documents.",
     docs: [
-      "GST or MSME Certificate",
-      "Rotary Member ID Number",
-      "Active Club Standing",
-    ],
-  },
-  {
-    tier: "Bronze Tier",
-    badge: "bg-amber-800 text-white",
-    border: "border-amber-300",
-    title: "Bronze Certified (Level 1)",
-    desc: "For early-stage Rotaract entrepreneurs verified through active Rotary ID and home club confirmation.",
-    docs: [
-      "Valid Rotary Member ID",
-      "Home Club President Confirmation",
+      "Valid Rotaract Club & District Affiliation",
+      "Member Identity Verification",
     ],
   },
 ];

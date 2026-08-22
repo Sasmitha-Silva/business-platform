@@ -63,7 +63,7 @@ export function FeaturedBusinessesShowcase() {
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <h3 className="text-xl font-black tracking-tight text-white mb-0.5">
-                      Horizon Financial Advisory.
+                      Horizon Financial Advisory
                     </h3>
                     <p className="text-xs text-white/90 font-medium flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-pink-300" /> Colombo, Sri Lanka · District 3220
@@ -98,7 +98,7 @@ export function FeaturedBusinessesShowcase() {
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <h3 className="text-xl font-black tracking-tight text-white mb-0.5">
-                      Nexus Architecture Studio.
+                      Nexus Architecture Studio
                     </h3>
                     <p className="text-xs text-white/90 font-medium flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-pink-300" /> Colombo, Sri Lanka · Architecture
@@ -139,7 +139,7 @@ export function FeaturedBusinessesShowcase() {
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <h3 className="text-2xl font-black tracking-tight leading-tight text-white mb-1">
-                      Skyline Legal Associates.
+                      Skyline Legal Associates
                     </h3>
                     <p className="text-xs text-white/90 font-medium flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-pink-300" /> Dubai, UAE · Corporate Law
@@ -177,7 +177,7 @@ export function FeaturedBusinessesShowcase() {
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <h3 className="text-xl font-black tracking-tight text-white mb-0.5">
-                      Apex Dental Studio.
+                      Apex Dental Studio
                     </h3>
                     <p className="text-xs text-white/90 font-medium flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-pink-300" /> Mumbai, India · Healthcare
@@ -212,7 +212,7 @@ export function FeaturedBusinessesShowcase() {
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <h3 className="text-xl font-black tracking-tight text-white mb-0.5">
-                      Vivid Design Hub.
+                      Vivid Design Hub
                     </h3>
                     <p className="text-xs text-white/90 font-medium flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-pink-300" /> Nairobi, Kenya
@@ -261,7 +261,7 @@ export function FeaturedBusinessesShowcase() {
               ENTERPRISE SPOTLIGHT
             </span>
             <h3 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight mb-3 leading-snug">
-              Lumina Tech Labs: Cloud & AI Enterprise Software for Global Scale.
+              Lumina Tech Labs: Cloud & AI Enterprise Software for Global Scale
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl mb-6">
               Ready to scale your tech infrastructure? Explore custom AI automation, cloud backend development, and high-security SaaS platforms engineered by Rotaract Tech Leaders.

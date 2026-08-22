@@ -16,10 +16,15 @@ import {
   CheckCircle2,
   ChevronDown,
   Check,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
-import { mockAdminAnalytics, mockBusinesses } from "@/lib/mock-data";
+import {
+  mockAdminAnalytics,
+  mockBusinesses,
+  mockDeactivationRequests,
+} from "@/lib/mock-data";
 
 const DATE_RANGE_OPTIONS = [
   "Last 7 Days",
@@ -163,6 +168,37 @@ export default function SuperAdminDashboardPage() {
             asChild
           >
             <Link href="/admin/moderators">Assign Moderators</Link>
+          </Button>
+        </div>
+      )}
+
+      {/* ================= PENDING DEACTIVATION ESCALATIONS BANNER ================= */}
+      {mockDeactivationRequests.filter((r) => r.status === "pending").length > 0 && (
+        <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold shrink-0 border border-amber-200">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-amber-950">
+                  Moderator Deactivation Escalations
+                </h3>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-200 text-amber-900">
+                  {mockDeactivationRequests.filter((r) => r.status === "pending").length} Requests Pending Admin Action
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-amber-900/80 font-normal">
+                District moderators have flagged listings for prolonged inactivity, fraudulent details, or policy violations.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            className="bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs sm:text-sm font-semibold shrink-0 h-9.5 px-4.5 shadow-xs"
+            asChild
+          >
+            <Link href="/admin/verifications">Review Escalations</Link>
           </Button>
         </div>
       )}

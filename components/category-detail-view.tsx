@@ -84,11 +84,11 @@ const districtOptions = [
   { label: "District 9675 (Sydney)", value: "9675" },
 ];
 
-const verificationTiers = [
-  { label: "All Tiers", value: "all" },
-  { label: "Gold (Level 3)", value: "3" },
-  { label: "Silver (Level 2)", value: "2" },
-  { label: "Bronze (Level 1)", value: "1" },
+const verificationBadges = [
+  { label: "All Listings", value: "all" },
+  { label: "DRR Verified", value: "2" },
+  { label: "GST Verified", value: "1" },
+  { label: "Standard Listings", value: "0" },
 ];
 
 const sortOptions = [
@@ -234,10 +234,15 @@ export function CategoryDetailView({
         }
       }
 
-      // Verification Level filter
+      // Verification Level filter (0 = Standard, 1 = GST, 2 = DRR)
       if (selectedLevel !== "all") {
-        if (biz.verification_level !== Number(selectedLevel)) {
-          return false;
+        const targetLevel = Number(selectedLevel);
+        if (targetLevel === 2) {
+          if (biz.verification_level < 2) return false;
+        } else if (targetLevel === 1) {
+          if (biz.verification_level !== 1) return false;
+        } else if (targetLevel === 0) {
+          if (biz.verification_level > 0) return false;
         }
       }
 
@@ -392,12 +397,12 @@ export function CategoryDetailView({
               )}
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setSelectedSubcategory("all")}
                 className={cn(
-                  "px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border",
+                  "px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border",
                   selectedSubcategory === "all"
                     ? "bg-[#D41367] text-white border-[#D41367] shadow-sm"
                     : "bg-slate-100 hover:bg-pink-50 text-slate-700 hover:text-[#D41367] border-transparent"
@@ -424,7 +429,7 @@ export function CategoryDetailView({
                     type="button"
                     onClick={() => setSelectedSubcategory(sub.slug)}
                     className={cn(
-                      "px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border",
+                      "px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border",
                       isSelected
                         ? "bg-[#D41367] text-white border-[#D41367] shadow-sm"
                         : "bg-slate-100 hover:bg-pink-50 text-slate-700 hover:text-[#D41367] border-transparent"
@@ -472,7 +477,7 @@ export function CategoryDetailView({
             </div>
 
             {/* Custom Dropdown Filters */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
               <CustomDropdown
                 label="District Region"
                 value={selectedDistrict}
@@ -481,16 +486,16 @@ export function CategoryDetailView({
               />
 
               <CustomDropdown
-                label="Verification Tier"
+                label="Trust & Accreditation"
                 value={selectedLevel}
-                options={verificationTiers}
+                options={verificationBadges}
                 onChange={setSelectedLevel}
               />
 
               {hasFilters && (
                 <button
                   onClick={clearAll}
-                  className="inline-flex items-center gap-1 px-3 py-2 bg-pink-50 text-[#D41367] hover:bg-pink-100/80 rounded-xl text-xs font-extrabold transition-colors cursor-pointer shrink-0"
+                  className="inline-flex items-center justify-center gap-1 px-3 py-2 bg-pink-50 text-[#D41367] hover:bg-pink-100/80 rounded-xl text-xs font-extrabold transition-colors cursor-pointer shrink-0"
                 >
                   <RotateCcw className="w-3 h-3" />
                   Reset
@@ -501,8 +506,8 @@ export function CategoryDetailView({
         </div>
 
         {/* ================= RESULTS CONTROL ROW ================= */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
             <span className="font-bold text-slate-500">
               Showing <span className="font-extrabold text-slate-900">{sortedBusinesses.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0}–{Math.min(currentPage * ITEMS_PER_PAGE, sortedBusinesses.length)}</span> of <span className="font-extrabold text-slate-900">{sortedBusinesses.length}</span> enterprises
             </span>
@@ -527,7 +532,7 @@ export function CategoryDetailView({
           </div>
 
           {/* Sort Custom Dropdown + View Switcher */}
-          <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          <div className="flex items-center justify-center gap-2.5 self-center sm:self-auto">
             <CustomDropdown
               label="Sort Listings"
               value={sortBy}
@@ -582,7 +587,7 @@ export function CategoryDetailView({
                   return (
                     <div
                       key={biz.id}
-                      className="group bg-white rounded-2xl border border-slate-200/90 hover:border-pink-300 p-2.5 sm:p-3 flex flex-col justify-between hover:shadow-lg hover:shadow-slate-900/5 transition-all duration-200"
+                      className="group bg-white rounded-2xl border-2 border-[#D41367]/40 hover:border-[#D41367] p-2.5 sm:p-3 flex flex-col justify-between hover:shadow-lg hover:shadow-[#D41367]/10 transition-all duration-200"
                     >
                       <div className="space-y-2.5">
                         {/* Top Media Header (Compact Height) */}
@@ -669,7 +674,7 @@ export function CategoryDetailView({
                   return (
                     <div
                       key={biz.id}
-                      className="group bg-white rounded-2xl border border-slate-200/90 hover:border-pink-300 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 hover:shadow-md hover:shadow-slate-900/5 transition-all duration-200"
+                      className="group bg-white rounded-2xl border-2 border-[#D41367]/40 hover:border-[#D41367] p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 hover:shadow-md hover:shadow-[#D41367]/10 transition-all duration-200"
                     >
                       {/* Left side: Thumbnail + Info */}
                       <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">

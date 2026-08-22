@@ -5,34 +5,40 @@
 export const VERIFICATION_TIERS = {
   level_1: {
     label: 'GST Verified',
-    shortLabel: 'Bronze Tier',
-    badge: 'BRONZE TIER',
-    color: 'bronze',
-    bgClass: 'bg-amber-100 text-amber-800',
-    dotClass: 'bg-amber-500',
-    description: 'GST Certificate verified by Super Admin',
+    shortLabel: 'GST Verified',
+    badge: 'GST Verified',
+    color: 'blue',
+    bgClass: 'bg-blue-50 text-blue-700 border border-blue-200',
+    dotClass: 'bg-blue-500',
+    description: 'Official GST / BRN government registration verified',
     docs: ['gst'],
   },
   level_2: {
-    label: 'GST + DRR Verified',
-    shortLabel: 'Silver Tier',
-    badge: 'SILVER TIER',
-    color: 'silver',
-    bgClass: 'bg-slate-100 text-slate-700',
-    dotClass: 'bg-slate-400',
-    description: 'GST + DRR Recommendation verified by District Moderator',
-    docs: ['gst', 'drr'],
+    label: 'DRR Verified',
+    shortLabel: 'DRR Verified',
+    badge: 'DRR Verified',
+    color: 'crimson',
+    bgClass: 'bg-pink-50 text-[#D41367] border border-pink-200',
+    dotClass: 'bg-[#D41367]',
+    description: 'District Rotaract Representative (DRR) endorsement verified',
+    docs: ['drr', 'gst'],
   },
   level_3: {
-    label: 'GST + DRR + Udyam Verified',
-    shortLabel: 'Gold Tier',
-    badge: 'GOLD TIER',
-    color: 'gold',
-    bgClass: 'bg-yellow-100 text-yellow-800',
-    dotClass: 'bg-yellow-500',
-    description: 'GST + DRR + Udyam fully verified by Super Admin',
-    docs: ['gst', 'drr', 'udyam'],
+    label: 'DRR Verified',
+    shortLabel: 'DRR Verified',
+    badge: 'DRR Verified',
+    color: 'crimson',
+    bgClass: 'bg-pink-50 text-[#D41367] border border-pink-200',
+    dotClass: 'bg-[#D41367]',
+    description: 'District Rotaract Representative (DRR) endorsement verified',
+    docs: ['drr', 'gst'],
   },
+} as const;
+
+export const VERIFICATION_BADGES = {
+  0: { label: 'Standard Listing', badge: '', description: 'Standard Rotaract directory listing' },
+  1: { label: 'GST Verified', badge: 'GST Verified', description: 'Tax & GST registration verified' },
+  2: { label: 'DRR Verified', badge: 'DRR Verified', description: 'District Rotaract Representative endorsed' },
 } as const;
 
 export const BUSINESS_STATUSES = {
@@ -52,22 +58,16 @@ export const DOC_STATUSES = {
 
 export const DOC_TYPES = {
   gst: {
-    label: 'GST Certificate',
-    description: 'Government Issued Goods and Services Tax Registration (Form REG-06).',
+    label: 'GST / BRN Certificate',
+    description: 'Government Issued Goods and Services Tax / Business Registration Certificate.',
     fileTypes: 'PDF, JPG up to 5MB',
     tier: 'level_1',
   },
   drr: {
-    label: 'DRR Letter',
-    description: 'District Rotaract Representative authorization letter for current year.',
+    label: 'DRR Endorsement Letter',
+    description: 'District Rotaract Representative official recommendation letter for current tenure.',
     fileTypes: 'PDF only',
     tier: 'level_2',
-  },
-  udyam: {
-    label: 'Udyam Registry',
-    description: 'MSME Registration Certificate from Ministry of Micro, Small & Medium Enterprises.',
-    fileTypes: 'PDF, JPG up to 5MB',
-    tier: 'level_3',
   },
 } as const;
 
@@ -95,6 +95,52 @@ export const INQUIRY_STATUSES = {
 
 export const ENQUIRY_STATUSES = INQUIRY_STATUSES;
 
+export const DEACTIVATION_REASON_CATEGORIES = {
+  inactivity: {
+    label: 'Prolonged Inactivity',
+    description: 'No business activity, dormant profile, or invalid contact methods for over 6 months.',
+    badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
+  },
+  policy_violation: {
+    label: 'Rotaract Policy & Ethics Violation',
+    description: 'Breach of Rotaract ethical guidelines, business conduct, or commercial standards.',
+    badgeClass: 'bg-rose-100 text-rose-800 border-rose-200',
+  },
+  fraudulent_info: {
+    label: 'Fraudulent or Misleading Information',
+    description: 'Falsified verification documents, deceptive claims, or unverified Rotary affiliation.',
+    badgeClass: 'bg-red-100 text-red-800 border-red-200',
+  },
+  ceased_operations: {
+    label: 'Ceased Commercial Operations',
+    description: 'Entity has officially closed down, dissolved, or ceased active trading.',
+    badgeClass: 'bg-slate-100 text-slate-800 border-slate-200',
+  },
+  unresponsive: {
+    label: 'Unresponsive to District Audit',
+    description: 'Failed to respond to multiple district compliance communications or document refresh requests.',
+    badgeClass: 'bg-orange-100 text-orange-800 border-orange-200',
+  },
+  other: {
+    label: 'Other District Concern',
+    description: 'Specific governance, legal, or regional compliance issues requiring administrator intervention.',
+    badgeClass: 'bg-purple-100 text-purple-800 border-purple-200',
+  },
+} as const;
+
+export const DEACTIVATION_STATUS_BADGES = {
+  pending: { label: 'Pending Admin Review', bgClass: 'bg-amber-100 text-amber-800 border-amber-200' },
+  approved: { label: 'Deactivated by Admin', bgClass: 'bg-rose-100 text-rose-800 border-rose-200' },
+  rejected: { label: 'Request Dismissed', bgClass: 'bg-slate-100 text-slate-700 border-slate-200' },
+} as const;
+
+export const DEACTIVATION_URGENCY_BADGES = {
+  low: { label: 'Low', bgClass: 'bg-slate-100 text-slate-700 border-slate-200' },
+  medium: { label: 'Medium', bgClass: 'bg-blue-100 text-blue-800 border-blue-200' },
+  high: { label: 'High', bgClass: 'bg-orange-100 text-orange-800 border-orange-200' },
+  critical: { label: 'Critical Violation', bgClass: 'bg-red-100 text-red-800 border-red-200' },
+} as const;
+
 export const ADMIN_ACTION_BADGES: Record<string, { label: string; bgClass: string }> = {
   verified_business: { label: 'Verified Business', bgClass: 'bg-green-100 text-green-700' },
   tier_upgraded: { label: 'Tier Upgraded', bgClass: 'bg-blue-100 text-blue-700' },
@@ -105,6 +151,8 @@ export const ADMIN_ACTION_BADGES: Record<string, { label: string; bgClass: strin
   featured: { label: 'Featured', bgClass: 'bg-yellow-100 text-yellow-700' },
   moderator_assigned: { label: 'Moderator Assigned', bgClass: 'bg-indigo-100 text-indigo-700' },
   category_added: { label: 'Category Added', bgClass: 'bg-pink-100 text-pink-700' },
+  deactivation_approved: { label: 'Deactivation Approved', bgClass: 'bg-rose-100 text-rose-700' },
+  deactivation_dismissed: { label: 'Deactivation Dismissed', bgClass: 'bg-slate-100 text-slate-700' },
 } as const;
 
 export const SORT_OPTIONS = [

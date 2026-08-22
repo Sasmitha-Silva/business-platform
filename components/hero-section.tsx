@@ -20,7 +20,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative h-[100vh] min-h-[100vh] flex flex-col items-center justify-center pt-24 sm:pt-28 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden bg-white">
+    <section className="relative min-h-[90vh] sm:min-h-screen flex flex-col items-center justify-center pt-24 sm:pt-28 pb-16 px-4 sm:px-6 lg:px-8 overflow-hidden bg-white">
       {/* Background Precision Grid */}
       <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
         {/* Top-Left Static Cranberry Grid */}
@@ -59,7 +59,7 @@ export function HeroSection() {
 
         {/* Large Display Headline */}
         <div className="space-y-4 max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-6xl lg:text-[5.2rem] font-black text-[#101828] tracking-tight leading-[1.05]">
+          <h1 className="text-3xl sm:text-6xl lg:text-[5.2rem] font-black text-[#101828] tracking-tight leading-[1.08] sm:leading-[1.05]">
             Explore Verified <span className="text-[#D41367]">Rotaract</span> Enterprises
           </h1>
           <p className="text-sm sm:text-base lg:text-lg text-slate-600 font-medium leading-relaxed max-w-2xl mx-auto">
