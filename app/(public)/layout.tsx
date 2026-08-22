@@ -16,7 +16,7 @@ export default function PublicLayout({
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
-      <main className={cn("flex-1 bg-white", isLandingOrStandalone ? "pt-0" : "pt-24")}>
+      <main className={cn("flex-1 bg-white", isLandingOrStandalone ? "pt-0" : "pt-16 sm:pt-24")}>
         {children}
       </main>
       <Footer />
