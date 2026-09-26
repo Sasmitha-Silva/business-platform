@@ -148,7 +148,7 @@ export default function ModeratorDirectoryPage() {
     try {
       await submitBusinessDeactivationRequestAction({
         businessId: selectedBizForDeactivation.id,
-        districtNumber: selectedBizForDeactivation.rotaract_profile?.district_number || 3220,
+        districtNumber: selectedBizForDeactivation.rotaract_profile?.district_number || selectedBizForDeactivation.district_number || 0,
         reasonCategory,
         reasonDetails: reasonDetails.trim(),
         evidenceNotes: evidenceNotes.trim() || undefined,
@@ -351,10 +351,10 @@ export default function ModeratorDirectoryPage() {
                   <div className="flex items-center justify-between text-[11px] text-slate-500">
                     <span className="font-medium flex items-center gap-1 truncate max-w-[130px]">
                       <MapPin className="w-3 h-3 text-[#D41367] shrink-0" />
-                      <span className="truncate">{b.location?.city || "Colombo"}</span>
+                      <span className="truncate">{b.location?.city || "Not Specified"}</span>
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      Est. {b.year_established || 2020}
+                      {b.year_established ? `Est. ${b.year_established}` : "—"}
                     </span>
                   </div>
 

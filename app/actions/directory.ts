@@ -166,13 +166,6 @@ export async function getBusinessBySlugAction(slug: string): Promise<Business | 
       return null;
     }
 
-    // Atomically increment impression counter in background
-    try {
-      await supabase.rpc('increment_business_views', { target_slug: slug });
-    } catch {
-      // Silent catch for views counter
-    }
-
     const formatted = {
       ...business,
       location: Array.isArray((business as any).location) ? (business as any).location[0] || null : (business as any).location,
@@ -266,6 +259,11 @@ export async function submitEnquiryAction(formData: {
   message: string;
 }) {
   try {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.fromContact.trim())) {
+      return { success: false, error: 'Please enter a valid email address (e.g. name@domain.com).' };
+    }
+
     const supabase = await createClient();
 
     // 1. Insert into enquiries table

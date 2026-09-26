@@ -147,22 +147,22 @@ export default function HybridRegistrationPage() {
     fullName: "",
     email: "",
     phone: "",
-    clubName: "Rotaract Club of Colombo Central",
-    district: "District 3220",
+    clubName: "",
+    district: "",
     memberId: "",
     password: "",
 
     // Step 2: Enterprise Details & Logos
     businessName: "",
     tagline: "",
-    sector: "Technology & Software",
+    sector: "",
     description: "",
     logoUrl: "",
     bannerUrl: "",
 
     // Step 3: Locations & Contact
     city: "",
-    country: "Sri Lanka",
+    country: "",
     address: "",
     businessEmail: "",
     businessPhone: "",
@@ -261,7 +261,7 @@ export default function HybridRegistrationPage() {
     setFormData((prev) => ({
       ...prev,
       clubName: selectedClubName,
-      district: matched ? matched.district : "District 3220",
+      district: matched ? matched.district : prev.district,
     }));
   };
 
@@ -269,10 +269,22 @@ export default function HybridRegistrationPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const isJpegOrPng =
+      file.type === "image/jpeg" ||
+      file.type === "image/png" ||
+      file.type === "image/jpg" ||
+      !!file.name.match(/\.(jpe?g|png)$/i);
+
+    if (!isJpegOrPng) {
+      setErrorMessage("Please select a JPEG or PNG image file (.jpg, .jpeg, .png).");
+      return;
+    }
+
     // Local preview immediately
     const localUrl = URL.createObjectURL(file);
     setFormData((prev) => ({ ...prev, logoUrl: localUrl }));
     setIsUploadingLogo(true);
+    setErrorMessage("");
 
     try {
       const res = await getUploadUrlAction({
@@ -300,9 +312,21 @@ export default function HybridRegistrationPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const isJpegOrPng =
+      file.type === "image/jpeg" ||
+      file.type === "image/png" ||
+      file.type === "image/jpg" ||
+      !!file.name.match(/\.(jpe?g|png)$/i);
+
+    if (!isJpegOrPng) {
+      setErrorMessage("Please select a JPEG or PNG image file (.jpg, .jpeg, .png).");
+      return;
+    }
+
     const localUrl = URL.createObjectURL(file);
     setFormData((prev) => ({ ...prev, bannerUrl: localUrl }));
     setIsUploadingBanner(true);
+    setErrorMessage("");
 
     try {
       const res = await getUploadUrlAction({
@@ -497,7 +521,7 @@ export default function HybridRegistrationPage() {
                           setFormData({ ...formData, fullName: e.target.value });
                           if (fieldErrors.fullName) setFieldErrors({ ...fieldErrors, fullName: "" });
                         }}
-                        placeholder="e.g. Sasmitha Silva"
+                        placeholder="e.g. John Doe"
                         className={cn(
                           "w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 outline-none transition-all",
                           fieldErrors.fullName
@@ -526,7 +550,7 @@ export default function HybridRegistrationPage() {
                             setFormData({ ...formData, email: e.target.value });
                             if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: "" });
                           }}
-                          placeholder="sasmitha@example.com"
+                          placeholder="e.g. name@domain.com"
                           className={cn(
                             "w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 outline-none transition-all",
                             fieldErrors.email
@@ -763,7 +787,7 @@ export default function HybridRegistrationPage() {
                       <input
                         ref={logoInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/jpg"
                         onChange={handleLogoUpload}
                         className="hidden"
                       />
@@ -786,7 +810,7 @@ export default function HybridRegistrationPage() {
                           <p className="text-xs font-bold text-slate-900 truncate">
                             {formData.logoUrl ? "Logo Selected ✓" : "Upload Brand Logo"}
                           </p>
-                          <p className="text-[10px] text-slate-400 truncate">PNG, JPG or monogram</p>
+                          <p className="text-[10px] text-slate-400 truncate">JPEG or PNG</p>
                         </div>
                       </div>
                     </div>
@@ -800,7 +824,7 @@ export default function HybridRegistrationPage() {
                       <input
                         ref={bannerInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/jpg"
                         onChange={handleBannerUpload}
                         className="hidden"
                       />
@@ -891,7 +915,7 @@ export default function HybridRegistrationPage() {
                           type="text"
                           value={formData.city}
                           onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                          placeholder="e.g. Colombo / Mumbai"
+                          placeholder="e.g. City or Town"
                           className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
                         />
                         <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -904,7 +928,7 @@ export default function HybridRegistrationPage() {
                         type="text"
                         value={formData.country}
                         onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                        placeholder="e.g. Sri Lanka"
+                        placeholder="e.g. Country"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
                       />
                     </div>
@@ -916,7 +940,7 @@ export default function HybridRegistrationPage() {
                       type="text"
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="e.g. Level 14, World Trade Centre, Colombo 01"
+                      placeholder="e.g. 123 Business Boulevard, Suite 100"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
                     />
                   </div>

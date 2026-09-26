@@ -182,7 +182,7 @@ export default function LoginPage() {
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="sasmitha@example.com or RID-89210"
+                    placeholder="member@example.com or RID-89210"
                     className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
                   />
                   <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -254,7 +254,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setEmail("sasmitha@example.com");
+                  setEmail("demo@example.com");
                   setPassword("password123");
                 }}
                 className="text-[11px] font-bold text-slate-500 hover:text-[#D41367] inline-flex items-center gap-1.5 bg-slate-50 hover:bg-pink-50 border border-slate-200 hover:border-pink-200 px-3 py-1.5 rounded-full transition-all cursor-pointer"

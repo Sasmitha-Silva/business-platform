@@ -16,10 +16,19 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getOwnerBusinessAction, getOwnerEnquiriesAction, updateEnquiryStatusAction } from "@/app/actions/owner";
+import {
+  getOwnerBusinessAction,
+  getOwnerEnquiriesAction,
+  updateEnquiryStatusAction,
+  replyToOwnerEnquiryAction,
+} from "@/app/actions/owner";
+
+import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ExtendedEnquiry {
   id: string;
@@ -30,7 +39,7 @@ interface ExtendedEnquiry {
   phone?: string;
   message: string;
   service_requested?: string;
-  status: "new" | "in_progress" | "replied" | "closed";
+  status: "new" | "read" | "replied";
   created_at: string;
   replies?: Array<{
     id: string;
@@ -39,100 +48,100 @@ interface ExtendedEnquiry {
   }>;
 }
 
-const initialEnquiries: ExtendedEnquiry[] = [
-  {
-    id: "enq-1",
-    business_id: "biz-1",
-    from_name: "Rtr. Michael Fernandez",
-    from_contact: "michael@apex-global.com",
-    phone: "+61 412 345 678",
-    from_organization: "Rotaract Club of Sydney Harbour (Dist 9675)",
-    message: "Interested in enterprise cloud infrastructure audit services for our platform. We are scaling our cross-border logistics app and need a comprehensive security & performance review before Q4 launch.",
-    service_requested: "Software Consulting",
-    status: "new",
-    created_at: "Today, 10:45 AM",
-    replies: [],
-  },
-  {
-    id: "enq-2",
-    business_id: "biz-1",
-    from_name: "Rtr. Alisha Fernandez",
-    from_contact: "alisha@studiobloom.design",
-    phone: "+91 98450 12345",
-    from_organization: "Rotaract Club of Bangalore West (Dist 3190)",
-    message: "Looking for a technical API integration partner for our visual design platform. Would like to know your standard hourly rates or milestone packages for backend Node.js / Python engineers.",
-    service_requested: "API Integration",
-    status: "replied",
-    created_at: "Yesterday, 3:20 PM",
-    replies: [
-      {
-        id: "rep-1",
-        text: "Hi Alisha, thank you for reaching out! We sent our standard rate card and integration case studies to your email.",
-        sent_at: "Yesterday, 4:15 PM",
-      },
-    ],
-  },
-  {
-    id: "enq-3",
-    business_id: "biz-1",
-    from_name: "Rtr. Marcus Reed",
-    from_contact: "marcus@founderhouse.co",
-    phone: "+94 77 123 4567",
-    from_organization: "Rotaract District 3220 Secretariat",
-    message: "Need custom web portal development for our upcoming District Assembly. We require attendee registration, QR ticket check-ins, and workshop schedule management.",
-    service_requested: "Web Development",
-    status: "in_progress",
-    created_at: "July 24, 2026",
-    replies: [],
-  },
-  {
-    id: "enq-4",
-    business_id: "biz-1",
-    from_name: "Rtr. Priya Sharma",
-    from_contact: "priya@techinnovations.in",
-    phone: "+91 91234 56789",
-    from_organization: "Rotaract Club of Delhi Central (Dist 3011)",
-    message: "Requesting NDA & quote for custom cross-platform mobile app development. We have Figma wireframes ready and are evaluating vendor capabilities.",
-    service_requested: "App Development",
-    status: "new",
-    created_at: "July 19, 2026",
-    replies: [],
-  },
-  {
-    id: "enq-5",
-    business_id: "biz-1",
-    from_name: "Rtr. David Wilson",
-    from_contact: "david@wilsonenterprises.com",
-    phone: "+1 415 555 0192",
-    from_organization: "Rotary Club of Colombo East",
-    message: "Inquiring about cybersecurity vulnerability audit services for our firm's fintech product lines.",
-    service_requested: "Security Audit",
-    status: "closed",
-    created_at: "July 17, 2026",
-    replies: [
-      {
-        id: "rep-2",
-        text: "Completed initial scoping call. Client opted for annual retainer program.",
-        sent_at: "July 18, 2026",
-      },
-    ],
-  },
-];
-
 const quickTemplates = [
   "Thank you for contacting us! We would love to discuss your project requirements.",
   "We have received your enquiry and our technical team is reviewing specifications.",
   "Let's schedule a 15-minute discovery call to review timeline and pricing.",
 ];
 
+function parseEnquiryMessage(rawMessage: string): {
+  originalMessage: string;
+  replies: Array<{ id: string; text: string; sent_at: string }>;
+} {
+  if (!rawMessage) return { originalMessage: "", replies: [] };
+  const delimiterRegex = /\n\n--- \[Owner Reply • ([^\]]+)\]:\n/g;
+  const parts = rawMessage.split(delimiterRegex);
+
+  const originalMessage = parts[0] ? parts[0].trim() : rawMessage;
+  const replies: Array<{ id: string; text: string; sent_at: string }> = [];
+
+  for (let i = 1; i < parts.length; i += 2) {
+    const rawDate = parts[i];
+    const replyText = parts[i + 1];
+    if (replyText) {
+      const d = new Date(rawDate);
+      const sent_at = isNaN(d.getTime())
+        ? rawDate
+        : d.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+      replies.push({
+        id: `reply-${i}`,
+        text: replyText.trim(),
+        sent_at,
+      });
+    }
+  }
+
+  return { originalMessage, replies };
+}
+
 export default function OwnerEnquiriesPage() {
-  const [enquiries, setEnquiries] = useState<ExtendedEnquiry[]>(initialEnquiries);
+  const [enquiries, setEnquiries] = useState<ExtendedEnquiry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [businessSlug, setBusinessSlug] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [sendingReplyId, setSendingReplyId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoading(true);
+        const biz = await getOwnerBusinessAction();
+        if (biz) {
+          setBusinessSlug(biz.slug);
+          const rawEnquiries = await getOwnerEnquiriesAction(biz.id);
+          const mapped: ExtendedEnquiry[] = (rawEnquiries || []).map((e: any) => {
+            const parsed = parseEnquiryMessage(e.message || "");
+            return {
+              id: e.id,
+              business_id: e.business_id,
+              from_name: e.from_name,
+              from_contact: e.from_contact,
+              from_organization: e.from_organization || "",
+              phone: e.phone || "",
+              message: parsed.originalMessage,
+              service_requested: e.service_requested || "",
+              status: e.status || "new",
+              created_at: new Date(e.created_at).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              replies: parsed.replies,
+            };
+          });
+          setEnquiries(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load enquiries:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   // Filtered inquiries
   const filteredEnquiries = enquiries.filter((e) => {
@@ -143,7 +152,11 @@ export default function OwnerEnquiriesPage() {
       (e.service_requested && e.service_requested.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus =
-      statusFilter === "all" ? true : e.status === statusFilter;
+      statusFilter === "all"
+        ? true
+        : statusFilter === "in_progress" || statusFilter === "read"
+        ? e.status === "read"
+        : e.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -151,40 +164,73 @@ export default function OwnerEnquiriesPage() {
   // KPI Counters
   const totalCount = enquiries.length;
   const newCount = enquiries.filter((e) => e.status === "new").length;
-  const inProgressCount = enquiries.filter((e) => e.status === "in_progress").length;
-  const resolvedCount = enquiries.filter((e) => e.status === "replied" || e.status === "closed").length;
+  const inProgressCount = enquiries.filter((e) => e.status === "read").length;
+  const resolvedCount = enquiries.filter((e) => e.status === "replied").length;
 
-  const handleUpdateStatus = (id: string, newStatus: ExtendedEnquiry["status"]) => {
-    setEnquiries((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
-    );
-    showToast(`Lead marked as ${newStatus.replace("_", " ").toUpperCase()}`);
+  const handleUpdateStatus = async (id: string, newStatus: ExtendedEnquiry["status"]) => {
+    try {
+      setEnquiries((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+      );
+      await updateEnquiryStatusAction({
+        enquiryId: id,
+        status: newStatus as any,
+      });
+      showToast(`Lead marked as ${newStatus.replace("_", " ").toUpperCase()}`);
+    } catch (err) {
+      console.error("Error updating lead status:", err);
+    }
   };
 
-  const handleSendReply = (id: string, recipientName: string) => {
+  const handleSendReply = async (id: string, recipientName: string, recipientContact: string) => {
     const draftText = replyDrafts[id];
     if (!draftText?.trim()) return;
 
-    const newReply = {
-      id: `rep-${Date.now()}`,
-      text: draftText.trim(),
-      sent_at: "Just now",
-    };
+    try {
+      setSendingReplyId(id);
+      const res = await replyToOwnerEnquiryAction({
+        enquiryId: id,
+        replyText: draftText.trim(),
+      });
 
-    setEnquiries((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-            ...item,
-            status: "replied",
-            replies: [...(item.replies || []), newReply],
-          }
-          : item
-      )
-    );
+      if (res.success) {
+        const formattedDate = new Date(res.sentAt || Date.now()).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
 
-    setReplyDrafts((prev) => ({ ...prev, [id]: "" }));
-    showToast(`Reply dispatched to ${recipientName}`);
+        const newReply = {
+          id: `rep-${Date.now()}`,
+          text: draftText.trim(),
+          sent_at: formattedDate,
+        };
+
+        setEnquiries((prev) =>
+          prev.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  status: "replied",
+                  replies: [...(item.replies || []), newReply],
+                }
+              : item
+          )
+        );
+
+        setReplyDrafts((prev) => ({ ...prev, [id]: "" }));
+        showToast(`Reply dispatched and recorded for ${recipientName}`);
+      } else {
+        showToast(res.error || "Failed to dispatch reply.");
+      }
+    } catch (err) {
+      console.error("Error sending reply:", err);
+      showToast("An error occurred while saving your reply.");
+    } finally {
+      setSendingReplyId(null);
+    }
   };
 
   const handleCopyEmail = (id: string, email: string) => {
@@ -257,7 +303,7 @@ export default function OwnerEnquiriesPage() {
           {[
             { id: "all", label: "All Leads" },
             { id: "new", label: "New" },
-            { id: "in_progress", label: "In Progress" },
+            { id: "read", label: "In Progress / Read" },
             { id: "replied", label: "Replied / Closed" },
           ].map((tab) => (
             <button
@@ -275,15 +321,56 @@ export default function OwnerEnquiriesPage() {
       </div>
 
       {/* ================= INQUIRIES STREAM ================= */}
+      {/* ================= INQUIRIES LIST / ACCORDION ================= */}
       <div className="space-y-4">
-        {filteredEnquiries.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-5 w-44 rounded-md" />
+                    <Skeleton className="h-3.5 w-64 rounded-md" />
+                  </div>
+                  <Skeleton className="h-8 w-24 rounded-xl" />
+                </div>
+                <Skeleton className="h-4 w-full rounded-md" />
+              </div>
+            ))}
+          </div>
+        ) : enquiries.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-2xs">
             <div className="w-12 h-12 rounded-2xl bg-pink-50 text-[#D41367] flex items-center justify-center mx-auto border border-pink-100">
               <MessageSquare className="w-6 h-6" />
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900">No Inquiries Found</h3>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">No Inquiries Received Yet</h3>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+              When prospective clients, partners, or fellow Rotaractors submit inquiries from your public profile page, they will arrive here in real time.
+            </p>
+            {businessSlug && (
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 text-xs sm:text-sm font-semibold h-9 px-4 gap-1.5"
+                  asChild
+                >
+                  <Link href={`/business/${businessSlug}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                    <span>View Public Profile</span>
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : filteredEnquiries.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-2xs">
+            <div className="w-12 h-12 rounded-2xl bg-pink-50 text-[#D41367] flex items-center justify-center mx-auto border border-pink-100">
+              <MessageSquare className="w-6 h-6" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">No Inquiries Match Filters</h3>
             <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
-              No prospect messages matched your active search or status filters.
+              No prospect messages matched your active search query or status filter.
             </p>
             <Button
               variant="outline"
@@ -318,18 +405,19 @@ export default function OwnerEnquiriesPage() {
                         {enq.from_name}
                       </h3>
                       <span
-                        className={`text-xs font-semibold px-2.5 py-0.5 rounded-md ${enq.status === "new"
+                        className={`text-xs font-semibold px-2.5 py-0.5 rounded-md ${
+                          enq.status === "new"
                             ? "bg-pink-100 text-[#D41367]"
-                            : enq.status === "in_progress"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-emerald-100 text-emerald-800"
-                          }`}
+                            : enq.status === "read"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-emerald-100 text-emerald-800"
+                        }`}
                       >
                         {enq.status === "new"
                           ? "New Inquiry"
-                          : enq.status === "in_progress"
-                            ? "In Progress"
-                            : "Replied"}
+                          : enq.status === "read"
+                          ? "Read"
+                          : "Replied"}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 font-normal flex items-center gap-1.5 truncate">
@@ -446,13 +534,13 @@ export default function OwnerEnquiriesPage() {
                           New
                         </button>
                         <button
-                          onClick={() => handleUpdateStatus(enq.id, "in_progress")}
-                          className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-colors ${enq.status === "in_progress"
-                              ? "bg-amber-100 text-amber-800 border border-amber-200"
+                          onClick={() => handleUpdateStatus(enq.id, "read")}
+                          className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-colors ${enq.status === "read"
+                              ? "bg-blue-100 text-blue-800 border border-blue-200"
                               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
                             }`}
                         >
-                          In Progress
+                          Mark Read
                         </button>
                         <button
                           onClick={() => handleUpdateStatus(enq.id, "replied")}
@@ -514,12 +602,16 @@ export default function OwnerEnquiriesPage() {
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           size="sm"
-                          disabled={!replyDrafts[enq.id]?.trim()}
-                          onClick={() => handleSendReply(enq.id, enq.from_name)}
+                          disabled={!replyDrafts[enq.id]?.trim() || sendingReplyId === enq.id}
+                          onClick={() => handleSendReply(enq.id, enq.from_name, enq.from_contact)}
                           className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl text-xs sm:text-sm font-semibold h-9 px-4 gap-1.5 shadow-xs disabled:opacity-40 cursor-pointer"
                         >
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Dispatch Reply</span>
+                          {sendingReplyId === enq.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Send className="w-3.5 h-3.5" />
+                          )}
+                          <span>{sendingReplyId === enq.id ? "Dispatching..." : "Dispatch Reply"}</span>
                         </Button>
                       </div>
                     </div>

@@ -9,7 +9,7 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, anonKey);
 const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-async function createAdmin(email = 'admin@rbn.org', password = 'AdminPassword123!', fullName = 'Sasmitha Silva') {
+async function createAdmin(email = 'admin@rbn.org', password = 'AdminPassword123!', fullName = 'System Administrator') {
   console.log(`Creating/Promoting admin user: ${email}...`);
 
   // 1. Sign up user via Auth

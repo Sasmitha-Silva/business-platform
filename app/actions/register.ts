@@ -51,7 +51,7 @@ export async function registerBusinessAction(input: RegisterBusinessInput) {
     // 0. Server-side Input Validation
     if (!input.fullName?.trim()) return { success: false, error: 'Full legal name is required.' };
     if (!input.email?.trim() || !input.email.includes('@')) return { success: false, error: 'A valid email address is required.' };
-    if (!input.password || input.password.length < 6) return { success: false, error: 'Password must be at least 6 characters long.' };
+    if (!input.password || input.password.length < 8) return { success: false, error: 'Password must be at least 8 characters long.' };
     if (!input.phone?.trim()) return { success: false, error: 'Phone number is required.' };
     if (!input.memberId?.trim()) return { success: false, error: 'Rotary Member ID is required.' };
     if (!input.businessName?.trim()) return { success: false, error: 'Enterprise name is required.' };
@@ -98,7 +98,7 @@ export async function registerBusinessAction(input: RegisterBusinessInput) {
       });
     }
 
-    const districtNum = parseInt(input.district.replace(/\D/g, ''), 10) || 3220;
+    const districtNum = parseInt(input.district.replace(/\D/g, ''), 10) || 0;
 
     // 2. Ensure Profile exists in public.profiles
     await adminSupabase.from('profiles').upsert({
@@ -114,23 +114,29 @@ export async function registerBusinessAction(input: RegisterBusinessInput) {
     // 3. Create Rotaract Profile
     await adminSupabase.from('rotaract_profiles').upsert({
       user_id: userId,
-      club_name: input.clubName,
+      club_name: input.clubName || 'Rotaract Club',
       district_number: districtNum,
       rotary_id: input.memberId?.trim() || null,
       is_active_member: true,
     });
 
     // 4. Find Category ID
-    let categoryId = 'c1000000-0000-0000-0000-000000000004'; // Default Technology
-    const { data: matchedCategory } = await supabase
-      .from('categories')
-      .select('id')
-      .ilike('name', `%${input.sector.split('&')[0].trim()}%`)
-      .limit(1)
-      .maybeSingle();
+    let categoryId: string | null = null;
+    if (input.sector?.trim()) {
+      const { data: matchedCategory } = await supabase
+        .from('categories')
+        .select('id')
+        .ilike('name', `%${input.sector.split('&')[0].trim()}%`)
+        .limit(1)
+        .maybeSingle();
 
-    if (matchedCategory) {
-      categoryId = matchedCategory.id;
+      if (matchedCategory) {
+        categoryId = matchedCategory.id;
+      }
+    }
+    if (!categoryId) {
+      const { data: firstCat } = await supabase.from('categories').select('id').limit(1).maybeSingle();
+      if (firstCat) categoryId = firstCat.id;
     }
 
     // 5. Generate unique slug
@@ -177,11 +183,11 @@ export async function registerBusinessAction(input: RegisterBusinessInput) {
     // 7. Insert Business Location
     await supabase.from('business_locations').insert({
       business_id: business.id,
-      city: input.city.trim(),
-      country: input.country.trim() || 'Sri Lanka',
-      address: input.address?.trim() || `${input.city}, ${input.country}`,
-      state: 'Western',
-      district: input.district,
+      city: input.city?.trim() || 'Not Specified',
+      country: input.country?.trim() || 'Not Specified',
+      address: input.address?.trim() || (input.city ? `${input.city}, ${input.country || ''}`.trim() : 'Not Specified'),
+      state: 'Not Specified',
+      district: input.district?.trim() || 'Not Assigned',
     });
 
     // 8. Insert Business Contact & Social Channels

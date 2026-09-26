@@ -40,7 +40,7 @@ export default function ModeratorSettingsPage() {
               District Moderator Profile &amp; Security
             </h1>
             <span className="px-2.5 py-0.5 rounded-md bg-pink-50 text-[#D41367] font-semibold text-xs border border-pink-100/60">
-              District 3220 Secretariat
+              District Secretariat
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
@@ -51,7 +51,7 @@ export default function ModeratorSettingsPage() {
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Active Commission (2026-27)</span>
+            <span>Active Commission</span>
           </div>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function ModeratorSettingsPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs sm:text-sm font-semibold text-slate-700">Full Name *</Label>
                 <Input
-                  defaultValue="Ptr. Dilshan Wickremasinghe"
+                  placeholder="e.g. Officer Name"
                   className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
                 />
               </div>
@@ -80,14 +80,14 @@ export default function ModeratorSettingsPage() {
                 <div className="space-y-1.5">
                   <Label className="text-xs sm:text-sm font-semibold text-slate-700">Official Email</Label>
                   <Input
-                    defaultValue="dilshan@rotaract3220.org"
+                    placeholder="moderator@rotaract.org"
                     className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs sm:text-sm font-semibold text-slate-700">Direct Contact</Label>
                   <Input
-                    defaultValue="+94 77 123 4567"
+                    placeholder="+1 555 019 2831"
                     className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
                   />
                 </div>
@@ -97,7 +97,7 @@ export default function ModeratorSettingsPage() {
                 <div className="space-y-1.5">
                   <Label className="text-xs sm:text-sm font-semibold text-slate-700">Assigned District</Label>
                   <Input
-                    defaultValue="District 3220 (Sri Lanka & Maldives)"
+                    defaultValue="Assigned District Secretariat"
                     readOnly
                     className="h-10 text-xs sm:text-sm bg-slate-100/70 border-slate-200 rounded-xl text-slate-600 font-semibold cursor-not-allowed"
                   />
@@ -105,7 +105,7 @@ export default function ModeratorSettingsPage() {
                 <div className="space-y-1.5">
                   <Label className="text-xs sm:text-sm font-semibold text-slate-700">Home Rotaract Club</Label>
                   <Input
-                    defaultValue="Rotaract Club of Colombo Central"
+                    placeholder="e.g. Your Rotaract Club"
                     className="h-10 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
                   />
                 </div>

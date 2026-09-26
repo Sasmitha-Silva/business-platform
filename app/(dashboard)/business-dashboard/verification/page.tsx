@@ -20,10 +20,18 @@ import {
   FileCheck,
   Download,
   Info,
+  Loader2,
+  RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getOwnerBusinessAction, submitVerificationDocumentAction } from "@/app/actions/owner";
-import { getUploadUrlAction } from "@/app/actions/storage";
+import { cn } from "@/lib/utils";
+import {
+  getOwnerBusinessAction,
+  submitVerificationDocumentAction,
+  deleteVerificationDocumentAction,
+} from "@/app/actions/owner";
+import { getUploadUrlAction, getPrivateDocumentUrlAction } from "@/app/actions/storage";
 import type { VerificationDocType } from "@/lib/types";
 
 interface VerificationDoc {
@@ -34,6 +42,8 @@ interface VerificationDoc {
   description: string;
   status: "approved" | "rejected" | "pending" | "not_uploaded";
   feedback?: string;
+  dbId?: string;
+  fileKey?: string;
   fileName?: string;
   uploadedAt?: string;
   fileSize?: string;
@@ -73,16 +83,34 @@ const initialDocs: VerificationDoc[] = [
 export default function VerificationUploadsPage() {
   const [docs, setDocs] = useState<VerificationDoc[]>(initialDocs);
   const [businessId, setBusinessId] = useState<string>("");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [verificationLevel, setVerificationLevel] = useState<number>(0);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "warning" | "error";
+  } | null>(null);
   const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
+  const [viewingDocId, setViewingDocId] = useState<string | null>(null);
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
+  const [confirmDeleteDocId, setConfirmDeleteDocId] = useState<string | null>(null);
+  const [dragOverDocId, setDragOverDocId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentUploadTarget, setCurrentUploadTarget] = useState<VerificationDoc | null>(null);
+
+  const approvedDocs = docs.filter((d) => d.status === "approved").length;
+  const pendingDocs = docs.filter((d) => d.status === "pending").length;
+  const rejectedDocs = docs.filter((d) => d.status === "rejected").length;
+  const criteriaPercent = Math.round((approvedDocs / 3) * 100);
+
+  const gstDoc = docs.find((d) => d.docType === "gst");
+  const drrDoc = docs.find((d) => d.docType === "drr");
+  const udyamDoc = docs.find((d) => d.docType === "udyam");
 
   useEffect(() => {
     async function loadBiz() {
       const biz = await getOwnerBusinessAction();
       if (biz) {
         setBusinessId(biz.id);
+        setVerificationLevel(biz.verification_level || 0);
         if (biz.verification_documents && biz.verification_documents.length > 0) {
           setDocs((prev) =>
             prev.map((d) => {
@@ -90,8 +118,11 @@ export default function VerificationUploadsPage() {
               if (matched) {
                 return {
                   ...d,
+                  dbId: matched.id,
                   status: matched.status as any,
                   fileName: matched.file_name || d.fileName,
+                  fileKey: matched.file_key,
+                  fileSize: matched.file_size ? `${(matched.file_size / (1024 * 1024)).toFixed(1)} MB` : d.fileSize,
                   feedback: matched.rejection_reason || undefined,
                   uploadedAt: matched.created_at ? new Date(matched.created_at).toLocaleDateString() : d.uploadedAt,
                 };
@@ -113,77 +144,208 @@ export default function VerificationUploadsPage() {
     }
   };
 
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !currentUploadTarget) return;
+  const processFileUpload = async (file: File, targetDoc: VerificationDoc) => {
+    // 1. Validation - Strictly PDF only
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+      showToast("Invalid file format: Only PDF documents (.pdf) are allowed.", "warning");
+      return;
+    }
 
-    setUploadingDocId(currentUploadTarget.id);
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("File size limit exceeded: Document must be under 10MB.", "warning");
+      return;
+    }
+
+    setUploadingDocId(targetDoc.id);
 
     try {
-      // 1. Get presigned R2 upload URL
-      const res = await getUploadUrlAction({
-        filename: file.name,
-        contentType: file.type || "application/pdf",
-        folder: "documents",
-      });
+      let finalKey = "";
 
-      if (res.success && res.uploadUrl && res.key) {
-        // 2. Direct upload to R2
-        await fetch(res.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type || "application/pdf" },
-          body: file,
+      // 1. Get presigned R2 upload URL
+      try {
+        const res = await getUploadUrlAction({
+          filename: file.name,
+          contentType: "application/pdf",
+          folder: "documents",
         });
 
-        // 3. Save record in Supabase
-        if (businessId) {
-          await submitVerificationDocumentAction({
-            businessId,
-            docType: currentUploadTarget.docType,
-            fileKey: res.key,
-            fileName: file.name,
-            fileSize: file.size,
-            mimeType: file.type,
+        if (res.success && res.uploadUrl && res.key) {
+          const putRes = await fetch(res.uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": "application/pdf" },
+            body: file,
           });
+          if (putRes.ok) {
+            finalKey = res.key;
+          }
         }
+      } catch (presignedErr) {
+        console.warn("Direct R2 presigned upload failed, falling back to server route:", presignedErr);
+      }
 
-        setDocs((prev) =>
-          prev.map((d) =>
-            d.id === currentUploadTarget.id
-              ? {
+      // Fallback to server route if direct presigned failed
+      if (!finalKey) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "documents");
+        const apiRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await apiRes.json();
+        if (data.success && data.key) {
+          finalKey = data.key;
+        } else {
+          throw new Error(data.error || "Failed to upload document.");
+        }
+      }
+
+      // 3. Save record in Supabase
+      let savedDbId: string | undefined = undefined;
+      if (businessId && finalKey) {
+        const docRes = await submitVerificationDocumentAction({
+          businessId,
+          docType: targetDoc.docType,
+          fileKey: finalKey,
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: "application/pdf",
+        });
+        if (docRes.success && docRes.document) {
+          savedDbId = docRes.document.id;
+        }
+      }
+
+      setDocs((prev) =>
+        prev.map((d) =>
+          d.id === targetDoc.id
+            ? {
                 ...d,
+                dbId: savedDbId,
                 status: "pending",
                 fileName: file.name,
+                fileKey: finalKey,
                 uploadedAt: "Just now",
                 fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
                 feedback: undefined,
               }
-              : d
-          )
-        );
-        showToast(`Document "${file.name}" uploaded successfully. Sent for moderator audit.`);
-      }
-    } catch (err) {
+            : d
+        )
+      );
+      showToast(`Document "${file.name}" uploaded successfully. Sent for verification review.`, "success");
+    } catch (err: any) {
       console.error("Failed to upload verification document:", err);
-      showToast("Upload failed. Please try again.");
+      showToast(err?.message || "Upload failed. Please try again.", "error");
     } finally {
       setUploadingDocId(null);
       setCurrentUploadTarget(null);
+      setDragOverDocId(null);
     }
   };
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+  const handleViewDocument = async (doc: VerificationDoc) => {
+    if (!doc.fileKey) {
+      showToast("Document preview link is not available.", "warning");
+      return;
+    }
+    setViewingDocId(doc.id);
+    try {
+      const res = await getPrivateDocumentUrlAction(doc.fileKey);
+      if (res.success && res.downloadUrl) {
+        window.open(res.downloadUrl, "_blank", "noopener,noreferrer");
+      } else {
+        showToast(res.error || "Failed to generate document preview link.", "error");
+      }
+    } catch (err) {
+      console.error("Failed to view document:", err);
+      showToast("Failed to open document preview.", "error");
+    } finally {
+      setViewingDocId(null);
+    }
+  };
+
+  const handleDeleteDocument = async (doc: VerificationDoc) => {
+    if (!businessId) return;
+    setDeletingDocId(doc.id);
+    try {
+      const res = await deleteVerificationDocumentAction({
+        businessId,
+        docType: doc.docType,
+        fileKey: doc.fileKey,
+        documentId: doc.dbId,
+      });
+
+      if (res.success) {
+        setDocs((prev) =>
+          prev.map((d) =>
+            d.id === doc.id
+              ? {
+                  ...d,
+                  dbId: undefined,
+                  status: "not_uploaded",
+                  fileName: undefined,
+                  fileKey: undefined,
+                  fileSize: undefined,
+                  uploadedAt: undefined,
+                  feedback: undefined,
+                }
+              : d
+          )
+        );
+        showToast(`Document removed. You can now upload a new PDF.`, "success");
+      } else {
+        showToast(res.error || "Failed to delete document.", "error");
+      }
+    } catch (err) {
+      console.error("Failed to delete document:", err);
+      showToast("Failed to delete document.", "error");
+    } finally {
+      setDeletingDocId(null);
+      setConfirmDeleteDocId(null);
+    }
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && currentUploadTarget) {
+      processFileUpload(file, currentUploadTarget);
+    }
+  };
+
+  const showToast = (
+    msg: string,
+    type: "success" | "warning" | "error" = "success"
+  ) => {
+    setToast({ message: msg, type });
+    setTimeout(() => setToast(null), 4000);
   };
 
   return (
     <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
       {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
+      {toast && (
+        <div
+          className={cn(
+            "fixed bottom-6 right-6 z-50 text-xs sm:text-sm font-semibold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-3 duration-200 border",
+            toast.type === "warning" &&
+              "bg-amber-950 text-amber-200 border-amber-500/50 shadow-amber-950/40 ring-1 ring-amber-500/20",
+            toast.type === "error" &&
+              "bg-rose-950 text-rose-200 border-rose-500/50 shadow-rose-950/40 ring-1 ring-rose-500/20",
+            toast.type === "success" &&
+              "bg-slate-900 text-white border-slate-700 shadow-slate-900/30"
+          )}
+        >
+          {toast.type === "warning" && (
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+          )}
+          {toast.type === "error" && (
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+          )}
+          {toast.type === "success" && (
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          )}
+          <span>{toast.message}</span>
         </div>
       )}
 
@@ -194,9 +356,23 @@ export default function VerificationUploadsPage() {
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               Business Verification &amp; Accreditation
             </h1>
-            <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold text-xs border border-amber-200">
-              Silver Tier Active
-            </span>
+            {verificationLevel === 3 ? (
+              <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-semibold text-xs border border-emerald-200">
+                Gold Enterprise Active
+              </span>
+            ) : verificationLevel === 2 ? (
+              <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold text-xs border border-amber-200">
+                Silver Tier Active
+              </span>
+            ) : verificationLevel === 1 ? (
+              <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-800 font-semibold text-xs border border-blue-200">
+                Bronze Tier Active
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200">
+                Standard Listing (Tier 0)
+              </span>
+            )}
           </div>
           <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
             Upload official business credentials to earn verified Rotaract trust badges and rank higher across search results.
@@ -204,10 +380,27 @@ export default function VerificationUploadsPage() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-3.5 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold">
-            <AlertCircle className="w-4 h-4 text-red-600" />
-            <span>2 Documents Require Re-upload</span>
-          </div>
+          {rejectedDocs > 0 ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-3.5 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold">
+              <AlertCircle className="w-4 h-4 text-red-600" />
+              <span>{rejectedDocs} Document{rejectedDocs > 1 ? "s" : ""} Require Re-upload</span>
+            </div>
+          ) : pendingDocs > 0 ? (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3.5 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold">
+              <Clock className="w-4 h-4 text-blue-600" />
+              <span>{pendingDocs} Document{pendingDocs > 1 ? "s" : ""} Under Review</span>
+            </div>
+          ) : approvedDocs === 3 ? (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>All Documents Verified</span>
+            </div>
+          ) : (
+            <div className="bg-slate-50 border border-slate-200 text-slate-600 px-3.5 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold">
+              <ShieldCheck className="w-4 h-4 text-[#D41367]" />
+              <span>Tier Upgrade Available</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -219,57 +412,141 @@ export default function VerificationUploadsPage() {
               Accreditation Tier Roadmap
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
-              Complete document submissions to advance from Silver to Gold Enterprise Tier.
+              Submit verified credentials to earn badges and unlock higher directory visibility.
             </p>
           </div>
           <span className="text-xs sm:text-sm font-semibold text-[#D41367]">
-            2 of 3 Criteria Met (67%)
+            {approvedDocs} of 3 Criteria Met ({criteriaPercent}%)
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Bronze Tier */}
-          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
+          <div
+            className={`p-4 rounded-xl border space-y-2 ${
+              verificationLevel === 1
+                ? "border-blue-400 bg-blue-50/40"
+                : gstDoc?.status === "approved"
+                ? "border-emerald-200 bg-emerald-50/30"
+                : "border-slate-200 bg-slate-50/70"
+            }`}
+          >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tier 1</span>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Completed</span>
+              <span
+                className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md ${
+                  gstDoc?.status === "approved"
+                    ? "text-emerald-700 bg-emerald-50 border border-emerald-200"
+                    : gstDoc?.status === "pending"
+                    ? "text-blue-700 bg-blue-50 border border-blue-200"
+                    : gstDoc?.status === "rejected"
+                    ? "text-red-700 bg-red-50 border border-red-200"
+                    : "text-slate-500 bg-slate-200/60"
+                }`}
+              >
+                {gstDoc?.status === "approved" && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                {gstDoc?.status === "pending" && <Clock className="w-3.5 h-3.5 text-blue-600" />}
+                {gstDoc?.status === "rejected" && <AlertTriangle className="w-3.5 h-3.5 text-red-600" />}
+                <span>
+                  {gstDoc?.status === "approved"
+                    ? "Completed"
+                    : gstDoc?.status === "pending"
+                    ? "Under Review"
+                    : gstDoc?.status === "rejected"
+                    ? "Action Required"
+                    : "Upload Required"}
+                </span>
               </span>
             </div>
             <h4 className="text-sm sm:text-base font-bold text-slate-900">Bronze Listing</h4>
             <p className="text-xs text-slate-500 font-normal leading-relaxed">
-              Email &amp; rotary contact verified. Listed on district directory index.
+              Business registration or tax certificate approved. Active badge on directory card.
             </p>
           </div>
 
           {/* Silver Tier */}
-          <div className="p-4 rounded-xl border-2 border-amber-300 bg-amber-50/40 space-y-2 relative">
+          <div
+            className={`p-4 rounded-xl border space-y-2 ${
+              verificationLevel === 2
+                ? "border-amber-400 bg-amber-50/40"
+                : drrDoc?.status === "approved"
+                ? "border-emerald-200 bg-emerald-50/30"
+                : "border-slate-200 bg-slate-50/70"
+            }`}
+          >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">Tier 2 (Current)</span>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
-                <span>Active</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tier 2</span>
+              <span
+                className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md ${
+                  drrDoc?.status === "approved"
+                    ? "text-emerald-700 bg-emerald-50 border border-emerald-200"
+                    : drrDoc?.status === "pending"
+                    ? "text-blue-700 bg-blue-50 border border-blue-200"
+                    : drrDoc?.status === "rejected"
+                    ? "text-red-700 bg-red-50 border border-red-200"
+                    : "text-slate-500 bg-slate-200/60"
+                }`}
+              >
+                {drrDoc?.status === "approved" && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                {drrDoc?.status === "pending" && <Clock className="w-3.5 h-3.5 text-blue-600" />}
+                {drrDoc?.status === "rejected" && <AlertTriangle className="w-3.5 h-3.5 text-red-600" />}
+                <span>
+                  {drrDoc?.status === "approved"
+                    ? "Completed"
+                    : drrDoc?.status === "pending"
+                    ? "Under Review"
+                    : drrDoc?.status === "rejected"
+                    ? "Action Required"
+                    : "Upload Required"}
+                </span>
               </span>
             </div>
             <h4 className="text-sm sm:text-base font-bold text-slate-900">Silver Certified</h4>
-            <p className="text-xs text-slate-600 font-normal leading-relaxed">
-              DRR letter &amp; tax proof approved. Certified badge &amp; direct messaging enabled.
+            <p className="text-xs text-slate-500 font-normal leading-relaxed">
+              Official DRR or Rotary Club president endorsement approved.
             </p>
           </div>
 
           {/* Gold Tier */}
-          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
+          <div
+            className={`p-4 rounded-xl border space-y-2 ${
+              verificationLevel === 3
+                ? "border-emerald-400 bg-emerald-50/40"
+                : udyamDoc?.status === "approved"
+                ? "border-emerald-200 bg-emerald-50/30"
+                : "border-slate-200 bg-slate-50/70"
+            }`}
+          >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tier 3 (Next Goal)</span>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded-md">
-                <Clock className="w-3.5 h-3.5 text-slate-500" />
-                <span>Pending Review</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tier 3</span>
+              <span
+                className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md ${
+                  udyamDoc?.status === "approved"
+                    ? "text-emerald-700 bg-emerald-50 border border-emerald-200"
+                    : udyamDoc?.status === "pending"
+                    ? "text-blue-700 bg-blue-50 border border-blue-200"
+                    : udyamDoc?.status === "rejected"
+                    ? "text-red-700 bg-red-50 border border-red-200"
+                    : "text-slate-500 bg-slate-200/60"
+                }`}
+              >
+                {udyamDoc?.status === "approved" && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                {udyamDoc?.status === "pending" && <Clock className="w-3.5 h-3.5 text-blue-600" />}
+                {udyamDoc?.status === "rejected" && <AlertTriangle className="w-3.5 h-3.5 text-red-600" />}
+                <span>
+                  {udyamDoc?.status === "approved"
+                    ? "Completed"
+                    : udyamDoc?.status === "pending"
+                    ? "Under Review"
+                    : udyamDoc?.status === "rejected"
+                    ? "Action Required"
+                    : "Upload Required"}
+                </span>
               </span>
             </div>
             <h4 className="text-sm sm:text-base font-bold text-slate-900">Gold Enterprise</h4>
             <p className="text-xs text-slate-500 font-normal leading-relaxed">
-              MSME Registry approved. Top homepage spotlights &amp; buyer RFQ priority.
+              MSME / national enterprise certification approved. Homepage spotlight priority.
             </p>
           </div>
         </div>
@@ -287,10 +564,10 @@ export default function VerificationUploadsPage() {
             <div
               key={doc.id}
               className={`bg-white rounded-2xl border p-5 sm:p-6 shadow-2xs flex flex-col justify-between space-y-5 transition-all ${isRejected
-                  ? "border-red-200 hover:border-red-300"
-                  : isPending
-                    ? "border-blue-200 hover:border-blue-300"
-                    : "border-emerald-200 hover:border-emerald-300"
+                ? "border-red-200 hover:border-red-300"
+                : isPending
+                  ? "border-blue-200 hover:border-blue-300"
+                  : "border-emerald-200 hover:border-emerald-300"
                 }`}
             >
               <div className="space-y-4">
@@ -298,10 +575,10 @@ export default function VerificationUploadsPage() {
                 <div className="flex items-center justify-between">
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${isRejected
-                        ? "bg-red-50 text-red-600 border border-red-100"
-                        : isPending
-                          ? "bg-blue-50 text-blue-600 border border-blue-100"
-                          : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                      ? "bg-red-50 text-red-600 border border-red-100"
+                      : isPending
+                        ? "bg-blue-50 text-blue-600 border border-blue-100"
+                        : "bg-emerald-50 text-emerald-600 border border-emerald-100"
                       }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -369,10 +646,16 @@ export default function VerificationUploadsPage() {
                     </div>
                     <button
                       type="button"
-                      title="View file details"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors shrink-0 cursor-pointer"
+                      title="View PDF Document"
+                      onClick={() => handleViewDocument(doc)}
+                      disabled={viewingDocId === doc.id}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-[#D41367] hover:bg-pink-50 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
                     >
-                      <Eye className="w-4 h-4" />
+                      {viewingDocId === doc.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#D41367]" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 )}
@@ -380,32 +663,182 @@ export default function VerificationUploadsPage() {
 
               {/* Action / Upload Area */}
               <div>
-                {isRejected || doc.status === "not_uploaded" ? (
+                {confirmDeleteDocId === doc.id ? (
+                  <div className="rounded-xl border border-red-200 bg-red-50/70 p-3.5 space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-red-800">
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>Delete this document?</span>
+                    </div>
+                    <p className="text-[11px] text-red-700 font-normal leading-relaxed">
+                      This will remove the current document so you can submit a new PDF file.
+                    </p>
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setConfirmDeleteDocId(null)}
+                        disabled={deletingDocId === doc.id}
+                        className="h-8 text-xs rounded-xl border-slate-300 text-slate-700 hover:bg-white cursor-pointer flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleDeleteDocument(doc)}
+                        disabled={deletingDocId === doc.id}
+                        className="h-8 text-xs rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold cursor-pointer flex-1 gap-1.5"
+                      >
+                        {deletingDocId === doc.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                        <span>{deletingDocId === doc.id ? "Deleting..." : "Confirm Delete"}</span>
+                      </Button>
+                    </div>
+                  </div>
+                ) : uploadingDocId === doc.id ? (
+                  <div className="border border-dashed border-[#D41367] bg-pink-50/50 rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center animate-pulse">
+                    <Loader2 className="w-6 h-6 animate-spin text-[#D41367]" />
+                    <span className="text-xs font-semibold text-slate-800">Uploading document</span>
+                    <span className="text-[10px] text-slate-400">Please wait a moment...</span>
+                  </div>
+                ) : doc.status === "not_uploaded" ? (
                   <div
                     onClick={() => handleUploadClick(doc)}
-                    className="border border-dashed border-pink-300 hover:border-[#D41367] rounded-xl p-4 text-center bg-pink-50/30 hover:bg-pink-50/60 transition-all cursor-pointer space-y-1 group"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverDocId(doc.id);
+                    }}
+                    onDragLeave={() => setDragOverDocId(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOverDocId(null);
+                      const dropped = e.dataTransfer.files?.[0];
+                      if (dropped) processFileUpload(dropped, doc);
+                    }}
+                    className={`border border-dashed rounded-xl p-4 text-center transition-all cursor-pointer space-y-1.5 group ${
+                      dragOverDocId === doc.id
+                        ? "border-[#D41367] bg-pink-100/60 scale-[1.01]"
+                        : "border-slate-300 hover:border-[#D41367] bg-slate-50/70 hover:bg-pink-50/30"
+                    }`}
                   >
-                    <Upload className="w-5 h-5 text-[#D41367] mx-auto group-hover:scale-110 transition-transform" />
-                    <p className="text-xs sm:text-sm font-semibold text-[#D41367]">
-                      {uploadingDocId === doc.id ? "Uploading to R2" : "Click to Upload Document"}
+                    <div className="w-8 h-8 rounded-lg bg-white text-[#D41367] shadow-2xs flex items-center justify-center mx-auto border border-slate-200 group-hover:scale-105 transition-transform">
+                      <Upload className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-[#D41367] transition-colors leading-tight">
+                      Click or drag PDF to upload
                     </p>
-                    <p className="text-xs text-slate-400 font-normal">PDF, JPG, PNG up to 10MB</p>
+                    <p className="text-[10px] text-slate-400 font-normal leading-tight">
+                      PDF only up to 10MB
+                    </p>
                   </div>
                 ) : isPending ? (
-                  <Button
-                    disabled
-                    className="w-full bg-slate-100 text-slate-500 border border-slate-200 rounded-xl h-10 text-xs sm:text-sm font-semibold"
-                  >
-                    <Lock className="w-3.5 h-3.5 mr-1.5" /> Under Moderator Review
-                  </Button>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-blue-50/60 border border-blue-200 text-blue-800 text-xs font-medium">
+                      <span className="flex items-center gap-1.5 font-semibold">
+                        <Clock className="w-3.5 h-3.5 text-blue-600" /> Under Review
+                      </span>
+                      <span className="text-[10px] text-blue-600 font-medium">Audit in progress</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => handleViewDocument(doc)}
+                        disabled={viewingDocId === doc.id}
+                        variant="outline"
+                        className="rounded-xl text-xs font-semibold border-slate-200 hover:border-[#D41367] text-slate-700 hover:text-[#D41367] hover:bg-pink-50/40 gap-1.5 h-9 cursor-pointer"
+                      >
+                        {viewingDocId === doc.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Eye className="w-3.5 h-3.5" />
+                        )}
+                        <span>View</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setConfirmDeleteDocId(doc.id)}
+                        variant="outline"
+                        className="rounded-xl text-xs font-semibold border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50/60 gap-1.5 h-9 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </Button>
+                    </div>
+                  </div>
+                ) : isRejected ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-red-50/60 border border-red-200 text-red-800 text-xs font-medium">
+                      <span className="flex items-center gap-1.5 font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5 text-red-600" /> Rejected
+                      </span>
+                      <span className="text-[10px] text-red-600 font-medium">Action required</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {doc.fileName && (
+                        <Button
+                          type="button"
+                          onClick={() => handleViewDocument(doc)}
+                          disabled={viewingDocId === doc.id}
+                          variant="outline"
+                          className="rounded-xl text-xs font-semibold border-slate-200 hover:border-[#D41367] text-slate-700 hover:text-[#D41367] hover:bg-pink-50/40 gap-1.5 h-9 cursor-pointer"
+                        >
+                          {viewingDocId === doc.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" />
+                          )}
+                          <span>View</span>
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        onClick={() => setConfirmDeleteDocId(doc.id)}
+                        variant="outline"
+                        className={`${doc.fileName ? "" : "col-span-2 "}rounded-xl text-xs font-semibold border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50/60 gap-1.5 h-9 cursor-pointer`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete &amp; Re-upload</span>
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-xl border-emerald-200 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-50 h-10 text-xs sm:text-sm font-semibold gap-1.5"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Document Approved</span>
-                  </Button>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-50/70 border border-emerald-200 text-emerald-800 text-xs font-medium">
+                      <span className="flex items-center gap-1.5 font-semibold">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Verified Credential
+                      </span>
+                      <span className="text-[10px] text-emerald-700 font-medium">Accreditation active</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => handleViewDocument(doc)}
+                        disabled={viewingDocId === doc.id}
+                        variant="outline"
+                        className="rounded-xl text-xs font-semibold border-slate-200 hover:border-[#D41367] text-slate-700 hover:text-[#D41367] hover:bg-pink-50/40 gap-1.5 h-9 cursor-pointer"
+                      >
+                        {viewingDocId === doc.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Eye className="w-3.5 h-3.5" />
+                        )}
+                        <span>View</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setConfirmDeleteDocId(doc.id)}
+                        variant="outline"
+                        className="rounded-xl text-xs font-semibold border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50/60 gap-1.5 h-9 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -418,7 +851,7 @@ export default function VerificationUploadsPage() {
         type="file"
         ref={fileInputRef}
         onChange={handleFileSelected}
-        accept=".pdf,.png,.jpg,.jpeg"
+        accept="application/pdf,.pdf"
         className="hidden"
       />
 

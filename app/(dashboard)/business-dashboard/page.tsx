@@ -22,6 +22,10 @@ import {
   Globe,
   ShoppingBag,
   Plus,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
@@ -86,7 +90,10 @@ export default function OwnerDashboardPage() {
 
   const handleCopyLink = () => {
     if (!business?.slug) return;
-    navigator.clipboard.writeText(`https://rotaractnetwork.org/business/${business.slug}`);
+    const origin = typeof window !== "undefined" && window.location.origin
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_SITE_URL || "https://rotaractnetwork.org");
+    navigator.clipboard.writeText(`${origin}/business/${business.slug}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -190,6 +197,27 @@ export default function OwnerDashboardPage() {
                 {business.name}
               </h1>
               <VerificationBadge level={business.verification_level} size="sm" />
+              {business.status === "approved" ? (
+                <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold text-xs border border-emerald-200/80 inline-flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Active Listing
+                </span>
+              ) : business.status === "pending_review" || business.status === "draft" ? (
+                <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-700 font-semibold text-xs border border-amber-200/80 inline-flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-amber-600" />
+                  Pending Review
+                </span>
+              ) : business.status === "rejected" ? (
+                <span className="px-2.5 py-0.5 rounded-md bg-rose-50 text-rose-700 font-semibold text-xs border border-rose-200/80 inline-flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 text-rose-600" />
+                  Needs Revision
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 inline-flex items-center gap-1">
+                  <ShieldAlert className="w-3 h-3 text-slate-500" />
+                  {business.status || "Unpublished"}
+                </span>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-500 font-normal">
               <span className="px-2 py-0.5 rounded-md bg-pink-50 text-[#D41367] font-semibold text-xs border border-pink-100/60">
@@ -197,23 +225,36 @@ export default function OwnerDashboardPage() {
               </span>
               <span className="flex items-center gap-1 font-medium ml-1">
                 <MapPin className="w-3.5 h-3.5 text-[#D41367]" />
-                {business.location?.city || "Nationwide"}, Dist {business.rotaract_profile?.district_number || "3220"}
+                {business.location?.city || "Nationwide"}, Dist {(business as any).owner?.rotaract_profile?.district_number || (business as any).rotaract_profile?.district_number || business.district_number || "3220"}
               </span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          <Button
-            variant="outline"
-            className="rounded-xl text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900 gap-2 h-9.5 px-3.5"
-            asChild
-          >
-            <Link href={`/business/${business.slug}`} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-              <span>Public View</span>
-            </Link>
-          </Button>
+          {business.status === "approved" ? (
+            <Button
+              variant="outline"
+              className="rounded-xl text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900 gap-2 h-9.5 px-3.5"
+              asChild
+            >
+              <Link href={`/business/${business.slug}`} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                <span>Public View</span>
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              className="rounded-xl text-xs sm:text-sm font-semibold text-amber-800 border-amber-300 bg-amber-50/50 hover:bg-amber-100/70 gap-2 h-9.5 px-3.5"
+              asChild
+            >
+              <Link href={`/business/${business.slug}`} target="_blank" rel="noopener noreferrer">
+                <Eye className="w-3.5 h-3.5 text-amber-600" />
+                <span>Preview Listing (Draft)</span>
+              </Link>
+            </Button>
+          )}
 
           <Button
             className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl text-xs sm:text-sm font-semibold gap-2 h-9.5 px-4 shadow-xs"
@@ -227,93 +268,207 @@ export default function OwnerDashboardPage() {
         </div>
       </div>
 
+      {/* Notice Banner for Pending or Rejected Status */}
+      {(business.status === "pending_review" || business.status === "draft") && (
+        <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0 text-amber-700">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-amber-950">Registration Under Administrative Review</h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 uppercase">
+                  Pending District Approval
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Your enterprise profile is being verified by District 3220 administrators. You can use &ldquo;Preview Listing (Draft)&rdquo; above to inspect how your profile looks. It will automatically become discoverable to the public once approved.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="rounded-xl border-amber-300 bg-white hover:bg-amber-100 text-amber-900 text-xs shrink-0 font-semibold self-start md:self-auto cursor-pointer"
+          >
+            <Link href="/business-dashboard/verification">Check Verifications</Link>
+          </Button>
+        </div>
+      )}
+
+      {business.status === "rejected" && (
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-100 border border-rose-300 flex items-center justify-center shrink-0 text-rose-700">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-rose-950">Action Required: Listing Review Notice</h3>
+              <p className="text-xs text-rose-800 mt-0.5">
+                Your business listing requires adjustments before it can be published to the directory. Please review your submitted documents and profile details.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            asChild
+            className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs shrink-0 font-semibold self-start md:self-auto cursor-pointer"
+          >
+            <Link href="/business-dashboard/edit-profile">Update Profile</Link>
+          </Button>
+        </div>
+      )}
+
       {/* ================= 4 METRIC STAT CARDS ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Directory Impressions */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-2 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-medium text-slate-500">Directory Impressions</span>
-            <div className="w-8 h-8 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center border border-pink-100/60">
-              <Eye className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              {stats.profile_impressions.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 mt-1">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>+{stats.impressions_change}% vs last month</span>
-            </div>
-          </div>
-        </div>
+      {(() => {
+        const servicesCount = business.products_services?.filter((p) => p.type === "service").length || 0;
+        const productsCount = business.products_services?.filter((p) => p.type === "product").length || 0;
+        const totalOfferings = business.products_services?.length || 0;
+        const hasPendingDocs = business.verification_documents?.some((d: any) => d.status === "pending");
+        const hasRejectedDocs = business.verification_documents?.some((d: any) => d.status === "rejected");
+        const isPending = business.status === "pending_review" || business.status === "draft";
 
-        {/* Card 2: Direct Inquiries */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-2 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-medium text-slate-500">Direct Inquiries</span>
-            <div className="w-8 h-8 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center border border-pink-100/60">
-              <Mail className="w-4 h-4" />
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Directory Visibility & Listing Status */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-medium text-slate-500">Directory Status</span>
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center border ${
+                    business.status === "approved"
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                      : isPending
+                      ? "bg-amber-50 text-amber-600 border-amber-100"
+                      : "bg-rose-50 text-rose-600 border-rose-100"
+                  }`}
+                >
+                  {business.status === "approved" ? (
+                    <CheckCircle2 className="w-4 h-4" />
+                  ) : isPending ? (
+                    <Clock className="w-4 h-4" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <div className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-1.5">
+                  {business.status === "approved" ? (
+                    <span className="text-emerald-700">Active &amp; Listed</span>
+                  ) : isPending ? (
+                    <span className="text-amber-700">Under Review</span>
+                  ) : business.status === "rejected" ? (
+                    <span className="text-rose-700">Action Required</span>
+                  ) : (
+                    <span className="text-slate-700 capitalize">{business.status}</span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  {business.status === "approved"
+                    ? "Live & searchable in Rotaract Directory"
+                    : isPending
+                    ? "Pending verification approval"
+                    : "Review requested by district admin"}
+                </p>
+              </div>
             </div>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              {stats.total_enquiries}
-            </div>
-            <div className="text-xs font-medium text-slate-500 mt-1">
-              <span className="text-[#D41367] font-semibold">{stats.unread_enquiries} new unread</span> inquiries
-            </div>
-          </div>
-        </div>
 
-        {/* Card 3: Profile Engagements */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-2 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-medium text-slate-500">Contact Clicks</span>
-            <div className="w-8 h-8 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center border border-pink-100/60">
-              <MousePointerClick className="w-4 h-4" />
+            {/* Card 2: Direct Inquiries */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-medium text-slate-500">Direct Inquiries</span>
+                <div className="w-8 h-8 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center border border-pink-100/60">
+                  <Mail className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  {stats.total_enquiries}
+                </div>
+                <div className="text-xs font-medium text-slate-500 mt-1">
+                  {stats.unread_enquiries > 0 ? (
+                    <span className="text-[#D41367] font-semibold">{stats.unread_enquiries} new unread</span>
+                  ) : (
+                    <span>All inquiries responded</span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              348
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 mt-1">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>12.2% conversion rate</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Card 4: Verification Status */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-2 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-medium text-slate-500">Accreditation</span>
-            <div className="w-8 h-8 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center border border-pink-100/60">
-              <ShieldCheck className="w-4 h-4" />
+            {/* Card 3: Active Published Offerings */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-medium text-slate-500">Active Offerings</span>
+                <div className="w-8 h-8 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center border border-pink-100/60">
+                  <Package className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  {totalOfferings}
+                </div>
+                <div className="text-xs font-medium text-slate-500 mt-1">
+                  <span>{servicesCount} Services · {productsCount} Products</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Verification Status */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-medium text-slate-500">Accreditation</span>
+                <div className="w-8 h-8 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center border border-pink-100/60">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <VerificationBadge level={business.verification_level} size="sm" />
+                  <span className="text-sm font-bold text-slate-900">
+                    {business.verification_level === 3
+                      ? "Gold Enterprise"
+                      : business.verification_level === 2
+                      ? "DRR Endorsed"
+                      : business.verification_level === 1
+                      ? "GST Verified"
+                      : "Standard Listing"}
+                  </span>
+                </div>
+                <div className="mt-1">
+                  {hasRejectedDocs ? (
+                    <Link
+                      href="/business-dashboard/verification"
+                      className="text-xs font-semibold text-red-600 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Action required on document</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  ) : hasPendingDocs ? (
+                    <Link
+                      href="/business-dashboard/verification"
+                      className="text-xs font-semibold text-blue-600 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Documents under review</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/business-dashboard/verification"
+                      className="text-xs font-semibold text-[#D41367] hover:text-[#B80E56] transition-colors inline-flex items-center gap-1"
+                    >
+                      <span>{business.verification_level < 2 ? "Apply for Tier Upgrade" : "Manage Credentials"}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <VerificationBadge level={business.verification_level} size="sm" />
-              <span className="text-sm font-bold text-slate-900">
-                {business.verification_level === 2 || business.verification_level === 3
-                  ? "DRR Endorsed"
-                  : business.verification_level === 1
-                  ? "GST Verified"
-                  : "Standard Listing"}
-              </span>
-            </div>
-            <Link
-              href="/business-dashboard/verification"
-              className="text-xs font-semibold text-[#D41367] hover:text-[#B80E56] transition-colors inline-flex items-center gap-1 mt-1"
-            >
-              <span>{business.verification_level < 2 ? "Apply for DRR Verification" : "Manage Documents"}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* ================= 2-COLUMN OPERATIONAL SECTION ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
@@ -479,7 +634,7 @@ export default function OwnerDashboardPage() {
               <Link href={`/business/${business.slug}`} target="_blank" rel="noopener noreferrer">
                 <span className="flex items-center gap-2">
                   <ExternalLink className="w-3.5 h-3.5 text-pink-300" />
-                  <span>View Public Listing</span>
+                  <span>{business.status === "approved" ? "View Public Listing" : "Preview Listing (Draft)"}</span>
                 </span>
                 <ArrowRight className="w-3.5 h-3.5 ml-auto text-slate-400" />
               </Link>

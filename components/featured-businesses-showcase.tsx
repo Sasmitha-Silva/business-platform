@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ArrowUpRight, MapPin, Building2 } from "lucide-react";
@@ -8,6 +9,42 @@ import type { Business } from "@/lib/types";
 
 interface FeaturedBusinessesShowcaseProps {
   businesses?: Business[];
+}
+
+function FeaturedCardBg({ src, alt }: { src?: string | null; alt: string }) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    setIsLoaded(false);
+    setHasError(false);
+    if (imgRef.current && imgRef.current.complete) {
+      if (imgRef.current.naturalWidth === 0) {
+        setHasError(true);
+      } else {
+        setIsLoaded(true);
+      }
+    }
+  }, [src]);
+
+  if (!src || src.trim() === "" || hasError) return null;
+
+  return (
+    <Image
+      ref={imgRef}
+      src={src}
+      alt={alt}
+      fill
+      sizes="(max-width: 768px) 100vw, 400px"
+      className={`object-cover group-hover:scale-105 transition-all duration-500 pointer-events-none ${
+        isLoaded ? "opacity-40" : "opacity-0"
+      }`}
+      unoptimized
+      onLoad={() => setIsLoaded(true)}
+      onError={() => setHasError(true)}
+    />
+  );
 }
 
 export function FeaturedBusinessesShowcase({ businesses = [] }: FeaturedBusinessesShowcaseProps) {
@@ -47,18 +84,9 @@ export function FeaturedBusinessesShowcase({ businesses = [] }: FeaturedBusiness
               <Link
                 key={biz.id}
                 href={`/business/${biz.slug}`}
-                className="group relative rounded-3xl overflow-hidden block min-h-[260px] shadow-md border border-border bg-gradient-to-br from-slate-950 via-slate-900 to-[#1e1b4b] p-6 flex flex-col justify-between text-white transition-all hover:shadow-xl"
+                className="group relative rounded-3xl overflow-hidden block min-h-[260px] shadow-md border border-border bg-gradient-to-br from-slate-950 via-slate-900 to-[#1e1b4b] p-6 flex flex-col justify-between text-white transition-all hover:shadow-xl select-none"
               >
-                {displayImage && (
-                  <Image
-                    src={displayImage}
-                    alt={biz.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 400px"
-                    className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-500"
-                    unoptimized
-                  />
-                )}
+                <FeaturedCardBg src={displayImage} alt={biz.name} />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent pointer-events-none" />
 
                 <div className="relative z-10 flex items-center justify-between">

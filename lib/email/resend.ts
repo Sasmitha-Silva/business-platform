@@ -6,6 +6,19 @@ const fromEmail = process.env.RESEND_FROM_EMAIL || 'Rotaract Network <onboarding
 export const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 /**
+ * SEC-012: HTML escaping utility to prevent HTML/XSS injection into emails
+ */
+function escapeHtml(str: string | undefined | null): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Base email layout wrapper with modern Rotaract branding
  */
 function emailLayout({
@@ -23,10 +36,10 @@ function emailLayout({
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+  <title>${escapeHtml(title)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
-  <span style="display:none;font-size:0;line-height:0;max-height:0;mso-hide:all;">${preheader}</span>
+  <span style="display:none;font-size:0;line-height:0;max-height:0;mso-hide:all;">${escapeHtml(preheader)}</span>
   <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;padding:32px 16px;">
     <tr>
       <td align="center">
@@ -74,14 +87,17 @@ export async function sendWelcomeEmail({
 }) {
   if (!resend) return { success: false, error: 'Resend not configured' };
 
+  const safeFullName = escapeHtml(fullName);
+  const safeBusinessName = escapeHtml(businessName);
+
   try {
     const html = emailLayout({
       title: 'Welcome to Rotaract Business Network',
-      preheader: `Your business ${businessName} has been registered successfully.`,
+      preheader: `Your business ${safeBusinessName} has been registered successfully.`,
       contentHtml: `
-        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Welcome, ${fullName}!</h2>
+        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Welcome, ${safeFullName}!</h2>
         <p style="font-size:14px;line-height:1.6;color:#334155;">
-          Thank you for registering <strong>${businessName}</strong> on the Rotaract Business Network directory.
+          Thank you for registering <strong>${safeBusinessName}</strong> on the Rotaract Business Network directory.
         </p>
         <p style="font-size:14px;line-height:1.6;color:#334155;">
           Your listing is currently in <strong>Review</strong>. Once our District Moderators verify your Rotaract affiliation, your business will be published publicly across the directory.
@@ -97,7 +113,7 @@ export async function sendWelcomeEmail({
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Registration Confirmed: ${businessName} — Rotaract Business Network`,
+      subject: `Registration Confirmed: ${safeBusinessName} — Rotaract Business Network`,
       html,
     });
 
@@ -124,19 +140,21 @@ export async function sendVerificationApprovedEmail({
 }) {
   if (!resend) return { success: false, error: 'Resend not configured' };
 
+  const safeFullName = escapeHtml(fullName);
+  const safeBusinessName = escapeHtml(businessName);
   const tierLabel = tierLevel === 2 ? 'DRR Verified (Level 2)' : 'GST Verified (Level 1)';
 
   try {
     const html = emailLayout({
       title: 'Verification Approved',
-      preheader: `Congratulations! ${businessName} is now ${tierLabel}.`,
+      preheader: `Congratulations! ${safeBusinessName} is now ${tierLabel}.`,
       contentHtml: `
-        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Congratulations, ${fullName}!</h2>
+        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Congratulations, ${safeFullName}!</h2>
         <p style="font-size:14px;line-height:1.6;color:#334155;">
-          Your verification documents for <strong>${businessName}</strong> have been officially reviewed and approved by the District Moderation Team.
+          Your verification documents for <strong>${safeBusinessName}</strong> have been officially reviewed and approved by the District Moderation Team.
         </p>
         <div style="background-color:#fdf2f8;border:1px solid #fbcfe8;border-radius:12px;padding:16px;margin:20px 0;text-align:center;">
-          <span style="font-size:15px;font-weight:800;color:#D41367;">Badge Awarded: ${tierLabel}</span>
+          <span style="font-size:15px;font-weight:800;color:#D41367;">Badge Awarded: ${escapeHtml(tierLabel)}</span>
         </div>
         <p style="font-size:14px;line-height:1.6;color:#334155;">
           Your verified badge is now displayed proudly on your public business page, ranking you higher in search and filter results.
@@ -147,7 +165,7 @@ export async function sendVerificationApprovedEmail({
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Verified Badge Awarded: ${businessName}`,
+      subject: `Verified Badge Awarded: ${safeBusinessName}`,
       html,
     });
 
@@ -176,18 +194,23 @@ export async function sendVerificationRejectedEmail({
 }) {
   if (!resend) return { success: false, error: 'Resend not configured' };
 
+  const safeFullName = escapeHtml(fullName);
+  const safeBusinessName = escapeHtml(businessName);
+  const safeDocType = escapeHtml(docType);
+  const safeReason = escapeHtml(reason);
+
   try {
     const html = emailLayout({
       title: 'Verification Update Needed',
-      preheader: `Action required for your ${docType.toUpperCase()} document on ${businessName}.`,
+      preheader: `Action required for your ${safeDocType.toUpperCase()} document on ${safeBusinessName}.`,
       contentHtml: `
-        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Hello, ${fullName}</h2>
+        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Hello, ${safeFullName}</h2>
         <p style="font-size:14px;line-height:1.6;color:#334155;">
-          Our District Moderators reviewed your <strong>${docType.toUpperCase()}</strong> verification submission for <strong>${businessName}</strong>.
+          Our District Moderators reviewed your <strong>${safeDocType.toUpperCase()}</strong> verification submission for <strong>${safeBusinessName}</strong>.
         </p>
         <div style="background-color:#fff1f2;border:1px solid #fecdd3;border-radius:12px;padding:16px;margin:20px 0;">
           <strong style="color:#9f1239;font-size:13px;display:block;margin-bottom:4px;">Moderator Feedback / Reason:</strong>
-          <p style="margin:0;font-size:14px;color:#881337;">${reason}</p>
+          <p style="margin:0;font-size:14px;color:#881337;">${safeReason}</p>
         </div>
         <p style="font-size:14px;line-height:1.6;color:#334155;">
           Please re-upload a clear and valid document via your owner workspace.
@@ -203,7 +226,7 @@ export async function sendVerificationRejectedEmail({
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Verification Action Required: ${businessName}`,
+      subject: `Verification Action Required: ${safeBusinessName}`,
       html,
     });
 
@@ -238,23 +261,31 @@ export async function sendNewEnquiryEmail({
 }) {
   if (!resend) return { success: false, error: 'Resend not configured' };
 
+  const safeOwnerName = escapeHtml(ownerName);
+  const safeBusinessName = escapeHtml(businessName);
+  const safeFromName = escapeHtml(fromName);
+  const safeFromContact = escapeHtml(fromContact);
+  const safeFromOrg = fromOrganization ? escapeHtml(fromOrganization) : '';
+  const safeServiceRequested = serviceRequested ? escapeHtml(serviceRequested) : '';
+  const safeMessage = escapeHtml(message);
+
   try {
     const html = emailLayout({
       title: 'New Business Lead Received',
-      preheader: `You received a new inquiry from ${fromName} for ${businessName}.`,
+      preheader: `You received a new inquiry from ${safeFromName} for ${safeBusinessName}.`,
       contentHtml: `
-        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Hello, ${ownerName}</h2>
+        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Hello, ${safeOwnerName}</h2>
         <p style="font-size:14px;line-height:1.6;color:#334155;">
-          You have received a new business lead on <strong>${businessName}</strong> through the Rotaract Business Network:
+          You have received a new business lead on <strong>${safeBusinessName}</strong> through the Rotaract Business Network:
         </p>
         <div style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin:20px 0;font-size:13px;color:#334155;line-height:1.8;">
-          <div><strong>Sender Name:</strong> ${fromName}</div>
-          <div><strong>Contact Email/Phone:</strong> <a href="mailto:${fromContact}" style="color:#D41367;">${fromContact}</a></div>
-          ${fromOrganization ? `<div><strong>Organization / Club:</strong> ${fromOrganization}</div>` : ''}
-          ${serviceRequested ? `<div><strong>Service Requested:</strong> ${serviceRequested}</div>` : ''}
+          <div><strong>Sender Name:</strong> ${safeFromName}</div>
+          <div><strong>Contact Email/Phone:</strong> ${safeFromContact}</div>
+          ${safeFromOrg ? `<div><strong>Organization / Club:</strong> ${safeFromOrg}</div>` : ''}
+          ${safeServiceRequested ? `<div><strong>Service Requested:</strong> ${safeServiceRequested}</div>` : ''}
           <div style="margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0;">
             <strong>Message:</strong>
-            <p style="margin:4px 0 0 0;font-style:italic;color:#475569;">"${message}"</p>
+            <p style="margin:4px 0 0 0;font-style:italic;color:#475569;">"${safeMessage}"</p>
           </div>
         </div>
         <div style="margin:24px 0;text-align:center;">
@@ -268,7 +299,7 @@ export async function sendNewEnquiryEmail({
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `New Lead on ${businessName} from ${fromName}`,
+      subject: `New Lead on ${safeBusinessName} from ${safeFromName}`,
       html,
     });
 
@@ -297,12 +328,15 @@ export async function sendModeratorAppointmentEmail({
 }) {
   if (!resend) return { success: false, error: 'Resend not configured' };
 
+  const safeFullName = escapeHtml(fullName);
+  const safePassword = temporaryPassword ? escapeHtml(temporaryPassword) : '';
+
   try {
     const html = emailLayout({
       title: 'District Moderator Appointment',
       preheader: `You have been appointed as District Moderator for District ${districtNumber}.`,
       contentHtml: `
-        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Congratulations, ${fullName}!</h2>
+        <h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-top:0;">Congratulations, ${safeFullName}!</h2>
         <p style="font-size:14px;line-height:1.6;color:#334155;">
           You have been officially appointed as a <strong>District Moderator</strong> for <strong>District ${districtNumber}</strong> on the Rotaract Business Network platform.
         </p>
@@ -311,12 +345,12 @@ export async function sendModeratorAppointmentEmail({
           <div><strong>Appointed Role:</strong> District Moderator</div>
           <div><strong>Assigned Jurisdiction:</strong> District ${districtNumber}</div>
           ${
-            isNewAccount && temporaryPassword
+            isNewAccount && safePassword
               ? `
             <div style="margin-top:10px;padding-top:10px;border-top:1px solid #fbcfe8;">
               <strong>Your Temporary Login Credentials:</strong>
-              <div style="margin-top:4px;">Email: <strong>${to}</strong></div>
-              <div>Temporary Password: <code style="background-color:#ffffff;padding:2px 6px;border-radius:4px;border:1px solid #fbcfe8;font-family:monospace;font-size:13px;font-weight:bold;color:#D41367;">${temporaryPassword}</code></div>
+              <div style="margin-top:4px;">Email: <strong>${escapeHtml(to)}</strong></div>
+              <div>Temporary Password: <code style="background-color:#ffffff;padding:2px 6px;border-radius:4px;border:1px solid #fbcfe8;font-family:monospace;font-size:13px;font-weight:bold;color:#D41367;">${safePassword}</code></div>
               <p style="margin:6px 0 0 0;font-size:12px;color:#64748b;">(Please update your password after your initial sign-in via settings).</p>
             </div>
           `

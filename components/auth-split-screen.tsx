@@ -38,7 +38,6 @@ export function AuthSplitScreen({ type = "login", isSignUp: isSignUpProp }: Auth
           fullName: fullName.trim(),
           email: email.trim(),
           password,
-          role: "owner",
         });
 
         if (!result.success) {

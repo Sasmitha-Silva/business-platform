@@ -102,7 +102,7 @@ export default function AdminVerificationsPage() {
           businessId: d.business?.id || d.business_id,
           name: d.business?.name || "Enterprise",
           slug: d.business?.slug || "",
-          district: `District ${d.business?.district_number || 3220}`,
+          district: d.business?.district_number ? `District ${d.business.district_number}` : "Unassigned",
           requestedBadge: d.doc_type === "gst_certificate" ? "GST Verified" : "DRR Verified",
           docs: d.file_name || d.doc_type || "Verification Document",
           submitted: new Date(d.created_at).toLocaleDateString(),

@@ -1,7 +1,10 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { Resend } from 'resend';
+import { deleteStorageObjectAction } from '@/app/actions/storage';
 import type {
   Business,
   ProductService,
@@ -11,6 +14,16 @@ import type {
   EnquiryStatus,
   OwnerDashboardStats,
 } from '@/lib/types';
+
+async function verifyBusinessOwnership(supabase: any, businessId: string, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('businesses')
+    .select('id')
+    .eq('id', businessId)
+    .eq('owner_id', userId)
+    .maybeSingle();
+  return !error && !!data;
+}
 
 /**
  * 1. Fetch the logged-in owner's business profile with all relations
@@ -115,14 +128,19 @@ export async function updateOwnerBusinessAction(formData: {
 
     if (!user) return { success: false, error: 'Unauthorized' };
 
+    const isOwner = await verifyBusinessOwnership(supabase, formData.businessId, user.id);
+    if (!isOwner) {
+      return { success: false, error: 'Forbidden: You do not own this business profile.' };
+    }
+
     // 1. Update business
     const updateData: any = {
       name: formData.name.trim(),
       tagline: formData.tagline?.trim() || null,
       description: formData.description.trim(),
       year_established: formData.yearEstablished || null,
-      logo_url: formData.logoUrl || null,
-      cover_image_url: formData.coverImageUrl || null,
+      logo_url: formData.logoUrl && formData.logoUrl.trim() ? formData.logoUrl.trim() : null,
+      cover_image_url: formData.coverImageUrl && formData.coverImageUrl.trim() ? formData.coverImageUrl.trim() : null,
       is_women_owned: formData.isWomenOwned || false,
       is_startup: formData.isStartup || false,
       online_delivery: formData.onlineDelivery || false,
@@ -139,39 +157,49 @@ export async function updateOwnerBusinessAction(formData: {
       updateData.business_type = formData.businessType;
     }
 
-    const { error: bizError } = await supabase
+    const { data: updatedBiz, error: bizError } = await supabase
       .from('businesses')
       .update(updateData)
       .eq('id', formData.businessId)
-      .eq('owner_id', user.id);
+      .eq('owner_id', user.id)
+      .select('slug')
+      .maybeSingle();
 
     if (bizError) throw bizError;
 
-    // 2. Upsert location
-    await supabase.from('business_locations').upsert({
-      business_id: formData.businessId,
-      city: formData.city.trim(),
-      state: formData.state?.trim() || 'Western',
-      country: formData.country?.trim() || 'Sri Lanka',
-      district: formData.district?.trim() || 'Colombo',
-      address: formData.address.trim(),
-      pincode: formData.pincode?.trim() || null,
-      maps_link: formData.mapsLink?.trim() || null,
-    });
+    // 2. Upsert location if location fields are present
+    if (formData.city !== undefined || formData.address !== undefined) {
+      await supabase.from('business_locations').upsert({
+        business_id: formData.businessId,
+        city: (formData.city || '').trim(),
+        state: formData.state?.trim() || null,
+        country: formData.country?.trim() || null,
+        district: formData.district?.trim() || null,
+        address: (formData.address || '').trim(),
+        pincode: formData.pincode?.trim() || null,
+        maps_link: formData.mapsLink?.trim() || null,
+      });
+    }
 
-    // 3. Upsert contacts
-    await supabase.from('business_contacts').upsert({
-      business_id: formData.businessId,
-      email: formData.email.trim(),
-      mobile: formData.mobile.trim(),
-      alt_mobile: formData.altMobile?.trim() || null,
-      website: formData.website?.trim() || null,
-      whatsapp: formData.whatsapp?.trim() || null,
-      social_links: formData.socialLinks || {},
-    });
+    // 3. Upsert contacts if contact fields are present
+    if (formData.email !== undefined || formData.mobile !== undefined) {
+      await supabase.from('business_contacts').upsert({
+        business_id: formData.businessId,
+        email: (formData.email || '').trim(),
+        mobile: (formData.mobile || '').trim(),
+        alt_mobile: formData.altMobile?.trim() || null,
+        website: formData.website?.trim() || null,
+        whatsapp: formData.whatsapp?.trim() || null,
+        social_links: formData.socialLinks || {},
+      });
+    }
 
     revalidatePath('/business-dashboard');
     revalidatePath('/directory');
+    if (updatedBiz?.slug) {
+      revalidatePath(`/business/${updatedBiz.slug}`);
+    }
+    revalidatePath('/', 'layout');
 
     return { success: true };
   } catch (error: any) {
@@ -202,6 +230,11 @@ export async function saveProductServiceAction(formData: {
     } = await supabase.auth.getUser();
 
     if (!user) return { success: false, error: 'Unauthorized' };
+
+    const isOwner = await verifyBusinessOwnership(supabase, formData.businessId, user.id);
+    if (!isOwner) {
+      return { success: false, error: 'Forbidden: You do not have permission to modify this business.' };
+    }
 
     let productRecord: any;
 
@@ -271,6 +304,23 @@ export async function saveProductServiceAction(formData: {
 export async function deleteProductServiceAction(productId: string) {
   try {
     const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    // Verify ownership of the business that owns this product
+    const { data: product } = await supabase
+      .from('products_services')
+      .select('business_id, business:businesses(owner_id)')
+      .eq('id', productId)
+      .maybeSingle();
+
+    if (!product || (product.business as any)?.owner_id !== user.id) {
+      return { success: false, error: 'Forbidden: You do not own this product offering.' };
+    }
+
     const { error } = await supabase
       .from('products_services')
       .delete()
@@ -304,21 +354,60 @@ export async function submitVerificationDocumentAction(formData: {
 
     if (!user) return { success: false, error: 'Unauthorized' };
 
-    const { data: doc, error } = await supabase
-      .from('verification_documents')
-      .insert({
-        business_id: formData.businessId,
-        doc_type: formData.docType,
-        file_key: formData.fileKey,
-        file_name: formData.fileName,
-        file_size: formData.fileSize || null,
-        mime_type: formData.mimeType || null,
-        status: 'pending',
-      })
-      .select()
-      .single();
+    const isOwner = await verifyBusinessOwnership(supabase, formData.businessId, user.id);
+    if (!isOwner) {
+      return { success: false, error: 'Forbidden: You do not own this business.' };
+    }
 
-    if (error) throw error;
+    // Check if document already exists for this business and type
+    const { data: existingDoc } = await supabase
+      .from('verification_documents')
+      .select('id')
+      .eq('business_id', formData.businessId)
+      .eq('doc_type', formData.docType)
+      .maybeSingle();
+
+    let doc;
+    if (existingDoc) {
+      const { data: updatedDoc, error: updateError } = await supabase
+        .from('verification_documents')
+        .update({
+          file_key: formData.fileKey,
+          file_name: formData.fileName,
+          file_size: formData.fileSize || null,
+          mime_type: formData.mimeType || null,
+          status: 'pending',
+          rejection_reason: null,
+          reviewed_by: null,
+          reviewed_at: null,
+          claimed_by: null,
+          claimed_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingDoc.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      doc = updatedDoc;
+    } else {
+      const { data: newDoc, error: insertError } = await supabase
+        .from('verification_documents')
+        .insert({
+          business_id: formData.businessId,
+          doc_type: formData.docType,
+          file_key: formData.fileKey,
+          file_name: formData.fileName,
+          file_size: formData.fileSize || null,
+          mime_type: formData.mimeType || null,
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      doc = newDoc;
+    }
 
     revalidatePath('/business-dashboard/verification');
     return { success: true, document: doc };
@@ -329,11 +418,84 @@ export async function submitVerificationDocumentAction(formData: {
 }
 
 /**
+ * 5b. Delete Verification Document from R2 and Supabase
+ */
+export async function deleteVerificationDocumentAction({
+  businessId,
+  docType,
+  fileKey,
+  documentId,
+}: {
+  businessId: string;
+  docType?: VerificationDocType;
+  fileKey?: string;
+  documentId?: string;
+}) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const isOwner = await verifyBusinessOwnership(supabase, businessId, user.id);
+    if (!isOwner) {
+      return { success: false, error: 'Forbidden: You do not own this business.' };
+    }
+
+    // 1. Delete file from R2 storage if key provided
+    if (fileKey) {
+      try {
+        await deleteStorageObjectAction(fileKey);
+      } catch (storageErr) {
+        console.warn('Could not delete document file from storage:', storageErr);
+      }
+    }
+
+    // 2. Delete database record using admin client to bypass RLS restrictions
+    const adminSupabase = createAdminClient();
+    let query = adminSupabase.from('verification_documents').delete().eq('business_id', businessId);
+
+    if (documentId) {
+      query = query.eq('id', documentId);
+    } else if (fileKey) {
+      query = query.eq('file_key', fileKey);
+    } else if (docType) {
+      query = query.eq('doc_type', docType);
+    }
+
+    const { error: dbError } = await query;
+
+    if (dbError) {
+      console.error('Error deleting verification document from db:', dbError);
+      throw dbError;
+    }
+
+    revalidatePath('/business-dashboard/verification');
+    revalidatePath('/business-dashboard');
+    revalidatePath('/moderator-dashboard/verification');
+    revalidatePath('/admin-dashboard/verifications');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting verification document:', error);
+    return { success: false, error: error.message || 'Failed to delete verification document.' };
+  }
+}
+
+/**
  * 6. Fetch Business Enquiries / Leads Inbox
  */
 export async function getOwnerEnquiriesAction(businessId: string): Promise<Enquiry[]> {
   try {
     const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || !(await verifyBusinessOwnership(supabase, businessId, user.id))) {
+      return [];
+    }
 
     const { data, error } = await supabase
       .from('enquiries')
@@ -364,6 +526,22 @@ export async function updateEnquiryStatusAction({
 }) {
   try {
     const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    // Verify user owns the business associated with this enquiry
+    const { data: enquiry } = await supabase
+      .from('enquiries')
+      .select('business:businesses(owner_id)')
+      .eq('id', enquiryId)
+      .maybeSingle();
+
+    if (!enquiry || (enquiry.business as any)?.owner_id !== user.id) {
+      return { success: false, error: 'Forbidden: You do not have permission to manage this enquiry.' };
+    }
 
     const { error } = await supabase
       .from('enquiries')
@@ -380,11 +558,100 @@ export async function updateEnquiryStatusAction({
 }
 
 /**
+ * 7b. Send and Persist Reply to Customer Enquiry
+ */
+export async function replyToOwnerEnquiryAction({
+  enquiryId,
+  replyText,
+}: {
+  enquiryId: string;
+  replyText: string;
+}) {
+  try {
+    if (!replyText || !replyText.trim()) {
+      return { success: false, error: 'Reply text cannot be empty.' };
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    // Verify user owns the business associated with this enquiry
+    const { data: enquiry, error: fetchErr } = await supabase
+      .from('enquiries')
+      .select('*, business:businesses(name, owner_id)')
+      .eq('id', enquiryId)
+      .maybeSingle();
+
+    if (fetchErr || !enquiry || (enquiry.business as any)?.owner_id !== user.id) {
+      return { success: false, error: 'Forbidden: You do not have permission to reply to this enquiry.' };
+    }
+
+    const replyTimestamp = new Date().toISOString();
+    const replyMarker = `\n\n--- [Owner Reply • ${replyTimestamp}]:\n${replyText.trim()}`;
+    const updatedMessage = `${enquiry.message || ''}${replyMarker}`;
+
+    const { error: updateErr } = await supabase
+      .from('enquiries')
+      .update({
+        message: updatedMessage,
+        status: 'replied',
+        updated_at: replyTimestamp,
+      })
+      .eq('id', enquiryId);
+
+    if (updateErr) throw updateErr;
+
+    // Email notification via Resend if email is configured and contact has email
+    if (process.env.RESEND_API_KEY && enquiry.from_contact?.includes('@')) {
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const bizName = (enquiry.business as any)?.name || 'Rotaract Enterprise';
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'Rotaract Business Network <onboarding@resend.dev>',
+          to: enquiry.from_contact.trim(),
+          subject: `Response to your inquiry: ${bizName}`,
+          text: `Dear ${enquiry.from_name},\n\n${replyText.trim()}\n\nBest regards,\n${bizName}\nRotaract Business Network`,
+        });
+      } catch (mailErr) {
+        console.warn('Could not dispatch Resend notification email:', mailErr);
+      }
+    }
+
+    revalidatePath('/business-dashboard/enquiries');
+    return {
+      success: true,
+      sentAt: replyTimestamp,
+      replyText: replyText.trim(),
+    };
+  } catch (error: any) {
+    console.error('Error replying to enquiry:', error);
+    return { success: false, error: error.message || 'Failed to dispatch reply.' };
+  }
+}
+
+/**
  * 8. Compute Dashboard Analytics
  */
 export async function getOwnerDashboardStatsAction(businessId: string): Promise<OwnerDashboardStats> {
   try {
     const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || !(await verifyBusinessOwnership(supabase, businessId, user.id))) {
+      return {
+        profile_completeness: 0,
+        profile_impressions: 0,
+        impressions_change: 0,
+        total_enquiries: 0,
+        unread_enquiries: 0,
+      };
+    }
 
     const { data: business } = await supabase
       .from('businesses')
@@ -425,5 +692,156 @@ export async function getOwnerDashboardStatsAction(businessId: string): Promise<
       total_enquiries: 0,
       unread_enquiries: 0,
     };
+  }
+}
+
+/**
+ * 9. Fetch Owner Account & Security Settings
+ */
+export async function getOwnerAccountSettingsAction() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, phone, role, avatar_url')
+      .eq('id', user.id)
+      .single();
+
+    const { data: rotaractProfile } = await supabase
+      .from('rotaract_profiles')
+      .select('rotary_id, club_name, district_number, role_in_club, is_active')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const { data: business } = await supabase
+      .from('businesses')
+      .select(`
+        id, name, slug, description, verification_level,
+        category:categories!businesses_category_id_fkey(id, name, slug),
+        location:business_locations(*),
+        contact:business_contacts(*),
+        products_services(*)
+      `)
+      .eq('owner_id', user.id)
+      .maybeSingle();
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email || profile?.email || '',
+      },
+      profile: profile || null,
+      rotaractProfile: rotaractProfile || null,
+      business: business || null,
+    };
+  } catch (error) {
+    console.error('Error fetching owner account settings:', error);
+    return null;
+  }
+}
+
+/**
+ * 10. Update Owner Profile Details (Name, Phone, Rotary Club, RID)
+ */
+export async function updateOwnerAccountSettingsAction(formData: {
+  fullName: string;
+  phone?: string;
+  clubName?: string;
+  rotaryId?: string;
+}) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    // 1. Update personal profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        full_name: formData.fullName.trim(),
+        phone: formData.phone?.trim() || null,
+      })
+      .eq('id', user.id);
+
+    if (profileError) throw profileError;
+
+    // 2. Update rotaract profile if it exists or insert
+    if (formData.clubName !== undefined || formData.rotaryId !== undefined) {
+      const { data: existingRP } = await supabase
+        .from('rotaract_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingRP) {
+        await supabase
+          .from('rotaract_profiles')
+          .update({
+            club_name: formData.clubName?.trim() || null,
+            rotary_id: formData.rotaryId?.trim() || null,
+          })
+          .eq('user_id', user.id);
+      } else {
+        const { data: userBiz } = await supabase
+          .from('businesses')
+          .select('district_number')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+
+        await supabase.from('rotaract_profiles').insert({
+          user_id: user.id,
+          club_name: formData.clubName?.trim() || null,
+          rotary_id: formData.rotaryId?.trim() || null,
+          district_number: userBiz?.district_number || 0,
+        });
+      }
+    }
+
+    revalidatePath('/business-dashboard/settings');
+    revalidatePath('/business-dashboard');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating account settings:', error);
+    return { success: false, error: error.message || 'Failed to update settings' };
+  }
+}
+
+/**
+ * 11. Update Owner Account Password
+ */
+export async function updateOwnerPasswordAction(formData: {
+  newPassword: string;
+}) {
+  try {
+    if (!formData.newPassword || formData.newPassword.length < 8) {
+      return { success: false, error: 'Password must be at least 8 characters long.' };
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const { error } = await supabase.auth.updateUser({
+      password: formData.newPassword,
+    });
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating password:', error);
+    return { success: false, error: error.message || 'Failed to change password' };
   }
 }

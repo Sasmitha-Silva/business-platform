@@ -14,17 +14,35 @@ import type {
   ModeratorDashboardStats,
 } from '@/lib/types';
 
+async function requireModeratorOrAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('Unauthorized: Authentication required');
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, role, is_active')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile || !profile.is_active || (profile.role !== 'moderator' && profile.role !== 'super_admin')) {
+    throw new Error('Forbidden: Moderator or Super Admin access required');
+  }
+
+  return { supabase, user, role: profile.role };
+}
+
 /**
  * 1. Fetch Verification Queue for District Moderator
  */
 export async function getModeratorVerificationQueueAction(): Promise<any[]> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return [];
+    const { supabase, user } = await requireModeratorOrAdmin();
 
     // Fetch moderator's assigned districts
     const { data: assignments } = await supabase
@@ -84,12 +102,7 @@ export async function getModeratorVerificationQueueAction(): Promise<any[]> {
  */
 export async function claimVerificationDocAction(docId: string) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return { success: false, error: 'Unauthorized' };
+    const { supabase, user } = await requireModeratorOrAdmin();
 
     const { error } = await supabase
       .from('verification_documents')
@@ -126,12 +139,7 @@ export async function reviewVerificationDocAction({
   tierToAward?: number; // 1 for GST Verified, 2 for DRR Verified
 }) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return { success: false, error: 'Unauthorized' };
+    const { supabase, user } = await requireModeratorOrAdmin();
 
     // 1. Update verification_documents record
     const { data: doc, error: docError } = await supabase
@@ -220,12 +228,7 @@ export async function submitBusinessDeactivationRequestAction(formData: {
   urgency?: 'low' | 'medium' | 'high' | 'critical';
 }) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return { success: false, error: 'Unauthorized' };
+    const { supabase, user } = await requireModeratorOrAdmin();
 
     const { error } = await supabase.from('business_deactivation_requests').insert({
       business_id: formData.businessId,
@@ -252,12 +255,7 @@ export async function submitBusinessDeactivationRequestAction(formData: {
  */
 export async function getModeratorDistrictBusinessesAction(): Promise<Business[]> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return [];
+    const { supabase, user } = await requireModeratorOrAdmin();
 
     const { data: assignments } = await supabase
       .from('moderator_assignments')

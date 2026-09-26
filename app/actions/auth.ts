@@ -24,7 +24,7 @@ export async function loginAction(formData: {
     if (authError || !authData.user) {
       return {
         success: false,
-        error: authError?.message || 'Invalid email or password',
+        error: 'Invalid email or password.',
       };
     }
 
@@ -77,12 +77,17 @@ export async function signupAction(formData: {
   clubName?: string;
   districtNumber?: number;
   rotaryId?: string;
-  role?: UserRole;
 }) {
   try {
+    if (!formData.password || formData.password.length < 8) {
+      return { success: false, error: 'Password must be at least 8 characters.' };
+    }
+
     const supabase = await createClient();
 
-    const role = formData.role || 'owner';
+    // SECURITY: Role is always 'owner' for self-registration.
+    // Only admins can assign elevated roles through admin actions.
+    const role: UserRole = 'owner';
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: formData.email.trim(),
@@ -125,9 +130,7 @@ export async function signupAction(formData: {
       });
     }
 
-    let redirectTo = '/business-dashboard';
-    if (role === 'super_admin') redirectTo = '/admin-dashboard';
-    else if (role === 'moderator') redirectTo = '/moderator-dashboard';
+    const redirectTo = '/business-dashboard';
 
     revalidatePath('/', 'layout');
 

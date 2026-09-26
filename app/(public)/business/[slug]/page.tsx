@@ -26,6 +26,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
 import { EnquiryForm } from "@/components/enquiry-form";
+import { CoverBanner, BusinessLogo } from "@/components/cover-banner";
+import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlugAction } from "@/app/actions/directory";
 import { formatCurrencyPrice } from "@/lib/utils";
 
@@ -44,14 +46,47 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BusinessProfilePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const business = await getBusinessBySlugAction(slug);
-  if (!business || business.status !== "approved") notFound();
+  if (!business) notFound();
+
+  // If business is not approved, only the authenticated owner or admins/moderators can view it in preview mode
+  let canPreview = false;
+  if (business.status !== "approved") {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        if (business.owner_id === user.id) {
+          canPreview = true;
+        } else {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (profile && (profile.role === "admin" || profile.role === "moderator")) {
+            canPreview = true;
+          }
+        }
+      }
+    } catch {
+      canPreview = false;
+    }
+
+    if (!canPreview) {
+      notFound();
+    }
+  }
 
   const phoneNum = business.contact?.mobile;
   const waNum = business.contact?.whatsapp;
   const emailAddr = business.contact?.email;
   const tags = business.category?.name ? [business.category.name, "Verified Rotaract Enterprise", "Certified Quality"] : ["Enterprise"];
   const products = business.products_services || [];
-  const districtNum = business.district_number || business.rotaract_profile?.district_number || 3220;
+  const districtNum = business.district_number || business.rotaract_profile?.district_number || null;
   const clubName = business.rotaract_profile?.club_name || "Rotaract Member Club";
   const rotaryId = business.rotaract_profile?.rotary_id || "Active Member";
   const ownerName = business.owner?.name || (business.owner as any)?.full_name || "Enterprise Founder";
@@ -59,6 +94,31 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
   return (
     <div className="min-h-screen bg-slate-50/60 pb-16 font-sans">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
+        {/* Preview Banner for Non-Approved Listing */}
+        {business.status !== "approved" && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0 text-amber-700">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div className="text-xs sm:text-sm">
+                <span className="font-bold">Owner / Admin Preview:</span> This business listing is currently{" "}
+                <span className="font-semibold uppercase tracking-wider bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-950">
+                  {business.status}
+                </span>{" "}
+                and is NOT discoverable in the public directory until approved.
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              asChild
+              className="rounded-xl border-amber-300 bg-white hover:bg-amber-100 text-amber-900 text-xs shrink-0 font-semibold"
+            >
+              <Link href="/business-dashboard">Return to Dashboard</Link>
+            </Button>
+          </div>
+        )}
 
         {/* Breadcrumb Navigation */}
         <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
@@ -89,19 +149,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
         <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xs overflow-hidden">
           {/* 1. Cover Photo Banner (Compact, Sleek, Unobstructed) */}
           <div className="relative h-32 sm:h-44 md:h-52 w-full overflow-hidden bg-slate-900">
-            {business.cover_image_url ? (
-              <Image
-                src={business.cover_image_url}
-                alt={business.name}
-                fill
-                sizes="100vw"
-                className="object-cover"
-                priority
-                unoptimized
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-[#1e1b4b]" />
-            )}
+            <CoverBanner src={business.cover_image_url} alt={business.name} />
 
             {/* Floating Top Badges */}
             <div className="absolute top-2.5 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between gap-2 z-10 pointer-events-none">
@@ -128,20 +176,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
               <div className="flex items-end gap-3 sm:gap-4.5 min-w-0">
                 {/* Overlapping Logo Avatar */}
                 <div className="w-16 h-16 sm:w-22 sm:h-22 rounded-xl sm:rounded-2xl bg-white p-1 sm:p-1.5 shadow-md border-3 sm:border-4 border-white shrink-0 overflow-hidden relative z-10">
-                  {business.logo_url ? (
-                    <Image
-                      src={business.logo_url}
-                      alt={business.name}
-                      fill
-                      sizes="88px"
-                      className="object-cover rounded-lg sm:rounded-xl"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#D41367] to-[#B80E56] rounded-lg sm:rounded-xl flex items-center justify-center text-white font-black text-xl sm:text-3xl shadow-inner">
-                      {business.name.charAt(0)}
-                    </div>
-                  )}
+                  <BusinessLogo src={business.logo_url} name={business.name} />
                 </div>
 
                 {/* Title & Tagline */}
@@ -190,7 +225,7 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
               <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 text-xs text-slate-600 font-medium">
                 <span className="inline-flex items-center gap-1.5 text-slate-800 font-semibold">
                   <MapPin className="w-3.5 h-3.5 text-[#D41367]" />
-                  <span>{business.location?.city || "National"}, {business.location?.country || "Sri Lanka"}</span>
+                  <span>{[business.location?.city, business.location?.country].filter(Boolean).join(", ") || "Not Specified"}</span>
                 </span>
 
                 {business.year_established && (
@@ -487,8 +522,8 @@ export default async function BusinessProfilePage({ params }: { params: Promise<
                   <span className="truncate">{clubName}</span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 text-white/90">
-                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-300 shrink-0" />
-                  <span>District {districtNum}, {business.location?.country || "Sri Lanka"}</span>
+                  <MapPin className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                  <span>{districtNum ? `District ${districtNum}` : "Rotaract District"}{business.location?.country ? `, ${business.location.country}` : ""}</span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 text-white/90">
                   <Award className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-300 shrink-0" />

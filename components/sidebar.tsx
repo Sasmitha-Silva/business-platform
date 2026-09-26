@@ -85,8 +85,8 @@ export function Sidebar({
     role === "owner"
       ? "Business Workspace"
       : role === "super_admin" || (role as string) === "admin"
-      ? "Super Admin Portal"
-      : "Moderator Portal";
+        ? "Super Admin Portal"
+        : "Moderator Portal";
 
   return (
     <aside
@@ -103,7 +103,7 @@ export function Sidebar({
           </div>
           <div>
             <div className="font-extrabold text-sm tracking-tight text-slate-900 leading-none">
-              RBN
+              Rotaract Loop
             </div>
             <div className="text-[10px] text-slate-500 font-medium">
               {portalSubtitle}
@@ -116,12 +116,16 @@ export function Sidebar({
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {links.map((link) => {
           const Icon = iconMap[link.icon] || LayoutDashboard;
-          const isActive =
+          const isExactRoot =
+            link.href === "/admin-dashboard" ||
             link.href === "/business-dashboard" ||
+            link.href === "/moderator-dashboard" ||
             link.href === "/super-admin" ||
-            link.href === "/moderator"
-              ? pathname === link.href
-              : pathname.startsWith(link.href);
+            link.href === "/moderator";
+
+          const isActive = isExactRoot
+            ? pathname === link.href
+            : pathname === link.href || pathname.startsWith(`${link.href}/`);
 
           return (
             <Link

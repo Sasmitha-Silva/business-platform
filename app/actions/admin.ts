@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendModeratorAppointmentEmail } from '@/lib/email/resend';
 import { revalidatePath } from 'next/cache';
+import crypto from 'crypto';
 import type {
   Business,
   BusinessStatus,
@@ -14,12 +15,37 @@ import type {
 } from '@/lib/types';
 
 /**
+ * SECURITY: Verify the calling user is a super_admin.
+ * Must be called at the top of every admin-only server action.
+ */
+async function requireSuperAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Unauthorized: not authenticated');
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, is_active')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile || profile.role !== 'super_admin' || !profile.is_active) {
+    throw new Error('Unauthorized: requires super_admin role');
+  }
+
+  return { supabase, user, profile };
+}
+
+function generateSecurePassword(): string {
+  return crypto.randomBytes(12).toString('base64url').slice(0, 16) + '!A1';
+}
+
+/**
  * 1. Fetch All Directory Businesses for Super Admin
  */
 export async function getAllBusinessesAdminAction(): Promise<Business[]> {
   try {
-    const supabase = await createClient();
-
+    const { supabase } = await requireSuperAdmin();
     const { data, error } = await supabase
       .from('businesses')
       .select(
@@ -68,10 +94,7 @@ export async function updateBusinessStatusAdminAction(
   reason?: string
 ) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { supabase, user } = await requireSuperAdmin();
 
     const { data: business, error } = await supabase
       .from('businesses')
@@ -83,17 +106,15 @@ export async function updateBusinessStatusAdminAction(
     if (error) throw error;
 
     // Log in admin_audit_logs
-    if (user) {
-      await supabase.from('admin_audit_logs').insert({
-        actor_id: user.id,
-        actor_role: 'super_admin',
-        action_type: status === 'suspended' ? 'suspended' : status === 'approved' ? 'verified_business' : 'unsuspended',
-        target_table: 'businesses',
-        target_id: businessId,
-        target_name: business?.name || 'Business',
-        details: { status, reason },
-      });
-    }
+    await supabase.from('admin_audit_logs').insert({
+      actor_id: user.id,
+      actor_role: 'super_admin',
+      action_type: status === 'suspended' ? 'suspended' : status === 'approved' ? 'verified_business' : 'unsuspended',
+      target_table: 'businesses',
+      target_id: businessId,
+      target_name: business?.name || 'Business',
+      details: { status, reason },
+    });
 
     revalidatePath('/admin-dashboard');
     revalidatePath('/directory');
@@ -111,7 +132,7 @@ export async function toggleBusinessFeatureAdminAction(
   isFeatured: boolean
 ) {
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireSuperAdmin();
     const { error } = await supabase
       .from('businesses')
       .update({ is_featured: isFeatured })
@@ -132,8 +153,7 @@ export async function toggleBusinessFeatureAdminAction(
  */
 export async function getModeratorsAdminAction(): Promise<any[]> {
   try {
-    const supabase = await createClient();
-
+    const { supabase } = await requireSuperAdmin();
     const { data, error } = await supabase
       .from('moderator_assignments')
       .select(
@@ -175,12 +195,7 @@ export async function createOrAssignModeratorAdminAction({
   phone?: string;
 }) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return { success: false, error: 'Unauthorized' };
+    const { supabase, user } = await requireSuperAdmin();
 
     const admin = createAdminClient();
     const cleanEmail = email.trim().toLowerCase();
@@ -193,12 +208,15 @@ export async function createOrAssignModeratorAdminAction({
       .maybeSingle();
 
     let moderatorId = existingProfile?.id;
+    let tempPassword: string | undefined;
 
     if (!moderatorId) {
-      // 2. Create Auth User in auth.users
+      tempPassword = generateSecurePassword();
+
+      // 2. Create Auth User in auth.users with unique random password
       const { data: authData, error: authError } = await admin.auth.admin.createUser({
         email: cleanEmail,
-        password: 'ModeratorPassword123!',
+        password: tempPassword,
         email_confirm: true,
         user_metadata: { full_name: fullName.trim() },
       });
@@ -261,7 +279,7 @@ export async function createOrAssignModeratorAdminAction({
       fullName: fullName.trim(),
       districtNumber,
       isNewAccount: !existingProfile,
-      temporaryPassword: !existingProfile ? 'ModeratorPassword123!' : undefined,
+      temporaryPassword: !existingProfile ? tempPassword : undefined,
     }).catch((e) => console.error('Failed to send appointment email:', e));
 
     revalidatePath('/admin-dashboard/moderators');
@@ -277,6 +295,7 @@ export async function createOrAssignModeratorAdminAction({
  */
 export async function removeModeratorAssignmentAction(assignmentId: string) {
   try {
+    const { user } = await requireSuperAdmin();
     const admin = createAdminClient();
 
     // Get assignment details first to see who the moderator was
@@ -323,8 +342,7 @@ export async function removeModeratorAssignmentAction(assignmentId: string) {
  */
 export async function getDeactivationRequestsAdminAction(): Promise<BusinessDeactivationRequest[]> {
   try {
-    const supabase = await createClient();
-
+    const { supabase } = await requireSuperAdmin();
     const { data, error } = await supabase
       .from('business_deactivation_requests')
       .select(
@@ -363,10 +381,7 @@ export async function resolveDeactivationRequestAdminAction({
   suspendBusiness?: boolean;
 }) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { supabase, user } = await requireSuperAdmin();
 
     // 1. Update request
     await supabase
@@ -374,7 +389,7 @@ export async function resolveDeactivationRequestAdminAction({
       .update({
         status,
         admin_notes: adminNotes || null,
-        reviewed_by: user?.id || null,
+        reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
       })
       .eq('id', requestId);
@@ -399,8 +414,7 @@ export async function resolveDeactivationRequestAdminAction({
  */
 export async function getCategoriesAdminAction(): Promise<Category[]> {
   try {
-    const supabase = await createClient();
-
+    const { supabase } = await requireSuperAdmin();
     const { data, error } = await supabase
       .from('categories')
       .select('*')
@@ -435,7 +449,7 @@ export async function saveCategoryAdminAction(formData: {
   isActive?: boolean;
 }) {
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireSuperAdmin();
 
     const payload = {
       name: formData.name.trim(),
@@ -470,8 +484,7 @@ export async function saveCategoryAdminAction(formData: {
  */
 export async function getAdminAuditLogsAction(): Promise<AdminAction[]> {
   try {
-    const supabase = await createClient();
-
+    const { supabase } = await requireSuperAdmin();
     const { data, error } = await supabase
       .from('admin_audit_logs')
       .select(
@@ -510,7 +523,7 @@ export async function getAdminAuditLogsAction(): Promise<AdminAction[]> {
  */
 export async function getAllUsersAdminAction(): Promise<any[]> {
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireSuperAdmin();
     const { data, error } = await supabase
       .from('profiles')
       .select(`
@@ -530,9 +543,9 @@ export async function getAllUsersAdminAction(): Promise<any[]> {
       name: u.full_name || 'Member User',
       email: u.email || 'user@rbn.org',
       role: u.role === 'super_admin' ? 'Super Admin' : u.role === 'moderator' ? 'District Moderator' : 'Business Owner',
-      district: u.rotaract_profile?.district_number ? `District ${u.rotaract_profile.district_number}` : 'District 3220',
+      district: u.rotaract_profile?.district_number ? `District ${u.rotaract_profile.district_number}` : 'Unassigned',
       status: u.is_active !== false ? 'Active' : 'Suspended',
-      rotaryId: u.rotaract_profile?.rotary_id || 'Standard Member',
+      rotaryId: u.rotaract_profile?.rotary_id || 'N/A',
     }));
   } catch {
     return [];
@@ -544,7 +557,7 @@ export async function getAllUsersAdminAction(): Promise<any[]> {
  */
 export async function getAdminAnalyticsAction(): Promise<DashboardAnalytics> {
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireSuperAdmin();
 
     const { count: totalBusinesses } = await supabase
       .from('businesses')
@@ -586,8 +599,10 @@ export async function getAdminAnalyticsAction(): Promise<DashboardAnalytics> {
 
     const distMap: Record<number, number> = {};
     (businesses || []).forEach((b) => {
-      const d = Number(b.district_number || 3220);
-      distMap[d] = (distMap[d] || 0) + 1;
+      if (b.district_number) {
+        const d = Number(b.district_number);
+        distMap[d] = (distMap[d] || 0) + 1;
+      }
     });
 
     const businesses_by_district = Object.entries(distMap).map(([district, count]) => ({

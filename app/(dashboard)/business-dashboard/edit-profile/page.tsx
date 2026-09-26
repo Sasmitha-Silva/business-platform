@@ -28,6 +28,7 @@ import {
   Rocket,
   Truck,
   Handshake,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,6 +129,7 @@ export default function BusinessEditProfilePage() {
   const cachedBiz = getCachedDashboardData<Business>("owner_biz");
   const [activeTab, setActiveTab] = useState<"media" | "services" | "products" | "overview">("media");
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSavingMedia, setIsSavingMedia] = useState(false);
   const [rawBusiness, setRawBusiness] = useState<Business | null>(cachedBiz || null);
   const [isLoading, setIsLoading] = useState(!cachedBiz);
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
@@ -177,7 +179,6 @@ export default function BusinessEditProfilePage() {
 
   const [newDashLocationInput, setNewDashLocationInput] = useState("");
 
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [showAddService, setShowAddService] = useState(false);
@@ -298,6 +299,112 @@ export default function BusinessEditProfilePage() {
     setTimeout(() => setSavedSuccess(false), 3500);
   };
 
+  const handleLogoChange = async (url: string) => {
+    setBusinessInfo((prev) => ({ ...prev, logoUrl: url }));
+    if (!businessInfo.id) return;
+    try {
+      await updateOwnerBusinessAction({
+        businessId: businessInfo.id,
+        name: businessInfo.name,
+        tagline: businessInfo.tagline,
+        description: businessInfo.description,
+        yearEstablished: Number(businessInfo.yearEstablished) || undefined,
+        categoryId: businessInfo.categoryId || undefined,
+        subcategoryId: businessInfo.subcategoryId || undefined,
+        businessType: businessInfo.businessType,
+        isWomenOwned: businessInfo.isWomenOwned,
+        isStartup: businessInfo.isStartup,
+        onlineDelivery: businessInfo.onlineDelivery,
+        franchiseAvailable: businessInfo.franchiseAvailable,
+        logoUrl: url || "",
+        coverImageUrl: businessInfo.coverUrl || "",
+        city: businessInfo.city || "",
+        address: businessInfo.address || "",
+        pincode: businessInfo.pincode,
+        email: businessInfo.email,
+        mobile: businessInfo.phone,
+        whatsapp: businessInfo.socialLinks.whatsapp,
+        socialLinks: businessInfo.socialLinks,
+      });
+      triggerSaveNotification();
+    } catch (err) {
+      console.error("Auto-saving logo failed:", err);
+    }
+  };
+
+  const handleCoverChange = async (url: string) => {
+    setBusinessInfo((prev) => ({ ...prev, coverUrl: url }));
+    if (!businessInfo.id) return;
+    try {
+      await updateOwnerBusinessAction({
+        businessId: businessInfo.id,
+        name: businessInfo.name,
+        tagline: businessInfo.tagline,
+        description: businessInfo.description,
+        yearEstablished: Number(businessInfo.yearEstablished) || undefined,
+        categoryId: businessInfo.categoryId || undefined,
+        subcategoryId: businessInfo.subcategoryId || undefined,
+        businessType: businessInfo.businessType,
+        isWomenOwned: businessInfo.isWomenOwned,
+        isStartup: businessInfo.isStartup,
+        onlineDelivery: businessInfo.onlineDelivery,
+        franchiseAvailable: businessInfo.franchiseAvailable,
+        logoUrl: businessInfo.logoUrl || "",
+        coverImageUrl: url || "",
+        city: businessInfo.city || "",
+        address: businessInfo.address || "",
+        pincode: businessInfo.pincode,
+        email: businessInfo.email,
+        mobile: businessInfo.phone,
+        whatsapp: businessInfo.socialLinks.whatsapp,
+        socialLinks: businessInfo.socialLinks,
+      });
+      triggerSaveNotification();
+    } catch (err) {
+      console.error("Auto-saving cover photo failed:", err);
+    }
+  };
+
+  const handleSaveMedia = async () => {
+    if (!businessInfo.id) return;
+    setIsSavingMedia(true);
+    try {
+      const res = await updateOwnerBusinessAction({
+        businessId: businessInfo.id,
+        name: businessInfo.name,
+        tagline: businessInfo.tagline,
+        description: businessInfo.description,
+        yearEstablished: Number(businessInfo.yearEstablished) || undefined,
+        categoryId: businessInfo.categoryId || undefined,
+        subcategoryId: businessInfo.subcategoryId || undefined,
+        businessType: businessInfo.businessType,
+        isWomenOwned: businessInfo.isWomenOwned,
+        isStartup: businessInfo.isStartup,
+        onlineDelivery: businessInfo.onlineDelivery,
+        franchiseAvailable: businessInfo.franchiseAvailable,
+        logoUrl: businessInfo.logoUrl,
+        coverImageUrl: businessInfo.coverUrl,
+        city: businessInfo.city || "",
+        address: businessInfo.address || "",
+        pincode: businessInfo.pincode,
+        email: businessInfo.email,
+        mobile: businessInfo.phone,
+        whatsapp: businessInfo.socialLinks.whatsapp,
+        socialLinks: businessInfo.socialLinks,
+      });
+      if (res && res.success) {
+        triggerSaveNotification();
+      } else {
+        alert(res?.error || "Failed to save media settings.");
+      }
+    } catch (err) {
+      console.error("Failed to update media:", err);
+      alert("An error occurred while saving media.");
+    } finally {
+      setIsSavingMedia(false);
+    }
+  };
+
   const handleSaveOverview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessInfo.id) return;
@@ -317,8 +424,10 @@ export default function BusinessEditProfilePage() {
         franchiseAvailable: businessInfo.franchiseAvailable,
         logoUrl: businessInfo.logoUrl,
         coverImageUrl: businessInfo.coverUrl,
-        city: businessInfo.city || "Colombo",
-        address: businessInfo.address || "Main Street",
+        city: businessInfo.city || "",
+        district: businessInfo.district || "",
+        country: businessInfo.country || "",
+        address: businessInfo.address || "",
         pincode: businessInfo.pincode,
         email: businessInfo.email,
         mobile: businessInfo.phone,
@@ -329,11 +438,6 @@ export default function BusinessEditProfilePage() {
     } catch (err) {
       console.error("Failed to update profile:", err);
     }
-  };
-
-  const handleRemoveGalleryImage = (index: number) => {
-    setGalleryImages(galleryImages.filter((_, i) => i !== index));
-    triggerSaveNotification();
   };
 
   const handleAddService = async (e: React.FormEvent) => {
@@ -367,6 +471,7 @@ export default function BusinessEditProfilePage() {
   };
 
   const handleDeleteService = async (id: string) => {
+    if (!window.confirm("Are you sure you want to remove this service? This action cannot be undone.")) return;
     try {
       await deleteProductServiceAction(id);
       setServices(services.filter((s) => s.id !== id));
@@ -408,6 +513,7 @@ export default function BusinessEditProfilePage() {
   };
 
   const handleDeleteProduct = async (id: string) => {
+    if (!window.confirm("Are you sure you want to remove this product? This action cannot be undone.")) return;
     try {
       await deleteProductServiceAction(id);
       setProducts(products.filter((p) => p.id !== id));
@@ -431,11 +537,11 @@ export default function BusinessEditProfilePage() {
                 Manage Business Profile &amp; Listings
               </h1>
               <span className="px-2.5 py-0.5 rounded-md bg-pink-50 text-[#D41367] font-semibold text-xs border border-pink-100/60">
-                {businessInfo.category || "Technology"}
+                {businessInfo.category || "General Listing"}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
-              Update your business branding, showcase gallery, active services, and product catalog visible in the directory.
+              Update your business branding, active services, and product catalog visible in the directory.
             </p>
           </div>
         </div>
@@ -447,8 +553,8 @@ export default function BusinessEditProfilePage() {
             asChild
           >
             <Link
-              href={`/business/${businessInfo.slug || "lumina-digital-solutions"}`}
-              target="_blank"
+              href={businessInfo.slug ? `/business/${businessInfo.slug}` : "#"}
+              target={businessInfo.slug ? "_blank" : undefined}
               rel="noopener noreferrer"
             >
               <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
@@ -458,15 +564,22 @@ export default function BusinessEditProfilePage() {
         </div>
       </div>
 
-      {/* Toast Notification */}
+      {/* Floating Save Notification Toast */}
       {savedSuccess && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between shadow-2xs animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-600" />
-            <span>Business details updated successfully! Changes are live on your profile.</span>
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700/80 animate-in fade-in slide-in-from-bottom-3 duration-200 max-w-md ring-1 ring-white/10">
+          <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
           </div>
-          <button onClick={() => setSavedSuccess(false)} className="text-emerald-600 hover:text-emerald-800 cursor-pointer">
-            <X className="w-4 h-4" />
+          <div>
+            <p className="font-bold text-white leading-tight">Saved Successfully</p>
+            <p className="text-[11px] text-slate-300 font-normal">Business details updated and live on your profile.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSavedSuccess(false)}
+            className="text-slate-400 hover:text-white ml-2 p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -524,7 +637,7 @@ export default function BusinessEditProfilePage() {
           {/* Logo & Cover Image Editor */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Business Logo Section */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4 flex flex-col justify-between">
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
                   <ImageIcon className="w-4 h-4 text-[#D41367]" /> Business Logo
@@ -532,12 +645,15 @@ export default function BusinessEditProfilePage() {
                 <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">Displayed on directory cards and headers.</p>
               </div>
 
-              <ImageUploader
-                label="Click or Drag file to Upload Logo"
-                value={businessInfo.logoUrl}
-                onChange={(url) => setBusinessInfo({ ...businessInfo, logoUrl: url })}
-                heightClass="h-32"
-              />
+              <div className="flex flex-col items-center justify-center my-auto py-2">
+                <ImageUploader
+                  label="Square Logo (1:1 Ratio)"
+                  value={businessInfo.logoUrl}
+                  onChange={handleLogoChange}
+                  folder="logos"
+                  aspectRatio="square"
+                />
+              </div>
             </div>
 
             {/* Cover Banner Image Section */}
@@ -550,59 +666,24 @@ export default function BusinessEditProfilePage() {
               </div>
 
               <ImageUploader
-                label="Click or Drag file to Upload Cover Photo"
+                label="Hero Cover Banner (Wide)"
                 value={businessInfo.coverUrl}
-                onChange={(url) => setBusinessInfo({ ...businessInfo, coverUrl: url })}
-                heightClass="h-32"
+                onChange={handleCoverChange}
+                folder="covers"
+                aspectRatio="banner"
+                heightClass="h-36 sm:h-44"
               />
-            </div>
-          </div>
-
-          {/* Photo Gallery Showcase */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#D41367]" /> Showcase Photo Gallery
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
-                  Upload photos of your office, team, work samples, or facility.
-                </p>
-              </div>
-            </div>
-
-            {/* Images Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {/* Image Upload Tile */}
-              <div className="aspect-video">
-                <ImageUploader
-                  value=""
-                  onChange={(url) => setGalleryImages([...galleryImages, url])}
-                  heightClass="h-full"
-                />
-              </div>
-
-              {galleryImages.map((img, idx) => (
-                <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-video bg-slate-100 shadow-xs">
-                  <Image src={img} alt={`Gallery ${idx}`} fill unoptimized className="object-cover transition-transform group-hover:scale-105" />
-                  <button
-                    onClick={() => handleRemoveGalleryImage(idx)}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-700"
-                    title="Delete Image"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
             </div>
           </div>
 
           <div className="flex justify-end">
             <Button
-              onClick={triggerSaveNotification}
-              className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl h-10 px-6 text-xs sm:text-sm font-semibold gap-2 shadow-xs"
+              onClick={handleSaveMedia}
+              disabled={isSavingMedia}
+              className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-xl h-10 px-6 text-xs sm:text-sm font-semibold gap-2 shadow-xs cursor-pointer"
             >
-              <Save className="w-4 h-4" /> Save Media Settings
+              {isSavingMedia ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isSavingMedia ? "Saving Media..." : "Save Media Settings"}
             </Button>
           </div>
         </div>
@@ -997,10 +1078,16 @@ export default function BusinessEditProfilePage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs sm:text-sm font-semibold text-slate-700">Primary Operating City &amp; District</Label>
+              <Label className="text-xs sm:text-sm font-semibold text-slate-700">WhatsApp Business Direct Link / Mobile</Label>
               <Input
-                value={businessInfo.primaryLocation}
-                onChange={(e) => setBusinessInfo({ ...businessInfo, primaryLocation: e.target.value })}
+                value={businessInfo.socialLinks.whatsapp}
+                onChange={(e) =>
+                  setBusinessInfo({
+                    ...businessInfo,
+                    socialLinks: { ...businessInfo.socialLinks, whatsapp: e.target.value },
+                  })
+                }
+                placeholder="e.g. +94771234567"
                 className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
               />
             </div>
@@ -1191,19 +1278,52 @@ export default function BusinessEditProfilePage() {
             </div>
 
             <div className="grid sm:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Operating City / Town *</Label>
+                <Input
+                  required
+                  value={businessInfo.city}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, city: e.target.value })}
+                  placeholder="e.g. City or Town"
+                  className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Rotary District</Label>
+                <Input
+                  value={businessInfo.district}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, district: e.target.value })}
+                  placeholder="e.g. District Number (e.g. 3220)"
+                  className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Country</Label>
+                <Input
+                  value={businessInfo.country}
+                  onChange={(e) => setBusinessInfo({ ...businessInfo, country: e.target.value })}
+                  placeholder="e.g. Country"
+                  className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2 space-y-1">
                 <Label className="text-xs sm:text-sm font-semibold text-slate-700">Registered Address</Label>
                 <Input
                   value={businessInfo.address}
                   onChange={(e) => setBusinessInfo({ ...businessInfo, address: e.target.value })}
+                  placeholder="e.g. 123 Business Way, Suite 100"
                   className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Pincode / Zip</Label>
+                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Pincode / Postal Code</Label>
                 <Input
                   value={businessInfo.pincode}
                   onChange={(e) => setBusinessInfo({ ...businessInfo, pincode: e.target.value })}
+                  placeholder="e.g. 00300"
                   className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
                 />
               </div>
@@ -1214,20 +1334,11 @@ export default function BusinessEditProfilePage() {
           <div className="space-y-4 pt-4 border-t border-slate-100">
             <div>
               <h4 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-[#D41367]" /> Primary &amp; Additional Operating Hubs
+                <Building2 className="w-4 h-4 text-[#D41367]" /> Additional Operating Hubs &amp; Branches
               </h4>
               <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
-                Main operating center and regional branch offices.
+                Regional branch offices, manufacturing facilities, or distribution hubs.
               </p>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs sm:text-sm font-semibold text-slate-700">Primary Operating City &amp; District</Label>
-              <Input
-                value={businessInfo.primaryLocation}
-                onChange={(e) => setBusinessInfo({ ...businessInfo, primaryLocation: e.target.value })}
-                className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
-              />
             </div>
 
             <div className="space-y-2">

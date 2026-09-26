@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { MapPin, PhoneCall, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
+import { BusinessLogo } from "@/components/cover-banner";
 import { cn } from "@/lib/utils";
 import type { Business } from "@/lib/types";
 
@@ -14,8 +14,8 @@ interface BusinessCardProps {
 export function BusinessCard({ business, className }: BusinessCardProps) {
   const location = business.location;
   const locationText = location?.city
-    ? `${location.city}, ${location.country || "Sri Lanka"}`
-    : business.category?.name || "";
+    ? (location.country ? `${location.city}, ${location.country}` : location.city)
+    : (location?.country || business.category?.name || "");
 
   const district = business.rotaract_profile?.district_number || business.district_number;
   const logoImage = business.logo_url;
@@ -32,12 +32,8 @@ export function BusinessCard({ business, className }: BusinessCardProps) {
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/60">
           {/* Avatar / Logo Icon */}
           <div className="relative shrink-0">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#D41367] to-[#B80E56] text-white font-extrabold text-lg flex items-center justify-center shadow-md shadow-[#D41367]/20 overflow-hidden relative">
-              {logoImage ? (
-                <Image src={logoImage} alt={business.name} fill sizes="48px" className="object-cover" unoptimized />
-              ) : (
-                business.name.charAt(0)
-              )}
+            <div className="w-12 h-12 rounded-2xl shadow-md shadow-[#D41367]/20 overflow-hidden relative">
+              <BusinessLogo src={logoImage} name={business.name} />
             </div>
             <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white z-10" title="Verified Rotaract Member">
               <ShieldCheck className="w-2.5 h-2.5 stroke-[3]" />

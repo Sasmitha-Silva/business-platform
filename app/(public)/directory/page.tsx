@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   MapPin,
@@ -26,10 +27,10 @@ import { Building2 } from "lucide-react";
 
 const districtOptions = [
   { label: "All Districts", value: "all" },
-  { label: "District 3220 (Sri Lanka)", value: "3220" },
-  { label: "District 3141 (Mumbai)", value: "3141" },
-  { label: "District 3011 (Delhi NCR)", value: "3011" },
-  { label: "District 3292 (Nepal)", value: "3292" },
+  { label: "District 3220", value: "3220" },
+  { label: "District 3141", value: "3141" },
+  { label: "District 3011", value: "3011" },
+  { label: "District 3292", value: "3292" },
 ];
 
 const verificationBadges = [
@@ -154,20 +155,41 @@ import {
   setCachedDashboardData,
 } from "@/lib/cache/admin-cache";
 
-export default function DirectoryPage() {
+export function DirectoryContent() {
+  const searchParams = useSearchParams();
+  const initialQ = searchParams.get("q") || searchParams.get("search") || "";
+  const initialLoc = searchParams.get("location") || "";
+  const initialCat = searchParams.get("category") || searchParams.get("sector") || "all";
+  const initialDist = searchParams.get("district") || "all";
+  const initialLevel = searchParams.get("level") || "all";
+
   const cachedBiz = getCachedDashboardData<Business[]>("public_directory_businesses");
   const cachedCats = getCachedDashboardData<Category[]>("public_directory_categories");
 
   const [liveBusinesses, setLiveBusinesses] = useState<Business[]>(cachedBiz || []);
   const [categories, setCategories] = useState<Category[]>(cachedCats || []);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedDistrict, setSelectedDistrict] = useState("all");
-  const [selectedLevel, setSelectedLevel] = useState("all");
+  const [searchQuery, setSearchQuery] = useState(initialQ);
+  const [locationQuery, setLocationQuery] = useState(initialLoc);
+  const [selectedCategory, setSelectedCategory] = useState(initialCat);
+  const [selectedDistrict, setSelectedDistrict] = useState(initialDist);
+  const [selectedLevel, setSelectedLevel] = useState(initialLevel);
   const [sortBy, setSortBy] = useState<"tier" | "name" | "newest">("tier");
   const [viewMode, setViewMode] = useState<"cards" | "list">("cards");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(!cachedBiz || !cachedCats);
+
+  useEffect(() => {
+    const q = searchParams.get("q") || searchParams.get("search");
+    if (q !== null) setSearchQuery(q);
+    const loc = searchParams.get("location");
+    if (loc !== null) setLocationQuery(loc);
+    const cat = searchParams.get("category") || searchParams.get("sector");
+    if (cat !== null) setSelectedCategory(cat);
+    const dist = searchParams.get("district");
+    if (dist !== null) setSelectedDistrict(dist);
+    const lvl = searchParams.get("level");
+    if (lvl !== null) setSelectedLevel(lvl);
+  }, [searchParams]);
 
   useEffect(() => {
     async function loadData() {
@@ -211,15 +233,33 @@ export default function DirectoryPage() {
     return liveBusinesses.filter((biz) => {
       // Keyword search
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesName = biz.name.toLowerCase().includes(q);
+        const q = searchQuery.toLowerCase().trim();
+        const matchesName = biz.name?.toLowerCase().includes(q) || false;
         const matchesTagline = biz.tagline?.toLowerCase().includes(q) || false;
         const matchesDesc = biz.description?.toLowerCase().includes(q) || false;
-        const matchesCat = biz.category?.name.toLowerCase().includes(q) || false;
-        const matchesSubcat = biz.subcategory?.name.toLowerCase().includes(q) || false;
+        const matchesCat = biz.category?.name?.toLowerCase().includes(q) || false;
+        const matchesSubcat = biz.subcategory?.name?.toLowerCase().includes(q) || false;
         const matchesCity = biz.location?.city?.toLowerCase().includes(q) || false;
         const matchesClub = biz.rotaract_profile?.club_name?.toLowerCase().includes(q) || false;
-        if (!matchesName && !matchesTagline && !matchesDesc && !matchesCat && !matchesSubcat && !matchesCity && !matchesClub) {
+        const matchesOwner = (biz.owner?.full_name || biz.owner?.name)?.toLowerCase().includes(q) || false;
+        if (!matchesName && !matchesTagline && !matchesDesc && !matchesCat && !matchesSubcat && !matchesCity && !matchesClub && !matchesOwner) {
+          return false;
+        }
+      }
+
+      // Location search (matches city, state, district name, country, club or district number)
+      if (locationQuery.trim()) {
+        const loc = locationQuery.toLowerCase().trim();
+        const locDigits = loc.replace(/\D/g, "");
+        const matchesCity = biz.location?.city?.toLowerCase().includes(loc) || false;
+        const matchesDistrictStr = biz.location?.district?.toLowerCase().includes(loc) || false;
+        const matchesState = biz.location?.state?.toLowerCase().includes(loc) || false;
+        const matchesCountry = biz.location?.country?.toLowerCase().includes(loc) || false;
+        const matchesClub = biz.rotaract_profile?.club_name?.toLowerCase().includes(loc) || false;
+        const bizDistrictNum = String(biz.rotaract_profile?.district_number || biz.district_number || "");
+        const matchesDistrictNum = locDigits ? bizDistrictNum.includes(locDigits) : false;
+
+        if (!matchesCity && !matchesDistrictStr && !matchesState && !matchesCountry && !matchesClub && !matchesDistrictNum) {
           return false;
         }
       }
@@ -253,7 +293,7 @@ export default function DirectoryPage() {
 
       return true;
     });
-  }, [liveBusinesses, searchQuery, selectedCategory, selectedDistrict, selectedLevel]);
+  }, [liveBusinesses, searchQuery, locationQuery, selectedCategory, selectedDistrict, selectedLevel]);
 
   // Sort businesses
   const sortedBusinesses = useMemo(() => {
@@ -271,7 +311,7 @@ export default function DirectoryPage() {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, selectedDistrict, selectedLevel, sortBy]);
+  }, [searchQuery, locationQuery, selectedCategory, selectedDistrict, selectedLevel, sortBy]);
 
   // Paginated businesses (10 per page)
   const totalPages = Math.ceil(sortedBusinesses.length / ITEMS_PER_PAGE) || 1;
@@ -282,6 +322,7 @@ export default function DirectoryPage() {
 
   const clearAll = () => {
     setSearchQuery("");
+    setLocationQuery("");
     setSelectedCategory("all");
     setSelectedDistrict("all");
     setSelectedLevel("all");
@@ -290,6 +331,7 @@ export default function DirectoryPage() {
 
   const hasFilters =
     searchQuery !== "" ||
+    locationQuery !== "" ||
     selectedCategory !== "all" ||
     selectedDistrict !== "all" ||
     selectedLevel !== "all";
@@ -327,12 +369,34 @@ export default function DirectoryPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search Enterprise, Founder, Industry, or City"
+                placeholder="Search Enterprise, Founder, or Industry"
                 className="w-full pl-9.5 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367]"
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Location Input */}
+            <div className="relative w-full md:w-52">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={locationQuery}
+                onChange={(e) => setLocationQuery(e.target.value)}
+                placeholder="City, State, or District"
+                className="w-full pl-9 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367]"
+              />
+              {locationQuery && (
+                <button
+                  type="button"
+                  onClick={() => setLocationQuery("")}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -407,6 +471,31 @@ export default function DirectoryPage() {
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-[#D41367] font-bold border border-pink-200 text-xs shadow-2xs">
                     &ldquo;{searchQuery}&rdquo;
                     <X className="w-3 h-3 cursor-pointer hover:opacity-80 ml-0.5" onClick={() => setSearchQuery("")} />
+                  </span>
+                )}
+                {locationQuery && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold border border-slate-300 text-xs shadow-2xs">
+                    <MapPin className="w-3 h-3 text-[#D41367]" />
+                    &ldquo;{locationQuery}&rdquo;
+                    <X className="w-3 h-3 cursor-pointer hover:opacity-80 ml-0.5" onClick={() => setLocationQuery("")} />
+                  </span>
+                )}
+                {selectedCategory !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-[#D41367] font-bold border border-pink-200 text-xs shadow-2xs">
+                    {categories.find((c) => c.slug === selectedCategory)?.name || selectedCategory}
+                    <X className="w-3 h-3 cursor-pointer hover:opacity-80 ml-0.5" onClick={() => setSelectedCategory("all")} />
+                  </span>
+                )}
+                {selectedDistrict !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 font-bold border border-slate-300 text-xs shadow-2xs">
+                    District {selectedDistrict}
+                    <X className="w-3 h-3 cursor-pointer hover:opacity-80 ml-0.5" onClick={() => setSelectedDistrict("all")} />
+                  </span>
+                )}
+                {selectedLevel !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 font-bold border border-amber-200 text-xs shadow-2xs">
+                    {verificationBadges.find((b) => b.value === selectedLevel)?.label || "Tier " + selectedLevel}
+                    <X className="w-3 h-3 cursor-pointer hover:opacity-80 ml-0.5" onClick={() => setSelectedLevel("all")} />
                   </span>
                 )}
               </>
@@ -730,5 +819,27 @@ export default function DirectoryPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function DirectoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white text-foreground pt-6 pb-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div className="h-8 w-48 bg-slate-100 rounded-lg animate-pulse" />
+            <div className="h-14 w-full bg-slate-100 rounded-2xl animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-64 bg-slate-100 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <DirectoryContent />
+    </Suspense>
   );
 }
