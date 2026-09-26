@@ -5,21 +5,27 @@ import { Button } from "@/components/ui/button";
 import { HeroSection } from "@/components/hero-section";
 import { FeaturedCategoriesShowcase } from "@/components/featured-categories-showcase";
 
+import { getCategoriesAction } from "@/app/actions/directory";
+
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Rotaract Business Network",
   description:
     "A premium directory connecting trusted Rotaract entrepreneurs and service leaders committed to excellence and professional integrity.",
 };
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const categories = await getCategoriesAction();
+
   return (
     <div className="relative">
       {/* Elevated High-Impact Hero Section */}
       <HeroSection />
 
-      {/* Interactive Featured Categories Showcase */}
+      {/* Interactive Featured Categories Showcase with Live Database Data */}
       <section className="bg-white">
-        <FeaturedCategoriesShowcase />
+        <FeaturedCategoriesShowcase categories={categories} />
       </section>
 
       {/* Spendesk-Style Curved Arrow Process Section */}

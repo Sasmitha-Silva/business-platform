@@ -16,9 +16,6 @@ export default function ModeratorLayout({
     <DashboardLayout
       role="moderator"
       links={MODERATOR_SIDEBAR_LINKS}
-      userName="Ptr. Dilshan Wickremasinghe"
-      userRole="District Moderator"
-      districtInfo="District 3220"
     >
       {children}
     </DashboardLayout>

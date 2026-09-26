@@ -83,7 +83,7 @@ export const BUSINESS_TYPES = [
 export const SERVICE_AREAS = [
   { value: 'local', label: 'Local' },
   { value: 'state', label: 'State' },
-  { value: 'pan_india', label: 'Pan India' },
+  { value: 'nationwide', label: 'Nationwide' },
   { value: 'international', label: 'International' },
 ] as const;
 

@@ -15,10 +15,23 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
+import { useAuth } from "@/components/auth-provider";
+
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const { user, profile, role } = useAuth();
+
+  const firstName = profile?.full_name?.trim() ? profile.full_name.trim().split(" ")[0] : null;
+  const workspaceLabel = firstName ? `${firstName}'s Workspace` : "My Workspace";
+
+  const dashboardHref =
+    role === "super_admin"
+      ? "/admin-dashboard"
+      : role === "moderator"
+      ? "/moderator-dashboard"
+      : "/business-dashboard";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -103,26 +116,41 @@ export function Navbar() {
           </nav>
 
           {/* Right: Actions */}
-          <div className="hidden md:flex items-center gap-6 shrink-0">
-            <Link
-              href="/auth/login"
-              className="relative py-1 text-[15px] sm:text-base font-bold text-slate-700 hover:text-[#D41367] transition-all duration-300 group inline-flex flex-col items-center"
-            >
-              <span className="transition-transform duration-300 group-hover:-translate-y-0.5">
-                Log in
-              </span>
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#D41367] rounded-full transition-all duration-300 origin-center scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100" />
-            </Link>
-            <Button
-              variant="outline"
-              className="border-2 border-[#D41367] text-[#D41367] hover:bg-[#D41367] hover:text-white bg-transparent rounded-full px-5 py-2 text-xs sm:text-sm font-extrabold shadow-2xs hover:scale-105 active:scale-95 transition-all h-auto cursor-pointer"
-              asChild
-            >
-              <Link href="/register">
-                <span>Register Business</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-              </Link>
-            </Button>
+          <div className="hidden md:flex items-center gap-4 shrink-0">
+            {user ? (
+              <Button
+                variant="outline"
+                className="border-2 border-[#D41367] bg-[#D41367] text-white hover:bg-[#B80E56] hover:text-white rounded-full px-5 py-2 text-xs sm:text-sm font-extrabold shadow-sm hover:scale-105 active:scale-95 transition-all h-auto cursor-pointer"
+                asChild
+              >
+                <Link href={dashboardHref}>
+                  <span>{workspaceLabel}</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  className="relative py-1 text-[15px] sm:text-base font-bold text-slate-700 hover:text-[#D41367] transition-all duration-300 group inline-flex flex-col items-center"
+                >
+                  <span className="transition-transform duration-300 group-hover:-translate-y-0.5">
+                    Log in
+                  </span>
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#D41367] rounded-full transition-all duration-300 origin-center scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100" />
+                </Link>
+                <Button
+                  variant="outline"
+                  className="border-2 border-[#D41367] text-[#D41367] hover:bg-[#D41367] hover:text-white bg-transparent rounded-full px-5 py-2 text-xs sm:text-sm font-extrabold shadow-2xs hover:scale-105 active:scale-95 transition-all h-auto cursor-pointer"
+                  asChild
+                >
+                  <Link href="/register">
+                    <span>Register Business</span>
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Trigger Button */}
@@ -225,27 +253,41 @@ export function Navbar() {
 
         {/* Bottom Actions CTA */}
         <div className="relative z-10 pt-3 sm:pt-4 border-t border-white/20 space-y-2 sm:space-y-3 shrink-0 max-w-md w-full mx-auto">
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            <Button
-              className="w-full bg-white hover:bg-pink-50 text-[#D41367] font-black text-xs sm:text-sm rounded-2xl py-2.5 sm:py-3.5 shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 h-auto cursor-pointer"
-              asChild
-            >
-              <Link href="/register" prefetch={true} onClick={() => setMobileOpen(false)}>
-                <span className="truncate">Register</span>
-                <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-              </Link>
-            </Button>
+          {user ? (
+            <div className="grid grid-cols-1 gap-2 sm:gap-3">
+              <Button
+                className="w-full bg-white hover:bg-pink-50 text-[#D41367] font-black text-xs sm:text-sm rounded-2xl py-2.5 sm:py-3.5 shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 h-auto cursor-pointer"
+                asChild
+              >
+                <Link href={dashboardHref} prefetch={true} onClick={() => setMobileOpen(false)}>
+                  <span className="truncate">{workspaceLabel}</span>
+                  <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <Button
+                className="w-full bg-white hover:bg-pink-50 text-[#D41367] font-black text-xs sm:text-sm rounded-2xl py-2.5 sm:py-3.5 shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 h-auto cursor-pointer"
+                asChild
+              >
+                <Link href="/register" prefetch={true} onClick={() => setMobileOpen(false)}>
+                  <span className="truncate">Register</span>
+                  <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                </Link>
+              </Button>
 
-            <Button
-              variant="outline"
-              className="w-full border-white/40 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm rounded-2xl py-2.5 sm:py-3.5 flex items-center justify-center gap-1.5 h-auto cursor-pointer"
-              asChild
-            >
-              <Link href="/auth/login" prefetch={true} onClick={() => setMobileOpen(false)}>
-                <span className="truncate">Member Login</span>
-              </Link>
-            </Button>
-          </div>
+              <Button
+                variant="outline"
+                className="w-full border-white/40 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm rounded-2xl py-2.5 sm:py-3.5 flex items-center justify-center gap-1.5 h-auto cursor-pointer"
+                asChild
+              >
+                <Link href="/auth/login" prefetch={true} onClick={() => setMobileOpen(false)}>
+                  <span className="truncate">Member Login</span>
+                </Link>
+              </Button>
+            </div>
+          )}
 
           <div className="text-center text-[10px] sm:text-[11px] text-white/70 font-medium">
             Rotaract South Asia MDIO Enterprise Network &copy; {new Date().getFullYear()}

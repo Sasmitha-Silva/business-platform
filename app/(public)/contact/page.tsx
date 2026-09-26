@@ -93,43 +93,80 @@ export default function ContactPage() {
 
         {/* ================= 2-COLUMN CONTACT LAYOUT ================= */}
         <div className="grid lg:grid-cols-3 gap-6 items-start">
-          {/* Left Column: Contact Channel Cards (1 col) */}
+          {/* Left Column: Official Contact Channel Cards (1 col) */}
           <div className="space-y-4">
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center shrink-0 border border-pink-100/60">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div className="space-y-1 min-w-0">
-                <h3 className="font-bold text-slate-900 text-sm sm:text-base">Email Helpdesk</h3>
-                <p className="text-xs text-slate-500 font-normal truncate">support@rotaractnetwork.org</p>
-                <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium pt-1">
-                  <Clock className="w-3 h-3" />
-                  <span>Response within 24 hours</span>
+            {/* Contact 1: IPDRR Rtr Nivas M R */}
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-3.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-pink-50 text-[#D41367] flex items-center justify-center shrink-0 border border-pink-100/60 font-black text-sm">
+                  NM
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
+                    IPDRR Rtr Nivas M R
+                  </h3>
+                  <p className="text-xs text-[#D41367] font-semibold">
+                    Director - Vocational Programs
+                  </p>
                 </div>
               </div>
+
+              <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
+                <a
+                  href="tel:+919611829965"
+                  className="flex items-center gap-2.5 text-slate-700 hover:text-[#D41367] font-medium transition-colors group"
+                >
+                  <Phone className="w-4 h-4 text-slate-400 group-hover:text-[#D41367] shrink-0" />
+                  <span>+91 9611829965</span>
+                </a>
+                <a
+                  href="mailto:Drrnivas.rid3182@gmail.com"
+                  className="flex items-center gap-2.5 text-slate-700 hover:text-[#D41367] font-medium transition-colors group truncate"
+                >
+                  <Mail className="w-4 h-4 text-slate-400 group-hover:text-[#D41367] shrink-0" />
+                  <span className="truncate">Drrnivas.rid3182@gmail.com</span>
+                </a>
+              </div>
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-100/80">
-                <Phone className="w-5 h-5" />
+            {/* Contact 2: PDRR Rtn Rtr Sailesh Proddaturu */}
+            <div className="bg-white/95 backdrop-blur-xs rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-3.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-100/80 font-black text-sm">
+                  SP
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
+                    PDRR Rtn Rtr Sailesh Proddaturu
+                  </h3>
+                  <p className="text-xs text-amber-700 font-semibold">
+                    Director - Vocational Programs
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1 min-w-0">
-                <h3 className="font-bold text-slate-900 text-sm sm:text-base">District Helpdesk</h3>
-                <p className="text-xs text-slate-500 font-normal">+94 77 123 4567</p>
-                <p className="text-[11px] text-slate-400 font-normal pt-1">Mon–Fri: 9:00 AM – 6:00 PM</p>
+
+              <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
+                <a
+                  href="tel:+919951143775"
+                  className="flex items-center gap-2.5 text-slate-700 hover:text-amber-700 font-medium transition-colors group"
+                >
+                  <Phone className="w-4 h-4 text-slate-400 group-hover:text-amber-700 shrink-0" />
+                  <span>+91 99511 43775</span>
+                </a>
+                <a
+                  href="mailto:rtrsaileshp@gmail.com"
+                  className="flex items-center gap-2.5 text-slate-700 hover:text-amber-700 font-medium transition-colors group truncate"
+                >
+                  <Mail className="w-4 h-4 text-slate-400 group-hover:text-amber-700 shrink-0" />
+                  <span className="truncate">rtrsaileshp@gmail.com</span>
+                </a>
               </div>
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xs rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center shrink-0 border border-slate-200">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <div className="space-y-1 min-w-0">
-                <h3 className="font-bold text-slate-900 text-sm sm:text-base">Global Secretariat</h3>
-                <p className="text-xs text-slate-600 font-normal leading-relaxed">
-                  Rotary International District 3220 Secretariat, Colombo, Sri Lanka.
-                </p>
-              </div>
+            {/* Response Time Badge */}
+            <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 flex items-center gap-3 text-xs text-slate-600">
+              <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Official queries responded within 24–48 hours</span>
             </div>
           </div>
 
@@ -197,11 +234,10 @@ export default function ContactPage() {
                             setTopic(opt);
                             setIsTopicOpen(false);
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer text-left ${
-                            topic === opt
-                              ? "bg-pink-50 text-[#D41367]"
-                              : "text-slate-700 hover:bg-slate-100"
-                          }`}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer text-left ${topic === opt
+                            ? "bg-pink-50 text-[#D41367]"
+                            : "text-slate-700 hover:bg-slate-100"
+                            }`}
                         >
                           <span>{opt}</span>
                           {topic === opt && <Check className="w-3.5 h-3.5 text-[#D41367]" />}
@@ -219,7 +255,7 @@ export default function ContactPage() {
                   required
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Provide details about your query or district verification ticket..."
+                  placeholder="Provide details about your query or district verification ticket"
                   className="w-full text-xs sm:text-sm p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:bg-white focus:border-[#D41367] focus:ring-2 focus:ring-pink-100 transition-all placeholder:text-slate-400 resize-none"
                 />
               </div>

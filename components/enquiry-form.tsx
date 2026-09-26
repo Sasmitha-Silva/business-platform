@@ -7,27 +7,49 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
+import { submitEnquiryAction } from "@/app/actions/directory";
+
 interface EnquiryFormProps {
+  businessId?: string;
   businessName?: string;
   onSubmit?: (data: { name: string; contact: string; message: string }) => void;
 }
 
-export function EnquiryForm({ businessName, onSubmit }: EnquiryFormProps) {
+export function EnquiryForm({ businessId, businessName, onSubmit }: EnquiryFormProps) {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit?.({ name, contact, message });
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setName("");
-      setContact("");
-      setMessage("");
-    }, 3000);
+    if (!name || !contact || !message || isSending) return;
+
+    setIsSending(true);
+
+    try {
+      if (businessId) {
+        await submitEnquiryAction({
+          businessId,
+          fromName: name,
+          fromContact: contact,
+          message,
+        });
+      }
+      onSubmit?.({ name, contact, message });
+      setSubmitted(true);
+      setTimeout(() => {
+        setSubmitted(false);
+        setName("");
+        setContact("");
+        setMessage("");
+      }, 3500);
+    } catch (err) {
+      console.error("Failed to send inquiry:", err);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   if (submitted) {
@@ -51,7 +73,7 @@ export function EnquiryForm({ businessName, onSubmit }: EnquiryFormProps) {
         <Label htmlFor="inquiry-name" className="text-xs font-bold text-slate-700">Your Name</Label>
         <Input
           id="inquiry-name"
-          placeholder="e.g. John Doe"
+          placeholder="e.g. Sasmitha Silva"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-xl border-slate-200 text-xs"
@@ -73,7 +95,7 @@ export function EnquiryForm({ businessName, onSubmit }: EnquiryFormProps) {
         <Label htmlFor="inquiry-message" className="text-xs font-bold text-slate-700">Inquiry Details</Label>
         <Textarea
           id="inquiry-message"
-          placeholder="Describe your requirements or questions..."
+          placeholder="Describe your requirements or questions"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={4}

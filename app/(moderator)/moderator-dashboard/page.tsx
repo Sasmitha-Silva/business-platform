@@ -23,18 +23,76 @@ import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { mockModeratorStats, mockPendingBusinesses } from "@/lib/mock-data";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  getModeratorVerificationQueueAction,
+  claimVerificationDocAction,
+  reviewVerificationDocAction,
+  getModeratorDistrictBusinessesAction,
+} from "@/app/actions/moderator";
+
+import {
+  getCachedDashboardData,
+  setCachedDashboardData,
+} from "@/lib/cache/admin-cache";
 
 export default function ModeratorDashboardPage() {
-  const stats = mockModeratorStats;
-  const [pendingQueue, setPendingQueue] = useState(mockPendingBusinesses);
-  const [activeClaimId, setActiveClaimId] = useState<string | null>("stellar");
+  const cachedQueue = getCachedDashboardData<any[]>("mod_queue");
+  const cachedBusinesses = getCachedDashboardData<any[]>("mod_district_businesses");
+
+  const [pendingQueue, setPendingQueue] = useState<any[]>(cachedQueue || []);
+  const [districtBusinesses, setDistrictBusinesses] = useState<any[]>(cachedBusinesses || []);
+  const [activeClaimId, setActiveClaimId] = useState<string | null>(cachedQueue && cachedQueue.length > 0 ? cachedQueue[0].id : null);
   const [notes, setNotes] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!cachedQueue);
 
   // Modals state
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        if (!cachedQueue) {
+          setIsLoading(true);
+        }
+        const [queue, businesses] = await Promise.all([
+          getModeratorVerificationQueueAction(),
+          getModeratorDistrictBusinessesAction(),
+        ]);
+        setPendingQueue(queue);
+        setDistrictBusinesses(businesses);
+        if (queue.length > 0 && !activeClaimId) {
+          setActiveClaimId(queue[0].id);
+        }
+        setCachedDashboardData("mod_queue", queue);
+        setCachedDashboardData("mod_district_businesses", businesses);
+      } catch (err) {
+        console.error("Failed to load moderator dashboard:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const stats = {
+    pending_change: pendingQueue.length,
+    active_businesses: districtBusinesses.length,
+    active_verified_percentage: districtBusinesses.length > 0
+      ? Math.round((districtBusinesses.filter((b) => (b.verification_level || 0) > 0).length / districtBusinesses.length) * 100)
+      : 100,
+    monthly_claims: districtBusinesses.filter((b) => b.status === 'approved').length,
+    avg_turnaround: '24h',
+    district_health_score: 98,
+    district_health_percentile: 'Top 5%',
+  };
 
   // Lock background scrolling and prevent Lenis capture when any modal is open
   useEffect(() => {
@@ -50,28 +108,115 @@ export default function ModeratorDashboardPage() {
 
   const activeClaim = pendingQueue.find((b) => b.id === activeClaimId) || pendingQueue[0];
 
-  const confirmApprove = () => {
+  const confirmApprove = async () => {
     if (!activeClaim) return;
-    setPendingQueue((prev) => prev.filter((b) => b.id !== activeClaim.id));
-    setActiveClaimId(null);
-    setShowApproveModal(false);
-    setNotes("");
-    showToast(`Approved ${activeClaim.name} for district accreditation.`);
+    try {
+      await reviewVerificationDocAction({
+        docId: activeClaim.id,
+        businessId: activeClaim.business?.id || activeClaim.business_id,
+        status: "approved",
+        tierToAward: 1,
+      });
+      setPendingQueue((prev) => prev.filter((b) => b.id !== activeClaim.id));
+      setActiveClaimId(null);
+      setShowApproveModal(false);
+      setNotes("");
+      showToast(`Approved ${activeClaim.business?.name || "Document"} for accreditation.`);
+    } catch (err) {
+      console.error("Approval error:", err);
+    }
   };
 
-  const confirmReturn = () => {
+  const confirmReturn = async () => {
     if (!activeClaim) return;
-    setPendingQueue((prev) => prev.filter((b) => b.id !== activeClaim.id));
-    setActiveClaimId(null);
-    setShowReturnModal(false);
-    setNotes("");
-    showToast(`Returned ${activeClaim.name} with revision notes.`);
+    try {
+      await reviewVerificationDocAction({
+        docId: activeClaim.id,
+        businessId: activeClaim.business?.id || activeClaim.business_id,
+        status: "rejected",
+        rejectionReason: notes || "Document requires updates.",
+      });
+      setPendingQueue((prev) => prev.filter((b) => b.id !== activeClaim.id));
+      setActiveClaimId(null);
+      setShowReturnModal(false);
+      setNotes("");
+      showToast(`Returned ${activeClaim.business?.name || "Document"} with revision notes.`);
+    } catch (err) {
+      console.error("Rejection error:", err);
+    }
   };
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
+        {/* Header Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-7 w-72 rounded-lg" />
+              <Skeleton className="h-5 w-24 rounded-md" />
+            </div>
+            <Skeleton className="h-4 w-96 rounded-md" />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-9.5 w-32 rounded-xl" />
+          </div>
+        </div>
+
+        {/* 4 Stat Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-3 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-32 rounded-md" />
+                <Skeleton className="w-8 h-8 rounded-xl" />
+              </div>
+              <Skeleton className="h-8 w-16 rounded-lg" />
+              <Skeleton className="h-3.5 w-36 rounded-md" />
+            </div>
+          ))}
+        </div>
+
+        {/* 2-Column Workflow Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+            <div className="space-y-1.5 pb-3 border-b border-slate-100">
+              <Skeleton className="h-5 w-44 rounded-md" />
+              <Skeleton className="h-3.5 w-56 rounded-md" />
+            </div>
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-4 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-4 w-36 rounded-md" />
+                    <Skeleton className="h-5 w-16 rounded-md" />
+                  </div>
+                  <Skeleton className="h-3.5 w-48 rounded-md" />
+                  <Skeleton className="h-3 w-32 rounded-md" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-5">
+            <div className="space-y-2 pb-4 border-b border-slate-100">
+              <Skeleton className="h-6 w-52 rounded-md" />
+              <Skeleton className="h-4 w-80 rounded-md" />
+            </div>
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <div className="space-y-2 pt-2">
+              <Skeleton className="h-4 w-32 rounded-md" />
+              <Skeleton className="h-24 w-full rounded-xl" />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Skeleton className="h-9.5 w-24 rounded-xl" />
+              <Skeleton className="h-9.5 w-28 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
@@ -193,7 +338,7 @@ export default function ModeratorDashboardPage() {
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Explain why this document needs correction (e.g. invalid signature, wrong tenure)..."
+                  placeholder="Explain why this document needs correction (e.g. invalid signature, wrong tenure)"
                   className="w-full text-xs sm:text-sm p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:bg-white focus:border-[#D41367] focus:ring-2 focus:ring-pink-100 transition-all placeholder:text-slate-400 resize-none"
                 />
               </div>
@@ -350,11 +495,10 @@ export default function ModeratorDashboardPage() {
                   <div
                     key={biz.id}
                     onClick={() => setActiveClaimId(biz.id)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
-                      isSelected
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${isSelected
                         ? "bg-pink-50/60 border-[#D41367] shadow-2xs"
                         : "bg-slate-50/60 border-slate-200 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
@@ -450,7 +594,7 @@ export default function ModeratorDashboardPage() {
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="State review findings or specific correction instructions for the business owner..."
+                  placeholder="State review findings or specific correction instructions for the business owner"
                   className="w-full text-xs sm:text-sm p-3 bg-slate-50 rounded-xl border border-slate-200 focus:bg-white focus:border-[#D41367]"
                 />
               </div>

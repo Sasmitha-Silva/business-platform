@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -23,55 +23,186 @@ import {
   Globe,
   Briefcase,
   Layers,
+  ChevronDown,
+  Sparkles,
+  Rocket,
+  Truck,
+  Handshake,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploader } from "@/components/image-uploader";
-import { mockBusinesses } from "@/lib/mock-data";
+import { cn, formatCurrencyPrice, getCurrencySymbol } from "@/lib/utils";
+import {
+  getOwnerBusinessAction,
+  updateOwnerBusinessAction,
+  saveProductServiceAction,
+  deleteProductServiceAction,
+} from "@/app/actions/owner";
+import { getCategoriesAction } from "@/app/actions/directory";
+import type { Business, Category } from "@/lib/types";
+import {
+  getCachedDashboardData,
+  setCachedDashboardData,
+} from "@/lib/cache/admin-cache";
 
-// Initial mock state from the first business
-const defaultBusiness = mockBusinesses[0];
+interface FormCustomDropdownProps {
+  value: string;
+  options: { label: string; value: string; description?: string }[];
+  onChange: (val: string) => void;
+  placeholder?: string;
+}
+
+function FormCustomDropdown({ value, options, onChange, placeholder }: FormCustomDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative w-full" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "w-full flex items-center justify-between px-3.5 h-9.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer bg-slate-50 border-slate-200 text-slate-800 hover:bg-white hover:border-slate-300",
+          open && "ring-2 ring-pink-100 border-[#D41367] bg-white shadow-xs"
+        )}
+      >
+        <span className="truncate">{selected ? selected.label : placeholder || "Select..."}</span>
+        <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ml-2", open && "rotate-180 text-[#D41367]")} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-2xl border border-slate-200 shadow-xl p-1.5 z-50 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 max-h-60 overflow-y-auto">
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-left transition-colors cursor-pointer",
+                  isSelected
+                    ? "bg-pink-50 text-[#D41367] font-bold"
+                    : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                )}
+              >
+                <div>
+                  <p className="leading-snug">{opt.label}</p>
+                  {opt.description && <p className="text-[10px] text-slate-400 font-normal">{opt.description}</p>}
+                </div>
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#D41367] shrink-0 ml-2" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const serviceScopeOptions = [
+  { value: "local", label: "Local (City & Immediate Area)", description: "Direct local community" },
+  { value: "state", label: "State / Provincial Area", description: "Regional province jurisdiction" },
+  { value: "nationwide", label: "Nationwide (All Districts)", description: "Across all districts" },
+  { value: "international", label: "International (Global Clients)", description: "Cross-border & export trade" },
+];
 
 export default function BusinessEditProfilePage() {
+  const cachedBiz = getCachedDashboardData<Business>("owner_biz");
   const [activeTab, setActiveTab] = useState<"media" | "services" | "products" | "overview">("media");
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [rawBusiness, setRawBusiness] = useState<Business | null>(cachedBiz || null);
+  const [isLoading, setIsLoading] = useState(!cachedBiz);
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
 
   // Business state
   const [businessInfo, setBusinessInfo] = useState({
-    name: defaultBusiness.name,
-    category: defaultBusiness.category?.name || "Technology & Software",
-    tagline: defaultBusiness.tagline || "",
-    description: defaultBusiness.description || "",
-    yearEstablished: defaultBusiness.year_established || 2021,
-    logoUrl: defaultBusiness.logo_url || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
-    coverUrl: defaultBusiness.cover_image_url || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
-    phone: defaultBusiness.contact?.mobile || "+91 9876543210",
-    email: defaultBusiness.contact?.email || "info@lumina.com",
-    address: defaultBusiness.location?.address || "123 Tech Park, Road No. 12",
-    pincode: defaultBusiness.location?.pincode || "500034",
-    primaryLocation: "Hyderabad, District 3150, India",
-    additionalLocations: ["Kandy Regional Hub", "Dubai Office"],
+    id: cachedBiz?.id || "",
+    slug: cachedBiz?.slug || "",
+    name: cachedBiz?.name || "",
+    categoryId: cachedBiz?.category_id || (cachedBiz?.category as any)?.id || "",
+    subcategoryId: cachedBiz?.subcategory_id || (cachedBiz?.subcategory as any)?.id || "",
+    businessType: ((cachedBiz?.business_type as any) || ["service_provider"]) as (
+      | "manufacturer"
+      | "trader"
+      | "service_provider"
+      | "exporter"
+      | "importer"
+      | "franchise"
+    )[],
+    category: cachedBiz?.category?.name || "General Enterprise",
+    tagline: cachedBiz?.tagline || "",
+    description: cachedBiz?.description || "",
+    yearEstablished: cachedBiz?.year_established || 2024,
+    logoUrl: cachedBiz?.logo_url || "",
+    coverUrl: cachedBiz?.cover_image_url || "",
+    isWomenOwned: cachedBiz?.is_women_owned || false,
+    isStartup: cachedBiz?.is_startup || false,
+    onlineDelivery: cachedBiz?.online_delivery || false,
+    franchiseAvailable: cachedBiz?.franchise_available || false,
+    phone: cachedBiz?.contact?.mobile || "",
+    email: cachedBiz?.contact?.email || "",
+    address: cachedBiz?.location?.address || "",
+    city: cachedBiz?.location?.city || "",
+    district: cachedBiz?.location?.district || "3220",
+    country: cachedBiz?.location?.country || "",
+    pincode: (cachedBiz?.location as any)?.postal_code || cachedBiz?.location?.pincode || "",
+    primaryLocation: cachedBiz?.location ? `${cachedBiz.location.city || ""}, District ${cachedBiz.district_number || "3220"}` : "",
+    additionalLocations: [] as string[],
     socialLinks: {
-      linkedin: "https://linkedin.com/company/lumina",
-      instagram: "https://instagram.com/lumina",
-      facebook: "https://facebook.com/lumina",
-      twitter: "https://twitter.com/lumina",
-      whatsapp: "+919876543210",
+      linkedin: (cachedBiz?.contact?.social_links as any)?.linkedin || "",
+      instagram: (cachedBiz?.contact?.social_links as any)?.instagram || "",
+      facebook: (cachedBiz?.contact?.social_links as any)?.facebook || "",
+      twitter: (cachedBiz?.contact?.social_links as any)?.twitter || "",
+      whatsapp: cachedBiz?.contact?.whatsapp || "",
     },
   });
 
   const [newDashLocationInput, setNewDashLocationInput] = useState("");
 
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [showAddService, setShowAddService] = useState(false);
+  const [newService, setNewService] = useState<{
+    name: string;
+    description: string;
+    price: string;
+    serviceArea: "local" | "state" | "nationwide" | "international";
+  }>({
+    name: "",
+    description: "",
+    price: "",
+    serviceArea: "nationwide",
+  });
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: "", price: "", description: "", tags: "" });
+
   const handleAddDashLocation = () => {
-    if (newDashLocationInput.trim()) {
-      setBusinessInfo((prev) => ({
-        ...prev,
-        additionalLocations: [...prev.additionalLocations, newDashLocationInput.trim()],
-      }));
-      setNewDashLocationInput("");
-      triggerSaveNotification();
-    }
+    if (!newDashLocationInput.trim()) return;
+    setBusinessInfo((prev) => ({
+      ...prev,
+      additionalLocations: [...prev.additionalLocations, newDashLocationInput.trim()],
+    }));
+    setNewDashLocationInput("");
+    triggerSaveNotification();
   };
 
   const handleRemoveDashLocation = (index: number) => {
@@ -82,68 +213,122 @@ export default function BusinessEditProfilePage() {
     triggerSaveNotification();
   };
 
-  // Gallery photos state
-  const [galleryImages, setGalleryImages] = useState<string[]>([
-    "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
-  ]);
+  useEffect(() => {
+    async function loadData() {
+      try {
+        if (!cachedBiz) {
+          setIsLoading(true);
+        }
+        const [biz, cats] = await Promise.all([
+          getOwnerBusinessAction(),
+          getCategoriesAction(),
+        ]);
 
-  // Services state
-  const [services, setServices] = useState([
-    {
-      id: "srv-1",
-      name: "Custom Enterprise Software & Web Apps",
-      description: "Scalable full-stack Next.js and Cloud architecture tailored for global enterprises.",
-      price: "$1,500 - $10,000",
-      serviceArea: "Pan India & International",
-      icon: "Code",
-    },
-    {
-      id: "srv-2",
-      name: "UI/UX Product Design & Prototyping",
-      description: "Human-centric digital interface design system with high-fidelity interactive prototypes.",
-      price: "$800 - $3,500",
-      serviceArea: "International",
-      icon: "Palette",
-    },
-  ]);
+        if (cats && cats.length > 0) {
+          setDbCategories(cats);
+        }
 
-  // Products state
-  const [products, setProducts] = useState([
-    {
-      id: "prd-1",
-      name: "Rotaract Member Management SaaS",
-      price: "$499/year",
-      description: "Automated member verification, district event passes, and annual dues collection platform.",
-      tags: ["SaaS", "Rotary", "Automation"],
-      imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      id: "prd-2",
-      name: "Smart Business Card NFC Tags",
-      price: "$29 / pack",
-      description: "Instant contactless profile sharing for Rotaract network events and B2B conferences.",
-      tags: ["Hardware", "NFC", "Networking"],
-      imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=600&q=80",
-    },
-  ]);
+        if (biz) {
+          setRawBusiness(biz);
+          setCachedDashboardData("owner_biz", biz);
+          setBusinessInfo({
+            id: biz.id,
+            slug: biz.slug,
+            name: biz.name,
+            categoryId: biz.category_id || (biz.category as any)?.id || (cats?.[0]?.id || ""),
+            subcategoryId: biz.subcategory_id || (biz.subcategory as any)?.id || "",
+            businessType: ((biz.business_type as any) || ["service_provider"]),
+            category: biz.category?.name || cats?.[0]?.name || "General Enterprise",
+            tagline: biz.tagline || "",
+            description: biz.description || "",
+            yearEstablished: biz.year_established || 2024,
+            logoUrl: biz.logo_url || "",
+            coverUrl: biz.cover_image_url || "",
+            isWomenOwned: biz.is_women_owned || false,
+            isStartup: biz.is_startup || false,
+            onlineDelivery: biz.online_delivery || false,
+            franchiseAvailable: biz.franchise_available || false,
+            phone: biz.contact?.mobile || "",
+            email: biz.contact?.email || "",
+            address: biz.location?.address || "",
+            city: biz.location?.city || "",
+            district: biz.location?.district || "",
+            country: biz.location?.country || "",
+            pincode: (biz.location as any)?.postal_code || biz.location?.pincode || "",
+            primaryLocation: `${biz.location?.city || "National"}, Dist ${biz.rotaract_profile?.district_number || "3220"}`,
+            additionalLocations: [],
+            socialLinks: {
+              linkedin: (biz.contact?.social_links as any)?.linkedin || "",
+              instagram: (biz.contact?.social_links as any)?.instagram || "",
+              facebook: (biz.contact?.social_links as any)?.facebook || "",
+              twitter: (biz.contact?.social_links as any)?.twitter || "",
+              whatsapp: biz.contact?.whatsapp || "",
+            },
+          });
 
-  // Modals / Editors state
-  const [showAddService, setShowAddService] = useState(false);
-  const [newService, setNewService] = useState({ name: "", description: "", price: "", serviceArea: "Pan India" });
+          const prods = biz.products_services || [];
+          const srvList = prods
+            .filter((p) => p.type === "service")
+            .map((s) => ({
+              ...s,
+              price: formatCurrencyPrice(s.price_from, biz.location?.country) || "Custom Quote",
+              serviceArea: s.service_area ? s.service_area.charAt(0).toUpperCase() + s.service_area.slice(1) : "Nationwide",
+            }));
+          const prdList = prods
+            .filter((p) => p.type === "product")
+            .map((p) => ({
+              ...p,
+              price: formatCurrencyPrice(p.price_from, biz.location?.country) || "Custom Quote",
+            }));
 
-  const [showAddProduct, setShowAddProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: "", price: "", description: "", tags: "", imageUrl: "" });
+          setServices(srvList);
+          setProducts(prdList);
+        }
+      } catch (err) {
+        console.error("Failed to load business profile:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const triggerSaveNotification = () => {
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3500);
   };
 
-  const handleSaveOverview = (e: React.FormEvent) => {
+  const handleSaveOverview = async (e: React.FormEvent) => {
     e.preventDefault();
-    triggerSaveNotification();
+    if (!businessInfo.id) return;
+    try {
+      await updateOwnerBusinessAction({
+        businessId: businessInfo.id,
+        name: businessInfo.name,
+        tagline: businessInfo.tagline,
+        description: businessInfo.description,
+        yearEstablished: Number(businessInfo.yearEstablished) || undefined,
+        categoryId: businessInfo.categoryId || undefined,
+        subcategoryId: businessInfo.subcategoryId || undefined,
+        businessType: businessInfo.businessType,
+        isWomenOwned: businessInfo.isWomenOwned,
+        isStartup: businessInfo.isStartup,
+        onlineDelivery: businessInfo.onlineDelivery,
+        franchiseAvailable: businessInfo.franchiseAvailable,
+        logoUrl: businessInfo.logoUrl,
+        coverImageUrl: businessInfo.coverUrl,
+        city: businessInfo.city || "Colombo",
+        address: businessInfo.address || "Main Street",
+        pincode: businessInfo.pincode,
+        email: businessInfo.email,
+        mobile: businessInfo.phone,
+        whatsapp: businessInfo.socialLinks.whatsapp,
+        socialLinks: businessInfo.socialLinks,
+      });
+      triggerSaveNotification();
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+    }
   };
 
   const handleRemoveGalleryImage = (index: number) => {
@@ -151,52 +336,85 @@ export default function BusinessEditProfilePage() {
     triggerSaveNotification();
   };
 
-  const handleAddService = (e: React.FormEvent) => {
+  const handleAddService = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newService.name.trim()) return;
-    setServices([
-      ...services,
-      {
-        id: `srv-${Date.now()}`,
-        name: newService.name,
-        description: newService.description,
-        price: newService.price || "Custom Quote",
+    if (!newService.name.trim() || !businessInfo.id) return;
+    try {
+      const res = await saveProductServiceAction({
+        businessId: businessInfo.id,
+        name: newService.name.trim(),
+        type: "service",
+        description: newService.description.trim(),
+        priceFrom: parseFloat(newService.price.replace(/[^0-9.]/g, "")) || undefined,
         serviceArea: newService.serviceArea,
-        icon: "Briefcase",
-      },
-    ]);
-    setNewService({ name: "", description: "", price: "", serviceArea: "Pan India" });
-    setShowAddService(false);
-    triggerSaveNotification();
+      });
+      if (res.success && res.product) {
+        setServices([
+          ...services,
+          {
+            ...res.product,
+            price: formatCurrencyPrice(newService.price, businessInfo.country) || "Custom Quote",
+            serviceArea: newService.serviceArea ? newService.serviceArea.charAt(0).toUpperCase() + newService.serviceArea.slice(1) : "Nationwide",
+          },
+        ]);
+      }
+      setNewService({ name: "", description: "", price: "", serviceArea: "nationwide" });
+      setShowAddService(false);
+      triggerSaveNotification();
+    } catch (err) {
+      console.error("Failed to add service:", err);
+    }
   };
 
-  const handleDeleteService = (id: string) => {
-    setServices(services.filter((s) => s.id !== id));
-    triggerSaveNotification();
+  const handleDeleteService = async (id: string) => {
+    try {
+      await deleteProductServiceAction(id);
+      setServices(services.filter((s) => s.id !== id));
+      triggerSaveNotification();
+    } catch (err) {
+      console.error("Failed to delete service:", err);
+    }
   };
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProduct.name.trim()) return;
-    setProducts([
-      ...products,
-      {
-        id: `prd-${Date.now()}`,
-        name: newProduct.name,
-        price: newProduct.price || "Contact for Pricing",
-        description: newProduct.description,
-        tags: newProduct.tags ? newProduct.tags.split(",").map((t) => t.trim()) : ["Featured"],
-        imageUrl: newProduct.imageUrl || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80",
-      },
-    ]);
-    setNewProduct({ name: "", price: "", description: "", tags: "", imageUrl: "" });
-    setShowAddProduct(false);
-    triggerSaveNotification();
+    if (!newProduct.name.trim() || !businessInfo.id) return;
+    try {
+      const tagsList = newProduct.tags ? newProduct.tags.split(",").map((t) => t.trim()) : ["Featured"];
+      const res = await saveProductServiceAction({
+        businessId: businessInfo.id,
+        name: newProduct.name.trim(),
+        type: "product",
+        description: newProduct.description.trim(),
+        priceFrom: parseFloat(newProduct.price.replace(/[^0-9.]/g, "")) || undefined,
+        tags: tagsList,
+      });
+      if (res.success && res.product) {
+        setProducts([
+          ...products,
+          {
+            ...res.product,
+            price: formatCurrencyPrice(newProduct.price, businessInfo.country) || "Custom Quote",
+            tags: tagsList,
+          },
+        ]);
+      }
+      setNewProduct({ name: "", price: "", description: "", tags: "" });
+      setShowAddProduct(false);
+      triggerSaveNotification();
+    } catch (err) {
+      console.error("Failed to add product:", err);
+    }
   };
 
-  const handleDeleteProduct = (id: string) => {
-    setProducts(products.filter((p) => p.id !== id));
-    triggerSaveNotification();
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      await deleteProductServiceAction(id);
+      setProducts(products.filter((p) => p.id !== id));
+      triggerSaveNotification();
+    } catch (err) {
+      console.error("Failed to delete product:", err);
+    }
   };
 
   return (
@@ -229,7 +447,7 @@ export default function BusinessEditProfilePage() {
             asChild
           >
             <Link
-              href={`/business/${defaultBusiness.slug || "lumina-digital-solutions"}`}
+              href={`/business/${businessInfo.slug || "lumina-digital-solutions"}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -457,12 +675,12 @@ export default function BusinessEditProfilePage() {
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-700">Service Scope / Region</Label>
-                    <Input
+                    <Label className="text-xs font-semibold text-slate-700">Service Scope / Target Region</Label>
+                    <FormCustomDropdown
                       value={newService.serviceArea}
-                      onChange={(e) => setNewService({ ...newService, serviceArea: e.target.value })}
-                      placeholder="e.g. Pan India / International"
-                      className="text-xs bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
+                      options={serviceScopeOptions}
+                      onChange={(val) => setNewService({ ...newService, serviceArea: val as any })}
+                      placeholder="Select target region..."
                     />
                   </div>
 
@@ -499,24 +717,35 @@ export default function BusinessEditProfilePage() {
           )}
 
           {/* Services List Grid */}
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {services.map((srv) => (
-              <div key={srv.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between space-y-4 hover:border-pink-200 transition-colors">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-3">
-                    <h4 className="text-sm font-bold text-slate-900 leading-snug">{srv.name}</h4>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-pink-50 text-[#D41367] shrink-0 border border-pink-100/80">
+              <div key={srv.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between hover:border-[#D41367]/40 hover:shadow-md transition-all group space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-2xs">
+                      <Wrench className="w-3.5 h-3.5 text-pink-400" />
+                      <span>Service</span>
+                    </div>
+                    <span className="bg-pink-50 text-[#D41367] font-black text-xs px-2.5 py-1 rounded-lg shadow-2xs border border-pink-200/60">
                       {srv.price}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">{srv.description}</p>
+                  <div className="space-y-1 pt-0.5">
+                    <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-[#D41367] transition-colors">{srv.name}</h4>
+                    {srv.description && (
+                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-normal">{srv.description}</p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs sm:text-sm">
-                  <span className="text-xs text-slate-500 font-normal">Scope: {srv.serviceArea}</span>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="inline-flex items-center gap-1 text-[11px] text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/80 font-medium">
+                    <Globe className="w-3 h-3 text-[#D41367]" />
+                    <span>{srv.serviceArea}</span>
+                  </span>
                   <button
                     onClick={() => handleDeleteService(srv.id)}
-                    className="text-red-500 hover:text-red-700 text-xs sm:text-sm font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                    className="text-red-500 hover:text-red-700 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Remove
                   </button>
@@ -558,7 +787,7 @@ export default function BusinessEditProfilePage() {
                     </div>
                     <div>
                       <h3 className="text-base sm:text-lg font-bold text-slate-900">Add New Product</h3>
-                      <p className="text-xs sm:text-sm text-slate-500 font-normal">Add product details, price, and thumbnail photo.</p>
+                      <p className="text-xs sm:text-sm text-slate-500 font-normal">Add product details, pricing, and tag keywords.</p>
                     </div>
                   </div>
                   <button
@@ -578,48 +807,41 @@ export default function BusinessEditProfilePage() {
                         required
                         value={newProduct.name}
                         onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                        placeholder="e.g. Executive Blazer Pin"
-                        className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
+                        placeholder="e.g. ERP Software Suite"
+                        className="rounded-xl border-slate-200 text-xs sm:text-sm h-9.5"
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs sm:text-sm font-semibold text-slate-700">Unit Price</Label>
+                      <Label className="text-xs sm:text-sm font-semibold text-slate-700">Price (Starting / Fixed)</Label>
                       <Input
                         value={newProduct.price}
                         onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                        placeholder="e.g. $15 per unit"
-                        className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
+                        placeholder="e.g. 99 or On Quote"
+                        className="rounded-xl border-slate-200 text-xs sm:text-sm h-9.5"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Tags (Comma Separated)</Label>
-                    <Input
-                      value={newProduct.tags}
-                      onChange={(e) => setNewProduct({ ...newProduct, tags: e.target.value })}
-                      placeholder="e.g. Merchandise, Rotary, Popular"
-                      className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Product Description</Label>
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Description</Label>
                     <textarea
-                      rows={2}
+                      rows={3}
                       value={newProduct.description}
                       onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                      placeholder="Key specifications, sizing, or product details..."
+                      placeholder="Key specifications, deliverables, warranties, or compatibility..."
                       className="w-full text-xs sm:text-sm p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:bg-white focus:border-[#D41367] focus:ring-2 focus:ring-pink-100 transition-all placeholder:text-slate-400 resize-none"
                     />
                   </div>
 
-                  <ImageUploader
-                    label="Upload Product Photo"
-                    value={newProduct.imageUrl}
-                    onChange={(url) => setNewProduct({ ...newProduct, imageUrl: url })}
-                    heightClass="h-24"
-                  />
+                  <div className="space-y-1">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-700">Keywords / Tags (Comma separated)</Label>
+                    <Input
+                      value={newProduct.tags}
+                      onChange={(e) => setNewProduct({ ...newProduct, tags: e.target.value })}
+                      placeholder="e.g. Cloud, Scalable, Analytics"
+                      className="rounded-xl border-slate-200 text-xs sm:text-sm h-9.5"
+                    />
+                  </div>
 
                   <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                     <Button
@@ -643,38 +865,34 @@ export default function BusinessEditProfilePage() {
           )}
 
           {/* Products List Grid */}
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {products.map((prd) => (
-              <div key={prd.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs flex flex-col justify-between group hover:border-pink-200 transition-all">
-                <div className="relative w-full h-40 bg-slate-100">
-                  <Image src={prd.imageUrl} alt={prd.name} fill unoptimized className="object-cover group-hover:scale-105 transition-transform" />
-                  <span className="absolute top-3 right-3 bg-white/95 backdrop-blur-md text-[#D41367] font-semibold text-xs px-2.5 py-0.5 rounded-md shadow-xs border border-slate-100">
-                    {prd.price}
-                  </span>
+              <div key={prd.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between hover:border-[#D41367]/40 hover:shadow-md transition-all group space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-2xs">
+                      <Package className="w-3.5 h-3.5 text-pink-400" />
+                      <span>Product</span>
+                    </div>
+                    <span className="bg-pink-50 text-[#D41367] font-black text-xs px-2.5 py-1 rounded-lg shadow-2xs border border-pink-200/60">
+                      {prd.price}
+                    </span>
+                  </div>
+                  <div className="space-y-1 pt-0.5">
+                    <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-[#D41367] transition-colors">{prd.name}</h4>
+                    {prd.description && (
+                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-normal">{prd.description}</p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 mb-1">{prd.name}</h4>
-                    <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed font-normal">{prd.description}</p>
-
-                    <div className="flex flex-wrap gap-1.5 mt-2.5">
-                      {prd.tags.map((t, idx) => (
-                        <span key={idx} className="text-xs font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 flex justify-end">
-                    <button
-                      onClick={() => handleDeleteProduct(prd.id)}
-                      className="text-red-500 hover:text-red-700 text-xs sm:text-sm font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Remove
-                    </button>
-                  </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
+                  <button
+                    onClick={() => handleDeleteProduct(prd.id)}
+                    className="text-red-500 hover:text-red-700 text-xs sm:text-sm font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
                 </div>
               </div>
             ))}
@@ -694,6 +912,7 @@ export default function BusinessEditProfilePage() {
             </p>
           </div>
 
+          {/* Business Core Info */}
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label className="text-xs sm:text-sm font-semibold text-slate-700">Official Business Name *</Label>
@@ -705,25 +924,69 @@ export default function BusinessEditProfilePage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs sm:text-sm font-semibold text-slate-700">Industry Sector / Category</Label>
+              <Label className="text-xs sm:text-sm font-semibold text-slate-700">Tagline / Slogan</Label>
               <Input
-                value={businessInfo.category}
-                onChange={(e) => setBusinessInfo({ ...businessInfo, category: e.target.value })}
+                value={businessInfo.tagline}
+                onChange={(e) => setBusinessInfo({ ...businessInfo, tagline: e.target.value })}
+                placeholder="e.g. Empowering Rotaract Brands with Next-Gen Solutions"
                 className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
               />
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          {/* Database-backed Industry Category & Subcategory Custom Dropdowns */}
+          <div className="grid sm:grid-cols-2 gap-4 pt-1">
             <div className="space-y-1">
-              <Label className="text-xs sm:text-sm font-semibold text-slate-700">Tagline / Slogan</Label>
-              <Input
-                value={businessInfo.tagline}
-                onChange={(e) => setBusinessInfo({ ...businessInfo, tagline: e.target.value })}
-                placeholder="e.g. Empowering Rotaract Brands with Next-Gen SaaS"
-                className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
+              <Label className="text-xs sm:text-sm font-semibold text-slate-700">Primary Industry Category (From Database) *</Label>
+              <FormCustomDropdown
+                value={businessInfo.categoryId}
+                options={dbCategories
+                  .filter((c) => !c.parent_id)
+                  .map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                    description: `Category / ${c.slug}`,
+                  }))}
+                onChange={(catId) => {
+                  const chosen = dbCategories.find((c) => c.id === catId);
+                  setBusinessInfo((prev) => ({
+                    ...prev,
+                    categoryId: catId,
+                    category: chosen ? chosen.name : prev.category,
+                    subcategoryId: "",
+                  }));
+                }}
+                placeholder="Select category from database..."
               />
             </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs sm:text-sm font-semibold text-slate-700">Industry Subcategory (Optional)</Label>
+              {dbCategories.some((c) => c.parent_id === businessInfo.categoryId) ? (
+                <FormCustomDropdown
+                  value={businessInfo.subcategoryId}
+                  options={[
+                    { value: "", label: "General (No Specific Subcategory)", description: "List under broad category" },
+                    ...dbCategories
+                      .filter((c) => c.parent_id === businessInfo.categoryId)
+                      .map((c) => ({
+                        value: c.id,
+                        label: c.name,
+                        description: `Subcategory / ${c.slug}`,
+                      })),
+                  ]}
+                  onChange={(subId) => setBusinessInfo((prev) => ({ ...prev, subcategoryId: subId }))}
+                  placeholder="Select subcategory..."
+                />
+              ) : (
+                <div className="h-9.5 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-xs flex items-center">
+                  <span>No subcategories for this sector</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label className="text-xs sm:text-sm font-semibold text-slate-700">Year Established</Label>
               <Input
@@ -732,6 +995,157 @@ export default function BusinessEditProfilePage() {
                 onChange={(e) => setBusinessInfo({ ...businessInfo, yearEstablished: Number(e.target.value) })}
                 className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
               />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs sm:text-sm font-semibold text-slate-700">Primary Operating City &amp; District</Label>
+              <Input
+                value={businessInfo.primaryLocation}
+                onChange={(e) => setBusinessInfo({ ...businessInfo, primaryLocation: e.target.value })}
+                className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl h-9.5 focus:bg-white"
+              />
+            </div>
+          </div>
+
+          {/* Commercial Classification Types */}
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <Label className="text-xs sm:text-sm font-semibold text-slate-700">Commercial Operating Classifications</Label>
+            <p className="text-xs text-slate-500">Select one or more classifications that define your business model:</p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {[
+                { value: "service_provider", label: "Service Provider" },
+                { value: "manufacturer", label: "Manufacturer" },
+                { value: "trader", label: "Trader / Distributor" },
+                { value: "exporter", label: "Exporter" },
+                { value: "importer", label: "Importer" },
+                { value: "franchise", label: "Franchise" },
+              ].map((opt) => {
+                const isSelected = businessInfo.businessType.includes(opt.value as any);
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      const cur = businessInfo.businessType;
+                      const next = isSelected
+                        ? cur.filter((t) => t !== opt.value)
+                        : [...cur, opt.value as any];
+                      setBusinessInfo((prev) => ({ ...prev, businessType: next.length > 0 ? next : ["service_provider"] }));
+                    }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5",
+                      isSelected
+                        ? "bg-pink-50 border-[#D41367] text-[#D41367] shadow-2xs font-bold"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    )}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5 text-[#D41367]" />}
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Enterprise Badges & Accreditations */}
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <Label className="text-xs sm:text-sm font-semibold text-slate-700">Enterprise Accreditations &amp; Capabilities</Label>
+            <p className="text-xs text-slate-500">Enable badges to showcase commercial capabilities in the Rotaract directory:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setBusinessInfo((prev) => ({ ...prev, isWomenOwned: !prev.isWomenOwned }))}
+                className={cn(
+                  "p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer",
+                  businessInfo.isWomenOwned
+                    ? "bg-purple-50/60 border-purple-300 text-purple-900"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold leading-tight">Women-Owned Enterprise</p>
+                    <p className="text-[10px] text-slate-500">Certified women-led or founded entity</p>
+                  </div>
+                </div>
+                <div className={cn("w-5 h-5 rounded-md border flex items-center justify-center", businessInfo.isWomenOwned ? "bg-[#D41367] border-[#D41367] text-white" : "border-slate-300 bg-white")}>
+                  {businessInfo.isWomenOwned && <Check className="w-3.5 h-3.5" />}
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBusinessInfo((prev) => ({ ...prev, isStartup: !prev.isStartup }))}
+                className={cn(
+                  "p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer",
+                  businessInfo.isStartup
+                    ? "bg-indigo-50/60 border-indigo-300 text-indigo-900"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                    <Rocket className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold leading-tight">High-Growth Startup</p>
+                    <p className="text-[10px] text-slate-500">Innovative early-stage venture</p>
+                  </div>
+                </div>
+                <div className={cn("w-5 h-5 rounded-md border flex items-center justify-center", businessInfo.isStartup ? "bg-[#D41367] border-[#D41367] text-white" : "border-slate-300 bg-white")}>
+                  {businessInfo.isStartup && <Check className="w-3.5 h-3.5" />}
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBusinessInfo((prev) => ({ ...prev, onlineDelivery: !prev.onlineDelivery }))}
+                className={cn(
+                  "p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer",
+                  businessInfo.onlineDelivery
+                    ? "bg-emerald-50/60 border-emerald-300 text-emerald-900"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Truck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold leading-tight">Direct Delivery &amp; Shipping</p>
+                    <p className="text-[10px] text-slate-500">Nationwide/local fulfillment ready</p>
+                  </div>
+                </div>
+                <div className={cn("w-5 h-5 rounded-md border flex items-center justify-center", businessInfo.onlineDelivery ? "bg-[#D41367] border-[#D41367] text-white" : "border-slate-300 bg-white")}>
+                  {businessInfo.onlineDelivery && <Check className="w-3.5 h-3.5" />}
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBusinessInfo((prev) => ({ ...prev, franchiseAvailable: !prev.franchiseAvailable }))}
+                className={cn(
+                  "p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer",
+                  businessInfo.franchiseAvailable
+                    ? "bg-amber-50/60 border-amber-300 text-amber-900"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Handshake className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold leading-tight">Franchise &amp; Expansion Open</p>
+                    <p className="text-[10px] text-slate-500">Open for regional dealership &amp; partners</p>
+                  </div>
+                </div>
+                <div className={cn("w-5 h-5 rounded-md border flex items-center justify-center", businessInfo.franchiseAvailable ? "bg-[#D41367] border-[#D41367] text-white" : "border-slate-300 bg-white")}>
+                  {businessInfo.franchiseAvailable && <Check className="w-3.5 h-3.5" />}
+                </div>
+              </button>
             </div>
           </div>
 

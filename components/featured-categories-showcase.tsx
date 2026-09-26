@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ArrowUpRight, Building2, Briefcase, Laptop, Stethoscope, Palette, Compass, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
+import type { Category } from "@/lib/types";
 
 const categoryPhotos = {
   finance: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1200&q=85",
@@ -13,7 +14,11 @@ const categoryPhotos = {
   tech: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=85",
 };
 
-export function FeaturedCategoriesShowcase() {
+interface FeaturedCategoriesShowcaseProps {
+  categories?: Category[];
+}
+
+export function FeaturedCategoriesShowcase({ categories }: FeaturedCategoriesShowcaseProps) {
   return (
     <section className="py-16 sm:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,7 +42,7 @@ export function FeaturedCategoriesShowcase() {
           </Link>
         </div>
 
-        {/* Asymmetric Bento Showcase Grid (Same Layout Preserved) */}
+        {/* Asymmetric Bento Showcase Grid */}
         <div className="grid lg:grid-cols-12 gap-6 items-stretch mb-6">
           {/* Column 1 (Left - 2 Stacked Category Cards) */}
           <div className="lg:col-span-4 flex flex-col gap-6 justify-between">
@@ -129,7 +134,7 @@ export function FeaturedCategoriesShowcase() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20 p-6 flex flex-col justify-between text-white">
                 {/* Top Badge */}
                 <div className="self-start">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-pink-600/90 backdrop-blur-md text-white text-[11px] font-extrabold border border-pink-400/40">
+                  <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#D41367] backdrop-blur-md text-white text-[11px] font-black tracking-wide border border-pink-400/40">
                     MOST ACTIVE SECTOR
                   </span>
                 </div>
@@ -137,7 +142,9 @@ export function FeaturedCategoriesShowcase() {
                 {/* Bottom Title & Action */}
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <span className="text-xs font-black text-pink-300 uppercase tracking-wider block mb-1">210 Verified Member Firms</span>
+                    <span className="text-xs font-black text-pink-400 uppercase tracking-wider block mb-1">
+                      210 VERIFIED MEMBER FIRMS
+                    </span>
                     <h3 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight text-white mb-1.5">
                       Technology & Software.
                     </h3>

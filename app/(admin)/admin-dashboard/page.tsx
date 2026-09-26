@@ -20,11 +20,19 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
 import {
-  mockAdminAnalytics,
-  mockBusinesses,
-  mockDeactivationRequests,
-} from "@/lib/mock-data";
+  getAdminAnalyticsAction,
+  getAllBusinessesAdminAction,
+  getDeactivationRequestsAdminAction,
+} from "@/app/actions/admin";
+import type { DashboardAnalytics, Business, BusinessDeactivationRequest } from "@/lib/types";
+
+import {
+  getCachedDashboardData,
+  setCachedDashboardData,
+} from "@/lib/cache/admin-cache";
 
 const DATE_RANGE_OPTIONS = [
   "Last 7 Days",
@@ -34,13 +42,62 @@ const DATE_RANGE_OPTIONS = [
   "All Time",
 ];
 
-export default function SuperAdminDashboardPage() {
-  const analytics = mockAdminAnalytics;
-  const recentVerifications = mockBusinesses.slice(0, 5);
+const DEFAULT_ANALYTICS: DashboardAnalytics = {
+  total_businesses: 0,
+  total_users: 0,
+  total_moderators: 0,
+  gold_tier_count: 0,
+  silver_tier_count: 0,
+  pending_verifications: 0,
+  pending_deactivations: 0,
+  businesses_by_district: [],
+  businesses_by_category: [],
+  verification_status_distribution: [],
+  monthly_growth: [],
+  recent_activity: [],
+};
 
+export default function SuperAdminDashboardPage() {
+  const cachedAnalytics = getCachedDashboardData<DashboardAnalytics>("admin_analytics");
+  const cachedVerifications = getCachedDashboardData<Business[]>("admin_recent_verifications");
+  const cachedDeacts = getCachedDashboardData<BusinessDeactivationRequest[]>("admin_deactivations");
+
+  const [analytics, setAnalytics] = useState<DashboardAnalytics>(cachedAnalytics || DEFAULT_ANALYTICS);
+  const [recentVerifications, setRecentVerifications] = useState<Business[]>(cachedVerifications || []);
+  const [deactivationRequests, setDeactivationRequests] = useState<BusinessDeactivationRequest[]>(cachedDeacts || []);
   const [dateRange, setDateRange] = useState("Last 30 Days");
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!cachedAnalytics);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        if (!cachedAnalytics) {
+          setIsLoading(true);
+        }
+        const [stats, businesses, deactReqs] = await Promise.all([
+          getAdminAnalyticsAction(),
+          getAllBusinessesAdminAction(),
+          getDeactivationRequestsAdminAction(),
+        ]);
+        setAnalytics(stats);
+        setRecentVerifications(businesses.slice(0, 5));
+        setDeactivationRequests(deactReqs);
+
+        // Store in SWR cache
+        setCachedDashboardData("admin_analytics", stats);
+        setCachedDashboardData("admin_recent_verifications", businesses.slice(0, 5));
+        setCachedDashboardData("admin_all_businesses", businesses);
+        setCachedDashboardData("admin_deactivations", deactReqs);
+      } catch (err) {
+        console.error("Failed to load super admin dashboard:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -52,6 +109,83 @@ export default function SuperAdminDashboardPage() {
     setIsDateRangeOpen(false);
     showToast(`Updated analytics view for: ${range}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
+        {/* Header Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-7 w-64 rounded-lg" />
+              <Skeleton className="h-5 w-28 rounded-md" />
+            </div>
+            <Skeleton className="h-4 w-96 rounded-md" />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-9.5 w-32 rounded-xl" />
+            <Skeleton className="h-9.5 w-36 rounded-xl" />
+          </div>
+        </div>
+
+        {/* 4 Stat Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-4.5 sm:p-5 space-y-3 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-32 rounded-md" />
+                <Skeleton className="w-8 h-8 rounded-xl" />
+              </div>
+              <Skeleton className="h-8 w-20 rounded-lg" />
+              <Skeleton className="h-3.5 w-40 rounded-md" />
+            </div>
+          ))}
+        </div>
+
+        {/* 2-Column Operational Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="space-y-1.5">
+                <Skeleton className="h-5 w-56 rounded-md" />
+                <Skeleton className="h-3.5 w-72 rounded-md" />
+              </div>
+              <Skeleton className="h-4 w-24 rounded-md" />
+            </div>
+            <div className="divide-y divide-slate-100">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="py-3.5 flex items-center justify-between gap-4">
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-4 w-48 rounded-md" />
+                    <Skeleton className="h-3.5 w-64 rounded-md" />
+                  </div>
+                  <Skeleton className="h-8 w-20 rounded-xl" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+            <div className="space-y-1.5 pb-3 border-b border-slate-100">
+              <Skeleton className="h-5 w-36 rounded-md" />
+              <Skeleton className="h-3.5 w-44 rounded-md" />
+            </div>
+            <div className="flex justify-center py-4">
+              <Skeleton className="w-36 h-36 rounded-full" />
+            </div>
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-28 rounded-md" />
+                  <Skeleton className="h-4 w-12 rounded-md" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
@@ -142,7 +276,7 @@ export default function SuperAdminDashboardPage() {
       </div>
 
       {/* ================= CRITICAL DISTRICT ALERT BANNER ================= */}
-      {analytics.districts_without_moderators.length > 0 && (
+      {(analytics.districts_without_moderators || []).length > 0 && (
         <div className="bg-red-50/70 border border-red-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center font-bold shrink-0 border border-red-200">
@@ -154,11 +288,11 @@ export default function SuperAdminDashboardPage() {
                   Moderator Coverage Notice
                 </h3>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-red-200/80 text-red-900">
-                  {analytics.districts_without_moderators.length} Districts Unassigned
+                  {(analytics.districts_without_moderators || []).length} Districts Unassigned
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-red-900/80 font-normal">
-                District {analytics.districts_without_moderators.join(", ")} currently have no active moderators assigned.
+                District {(analytics.districts_without_moderators || []).join(", ")} currently have no active moderators assigned.
               </p>
             </div>
           </div>
@@ -173,7 +307,7 @@ export default function SuperAdminDashboardPage() {
       )}
 
       {/* ================= PENDING DEACTIVATION ESCALATIONS BANNER ================= */}
-      {mockDeactivationRequests.filter((r) => r.status === "pending").length > 0 && (
+      {deactivationRequests.filter((r: BusinessDeactivationRequest) => r.status === "pending").length > 0 && (
         <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold shrink-0 border border-amber-200">
@@ -185,7 +319,7 @@ export default function SuperAdminDashboardPage() {
                   Moderator Deactivation Escalations
                 </h3>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-200 text-amber-900">
-                  {mockDeactivationRequests.filter((r) => r.status === "pending").length} Requests Pending Admin Action
+                  {deactivationRequests.filter((r: BusinessDeactivationRequest) => r.status === "pending").length} Requests Pending Admin Action
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-amber-900/80 font-normal">
@@ -270,7 +404,7 @@ export default function SuperAdminDashboardPage() {
           </div>
           <div>
             <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              {analytics.unverified_count.toLocaleString()}
+              {(analytics.unverified_count || 0).toLocaleString()}
             </div>
             <div className="text-xs font-medium text-slate-500 mt-1">
               <Link
@@ -409,7 +543,7 @@ export default function SuperAdminDashboardPage() {
           </div>
 
           <div className="space-y-2 pt-2 text-xs sm:text-sm border-t border-slate-100">
-            {analytics.category_breakdown.map((cat) => (
+            {(analytics.category_breakdown || []).map((cat) => (
               <div key={cat.name} className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ background: cat.color }} />

@@ -22,6 +22,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { getAllUsersAdminAction } from "@/app/actions/admin";
+
+import {
+  getCachedDashboardData,
+  setCachedDashboardData,
+} from "@/lib/cache/admin-cache";
 
 interface AdminUser {
   id: string;
@@ -33,56 +41,10 @@ interface AdminUser {
   rotaryId: string;
 }
 
-const initialUsers: AdminUser[] = [
-  {
-    id: "1",
-    name: "Rtr. Anand Vardhan Sharma",
-    email: "anand@luminadigital.in",
-    role: "Business Owner",
-    district: "District 3220",
-    status: "Active",
-    rotaryId: "RID-3220-8841",
-  },
-  {
-    id: "2",
-    name: "Rtr. Sarah Chen",
-    email: "sarah@rotaract3220.org",
-    role: "District Moderator",
-    district: "District 3220",
-    status: "Active",
-    rotaryId: "RID-3220-1042",
-  },
-  {
-    id: "3",
-    name: "Dr. Rtr. Rohan Shah",
-    email: "rohan@apexdental.com",
-    role: "Business Owner",
-    district: "District 3141",
-    status: "Active",
-    rotaryId: "RID-3141-9920",
-  },
-  {
-    id: "4",
-    name: "Rtr. Marcus Vance",
-    email: "marcus@bloomstudio.com",
-    role: "Business Owner",
-    district: "District 9110",
-    status: "Suspended",
-    rotaryId: "RID-9110-3312",
-  },
-  {
-    id: "5",
-    name: "Rtn. Kanishka De Silva",
-    email: "kanishka@rotaractglobal.org",
-    role: "Super Admin",
-    district: "District 3220",
-    status: "Active",
-    rotaryId: "RID-3220-0001",
-  },
-];
-
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<AdminUser[]>(initialUsers);
+  const cachedUsers = getCachedDashboardData<AdminUser[]>("admin_users_list");
+
+  const [users, setUsers] = useState<AdminUser[]>(cachedUsers || []);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -92,6 +54,25 @@ export default function AdminUsersPage() {
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const [newUserDistrict, setNewUserDistrict] = useState("District 3220");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!cachedUsers);
+
+  useEffect(() => {
+    async function loadUsers() {
+      try {
+        if (!cachedUsers) {
+          setIsLoading(true);
+        }
+        const data = await getAllUsersAdminAction();
+        setUsers(data);
+        setCachedDashboardData("admin_users_list", data);
+      } catch (err) {
+        console.error("Failed to load users:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadUsers();
+  }, []);
 
   // Status toggle confirmation modal
   const [statusModalUser, setStatusModalUser] = useState<AdminUser | null>(null);
@@ -160,6 +141,61 @@ export default function AdminUsersPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
+        {/* Header Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-7 w-72 rounded-lg" />
+              <Skeleton className="h-5 w-28 rounded-md" />
+            </div>
+            <Skeleton className="h-4 w-96 rounded-md" />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-9.5 w-32 rounded-xl" />
+          </div>
+        </div>
+
+        {/* Filter Bar Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <Skeleton className="h-10 w-full sm:w-80 rounded-xl" />
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Skeleton className="h-10 w-32 rounded-xl" />
+            <Skeleton className="h-10 w-32 rounded-xl" />
+          </div>
+        </div>
+
+        {/* Users Table Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <Skeleton className="h-5 w-40 rounded-md" />
+            <Skeleton className="h-5 w-20 rounded-md" />
+          </div>
+          <div className="divide-y divide-slate-100 p-4 space-y-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-4 w-44 rounded-md" />
+                    <Skeleton className="h-3.5 w-60 rounded-md" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <Skeleton className="h-6 w-24 rounded-md" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-8 w-20 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
       {/* Toast Alert */}
@@ -183,11 +219,10 @@ export default function AdminUsersPage() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
-                    statusModalUser.status === "Active"
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${statusModalUser.status === "Active"
                       ? "bg-red-50 text-red-600 border-red-100"
                       : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                  }`}
+                    }`}
                 >
                   {statusModalUser.status === "Active" ? (
                     <UserX className="w-4 h-4" />
@@ -248,11 +283,10 @@ export default function AdminUsersPage() {
               <Button
                 type="button"
                 onClick={confirmStatusToggle}
-                className={`rounded-xl text-xs sm:text-sm font-semibold h-9.5 px-5 shadow-xs text-white ${
-                  statusModalUser.status === "Active"
+                className={`rounded-xl text-xs sm:text-sm font-semibold h-9.5 px-5 shadow-xs text-white ${statusModalUser.status === "Active"
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-emerald-600 hover:bg-emerald-700"
-                }`}
+                  }`}
               >
                 {statusModalUser.status === "Active" ? "Confirm Suspension" : "Confirm Reactivation"}
               </Button>
@@ -359,9 +393,8 @@ export default function AdminUsersPage() {
                       >
                         <span className="font-medium text-slate-800 truncate">{newUserRole}</span>
                         <ChevronDown
-                          className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
-                            isRoleDropdownOpen ? "rotate-180" : ""
-                          }`}
+                          className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${isRoleDropdownOpen ? "rotate-180" : ""
+                            }`}
                         />
                       </button>
 
@@ -383,11 +416,10 @@ export default function AdminUsersPage() {
                                       setNewUserRole(role);
                                       setIsRoleDropdownOpen(false);
                                     }}
-                                    className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left ${
-                                      isSelected
+                                    className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-left ${isSelected
                                         ? "bg-pink-50 text-[#D41367]"
                                         : "text-slate-700 hover:bg-slate-100"
-                                    }`}
+                                      }`}
                                   >
                                     <span>{role}</span>
                                     {isSelected && (
@@ -444,7 +476,7 @@ export default function AdminUsersPage() {
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name, email, rotary ID..."
+            placeholder="Search by name, email, rotary ID"
             className="pl-9.5 h-9.5 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
           />
         </div>
@@ -459,11 +491,10 @@ export default function AdminUsersPage() {
             <button
               key={tab.id}
               onClick={() => setRoleFilter(tab.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${
-                roleFilter === tab.id
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${roleFilter === tab.id
                   ? "bg-[#D41367] text-white shadow-2xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -503,13 +534,12 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="py-4 px-5">
                       <span
-                        className={`px-2.5 py-0.5 rounded-md text-xs font-semibold ${
-                          u.role === "Super Admin"
+                        className={`px-2.5 py-0.5 rounded-md text-xs font-semibold ${u.role === "Super Admin"
                             ? "bg-purple-100 text-purple-800 border border-purple-200"
                             : u.role === "District Moderator"
-                            ? "bg-blue-100 text-blue-800 border border-blue-200"
-                            : "bg-slate-100 text-slate-700 border border-slate-200"
-                        }`}
+                              ? "bg-blue-100 text-blue-800 border border-blue-200"
+                              : "bg-slate-100 text-slate-700 border border-slate-200"
+                          }`}
                       >
                         {u.role}
                       </span>
@@ -518,11 +548,10 @@ export default function AdminUsersPage() {
                     <td className="py-4 px-5 font-mono text-xs font-semibold text-[#D41367]">{u.rotaryId}</td>
                     <td className="py-4 px-5">
                       <span
-                        className={`px-2.5 py-0.5 rounded-md text-xs font-semibold ${
-                          u.status === "Active"
+                        className={`px-2.5 py-0.5 rounded-md text-xs font-semibold ${u.status === "Active"
                             ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                             : "bg-rose-100 text-rose-800 border border-rose-200"
-                        }`}
+                          }`}
                       >
                         {u.status}
                       </span>
@@ -532,11 +561,10 @@ export default function AdminUsersPage() {
                         size="sm"
                         variant="ghost"
                         onClick={() => setStatusModalUser(u)}
-                        className={`h-8 text-xs font-semibold rounded-xl cursor-pointer ${
-                          u.status === "Active"
+                        className={`h-8 text-xs font-semibold rounded-xl cursor-pointer ${u.status === "Active"
                             ? "text-red-600 hover:bg-red-50"
                             : "text-emerald-600 hover:bg-emerald-50"
-                        }`}
+                          }`}
                       >
                         {u.status === "Active" ? "Suspend" : "Activate"}
                       </Button>

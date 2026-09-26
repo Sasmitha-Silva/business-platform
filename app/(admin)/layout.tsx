@@ -16,8 +16,6 @@ export default function AdminLayout({
     <DashboardLayout
       role="super_admin"
       links={ADMIN_SIDEBAR_LINKS}
-      userName="Rtn. Kanishka De Silva"
-      userRole="Super Admin"
     >
       {children}
     </DashboardLayout>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Mail,
   Phone,
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getOwnerBusinessAction, getOwnerEnquiriesAction, updateEnquiryStatusAction } from "@/app/actions/owner";
 
 interface ExtendedEnquiry {
   id: string;
@@ -174,10 +175,10 @@ export default function OwnerEnquiriesPage() {
       prev.map((item) =>
         item.id === id
           ? {
-              ...item,
-              status: "replied",
-              replies: [...(item.replies || []), newReply],
-            }
+            ...item,
+            status: "replied",
+            replies: [...(item.replies || []), newReply],
+          }
           : item
       )
     );
@@ -262,11 +263,10 @@ export default function OwnerEnquiriesPage() {
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${
-                statusFilter === tab.id
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${statusFilter === tab.id
                   ? "bg-[#D41367] text-white shadow-2xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -304,11 +304,10 @@ export default function OwnerEnquiriesPage() {
             return (
               <div
                 key={enq.id}
-                className={`bg-white rounded-2xl border transition-all duration-200 shadow-2xs overflow-hidden ${
-                  enq.status === "new"
+                className={`bg-white rounded-2xl border transition-all duration-200 shadow-2xs overflow-hidden ${enq.status === "new"
                     ? "border-pink-200/90 hover:border-[#D41367]"
                     : "border-slate-200 hover:border-slate-300"
-                }`}
+                  }`}
               >
                 {/* Main Card Header Bar */}
                 <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -319,19 +318,18 @@ export default function OwnerEnquiriesPage() {
                         {enq.from_name}
                       </h3>
                       <span
-                        className={`text-xs font-semibold px-2.5 py-0.5 rounded-md ${
-                          enq.status === "new"
+                        className={`text-xs font-semibold px-2.5 py-0.5 rounded-md ${enq.status === "new"
                             ? "bg-pink-100 text-[#D41367]"
                             : enq.status === "in_progress"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-emerald-100 text-emerald-800"
-                        }`}
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-emerald-100 text-emerald-800"
+                          }`}
                       >
                         {enq.status === "new"
                           ? "New Inquiry"
                           : enq.status === "in_progress"
-                          ? "In Progress"
-                          : "Replied"}
+                            ? "In Progress"
+                            : "Replied"}
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-slate-500 font-normal flex items-center gap-1.5 truncate">
@@ -357,11 +355,10 @@ export default function OwnerEnquiriesPage() {
                     <Button
                       size="sm"
                       onClick={() => setExpandedId(isExpanded ? null : enq.id)}
-                      className={`rounded-xl text-xs sm:text-sm font-semibold h-9 px-4 shadow-xs cursor-pointer transition-all ${
-                        isExpanded
+                      className={`rounded-xl text-xs sm:text-sm font-semibold h-9 px-4 shadow-xs cursor-pointer transition-all ${isExpanded
                           ? "bg-slate-900 text-white hover:bg-slate-800"
                           : "bg-[#D41367] text-white hover:bg-[#B80E56]"
-                      }`}
+                        }`}
                     >
                       <span>{isExpanded ? "Close Details" : "View & Reply"}</span>
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5 ml-1" /> : <ChevronDown className="w-3.5 h-3.5 ml-1" />}
@@ -441,31 +438,28 @@ export default function OwnerEnquiriesPage() {
                         <span className="font-semibold text-slate-700">Set Status:</span>
                         <button
                           onClick={() => handleUpdateStatus(enq.id, "new")}
-                          className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-colors ${
-                            enq.status === "new"
+                          className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-colors ${enq.status === "new"
                               ? "bg-pink-100 text-[#D41367] border border-pink-200"
                               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
-                          }`}
+                            }`}
                         >
                           New
                         </button>
                         <button
                           onClick={() => handleUpdateStatus(enq.id, "in_progress")}
-                          className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-colors ${
-                            enq.status === "in_progress"
+                          className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-colors ${enq.status === "in_progress"
                               ? "bg-amber-100 text-amber-800 border border-amber-200"
                               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
-                          }`}
+                            }`}
                         >
                           In Progress
                         </button>
                         <button
                           onClick={() => handleUpdateStatus(enq.id, "replied")}
-                          className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-colors ${
-                            enq.status === "replied"
+                          className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-colors ${enq.status === "replied"
                               ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
-                          }`}
+                            }`}
                         >
                           Mark Replied
                         </button>
@@ -512,7 +506,7 @@ export default function OwnerEnquiriesPage() {
                           rows={3}
                           value={replyDrafts[enq.id] || ""}
                           onChange={(e) => setReplyDrafts({ ...replyDrafts, [enq.id]: e.target.value })}
-                          placeholder={`Write a response to ${enq.from_name}...`}
+                          placeholder={`Write a response to ${enq.from_name}`}
                           className="w-full text-xs sm:text-sm p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-[#D41367] focus:ring-2 focus:ring-pink-100 transition-all resize-none placeholder:text-slate-400"
                         />
                       </div>

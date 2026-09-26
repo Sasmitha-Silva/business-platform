@@ -17,9 +17,11 @@ import {
   LogOut,
   Edit3,
 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/types";
+import { useAuth } from "@/components/auth-provider";
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -34,6 +36,8 @@ const iconMap: Record<string, React.ElementType> = {
   BarChart3,
   Edit3,
 };
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SidebarLink {
   href: string;
@@ -53,12 +57,29 @@ interface SidebarProps {
 export function Sidebar({
   role,
   links,
-  userName = "Member Portal",
+  userName,
   userRole,
   districtInfo,
   className,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { profile, isLoading, signOut } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const formattedRole = (r?: string) => {
+    if (!r) return "";
+    if (r === "super_admin") return "Super Admin";
+    if (r === "moderator") return "District Moderator";
+    if (r === "owner") return "Business Owner";
+    return r.replace("_", " ").toUpperCase();
+  };
+
+  const displayName = profile?.full_name || userName;
+  const displayRole = profile?.role ? formattedRole(profile.role) : userRole ? formattedRole(userRole) : formattedRole(role);
 
   const portalSubtitle =
     role === "owner"
@@ -75,49 +96,39 @@ export function Sidebar({
       )}
     >
       {/* Brand Header */}
-      <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[#D41367] text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0">
-          R
-        </div>
-        <div className="min-w-0">
-          <Link href="/" className="text-sm font-bold text-slate-900 block truncate hover:text-[#D41367] transition-colors">
-            Rotaract Network
-          </Link>
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-            {portalSubtitle}
-          </span>
-        </div>
+      <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#D41367] to-pink-500 flex items-center justify-center text-white font-bold shadow-xs">
+            R
+          </div>
+          <div>
+            <div className="font-extrabold text-sm tracking-tight text-slate-900 leading-none">
+              RBN
+            </div>
+            <div className="text-[10px] text-slate-500 font-medium">
+              {portalSubtitle}
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 p-3.5 space-y-1.5 overflow-y-auto">
-        <div className="px-3 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-          Workspace Navigation
-        </div>
-
+      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {links.map((link) => {
           const Icon = iconMap[link.icon] || LayoutDashboard;
-
-          // Match exact route for base paths, prefix matching for nested paths
-          const isBasePortalRoute = [
-            "/",
-            "/dashboard",
-            "/admin",
-            "/moderator",
-            "/business-dashboard",
-            "/admin-dashboard",
-            "/moderator-dashboard",
-          ].includes(link.href);
-          const isActive = isBasePortalRoute
-            ? pathname === link.href
-            : pathname === link.href || pathname.startsWith(link.href + "/");
+          const isActive =
+            link.href === "/business-dashboard" ||
+            link.href === "/super-admin" ||
+            link.href === "/moderator"
+              ? pathname === link.href
+              : pathname.startsWith(link.href);
 
           return (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all group",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group",
                 isActive
                   ? "bg-[#D41367] text-white shadow-xs"
                   : "text-slate-600 hover:bg-pink-50 hover:text-[#D41367]"
@@ -139,18 +150,27 @@ export function Sidebar({
       <div className="p-3.5 border-t border-slate-100 space-y-2 bg-slate-50/50">
         {/* User Card */}
         <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-1">
-          <p className="text-xs font-bold text-slate-900 truncate">
-            {userName}
-          </p>
-          {userRole && (
-            <p className="text-[11px] text-slate-500 font-medium truncate">
-              {userRole}
-            </p>
-          )}
-          {districtInfo && (
-            <p className="text-[10px] text-[#D41367] font-semibold pt-1 border-t border-slate-100 truncate">
-              {districtInfo}
-            </p>
+          {!mounted || (isLoading && !displayName) ? (
+            <div className="space-y-1.5 py-0.5">
+              <Skeleton className="h-3.5 w-28 rounded-md" />
+              <Skeleton className="h-2.5 w-20 rounded-md" />
+            </div>
+          ) : (
+            <>
+              <p className="text-xs font-bold text-slate-900 truncate">
+                {displayName || "Authenticated Member"}
+              </p>
+              {displayRole && (
+                <p className="text-[11px] text-slate-500 font-medium truncate capitalize">
+                  {displayRole}
+                </p>
+              )}
+              {districtInfo && (
+                <p className="text-[10px] text-[#D41367] font-semibold pt-1 border-t border-slate-100 truncate">
+                  {districtInfo}
+                </p>
+              )}
+            </>
           )}
         </div>
 
@@ -171,13 +191,11 @@ export function Sidebar({
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2 h-7.5"
-            asChild
+            onClick={() => signOut()}
+            className="text-xs text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2 h-7.5 cursor-pointer"
           >
-            <Link href="/auth/login">
-              <LogOut className="w-3.5 h-3.5 mr-1" />
-              <span>Logout</span>
-            </Link>
+            <LogOut className="w-3.5 h-3.5 mr-1" />
+            <span>Logout</span>
           </Button>
         </div>
       </div>

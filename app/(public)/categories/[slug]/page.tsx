@@ -1,37 +1,34 @@
 import { notFound } from "next/navigation";
 import { CategoryDetailView } from "@/components/category-detail-view";
-import { mockCategories, mockBusinesses } from "@/lib/mock-data";
+import { getCategoriesAction, getBusinessesAction } from "@/app/actions/directory";
 
-export async function generateStaticParams() {
-  return mockCategories.map((c) => ({ slug: c.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const category = mockCategories.find((c) => c.slug === slug);
+  const allCategories = await getCategoriesAction();
+  const category = allCategories.find((c) => c.slug === slug);
   if (!category) return { title: "Category Not Found" };
   return {
-    title: category.name,
+    title: `${category.name} | Rotaract Business Network`,
     description: `Discover verified ${category.name.toLowerCase()} enterprises and certified Rotaract professionals.`,
   };
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const category = mockCategories.find((c) => c.slug === slug);
+  const allCategories = await getCategoriesAction();
+  const category = allCategories.find((c) => c.slug === slug);
   if (!category) notFound();
 
-  const businesses = mockBusinesses.filter(
-    (b) =>
-      (b.category_id === category.id || b.category?.slug === category.slug) &&
-      b.status === "approved"
-  );
+  const res = await getBusinessesAction({ category_id: category.id, per_page: 50 });
+  const businesses = res.data || [];
 
   return (
     <CategoryDetailView
       category={category}
       businesses={businesses}
-      allCategories={mockCategories}
+      allCategories={allCategories}
     />
   );
 }

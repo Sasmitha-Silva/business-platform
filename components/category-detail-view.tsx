@@ -27,8 +27,8 @@ import {
   MoreHorizontal,
   Layers,
   ShieldCheck,
-  PhoneCall,
-  ExternalLink,
+  Building2,
+  ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
@@ -48,17 +48,97 @@ const iconMap: Record<string, React.ElementType> = {
   others: MoreHorizontal,
 };
 
-const categoryImages: Record<string, string> = {
-  "professional-services": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
-  technology: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80",
-  healthcare: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
-  "creative-services": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
-  "real-estate-construction": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-  manufacturing: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80",
-  retail: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80",
-  education: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80",
-  hospitality: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
-  others: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80",
+const categoryPhotos: Record<string, string> = {
+  technology: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=85",
+  "professional-services": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=85",
+  healthcare: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=85",
+  "creative-services": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=85",
+  manufacturing: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=85",
+  retail: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=85",
+  education: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=85",
+  hospitality: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=85",
+  "real-estate-construction": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=85",
+  "finance-audit": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1200&q=85",
+  others: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=85",
+};
+
+const defaultCategoryPhoto = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=85";
+
+const gradientStyles: Record<
+  string,
+  { bg: string; iconBg: string; textAccent: string; border: string; glow: string }
+> = {
+  technology: {
+    bg: "from-slate-950 via-slate-900 to-indigo-950",
+    iconBg: "bg-indigo-500/20 text-indigo-300 border-indigo-400/30",
+    textAccent: "group-hover:text-indigo-200",
+    border: "border-indigo-500/20 hover:border-indigo-500/50",
+    glow: "bg-indigo-500/10",
+  },
+  "professional-services": {
+    bg: "from-slate-950 via-slate-900 to-pink-950",
+    iconBg: "bg-[#D41367]/20 text-pink-300 border-[#D41367]/30",
+    textAccent: "group-hover:text-pink-200",
+    border: "border-pink-500/20 hover:border-pink-500/50",
+    glow: "bg-[#D41367]/10",
+  },
+  healthcare: {
+    bg: "from-slate-950 via-slate-900 to-emerald-950",
+    iconBg: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+    textAccent: "group-hover:text-emerald-200",
+    border: "border-emerald-500/20 hover:border-emerald-500/50",
+    glow: "bg-emerald-500/10",
+  },
+  "creative-services": {
+    bg: "from-slate-950 via-slate-900 to-purple-950",
+    iconBg: "bg-purple-500/20 text-purple-300 border-purple-400/30",
+    textAccent: "group-hover:text-purple-200",
+    border: "border-purple-500/20 hover:border-purple-500/50",
+    glow: "bg-purple-500/10",
+  },
+  "real-estate-construction": {
+    bg: "from-slate-950 via-slate-900 to-blue-950",
+    iconBg: "bg-blue-500/20 text-blue-300 border-blue-400/30",
+    textAccent: "group-hover:text-blue-200",
+    border: "border-blue-500/20 hover:border-blue-500/50",
+    glow: "bg-blue-500/10",
+  },
+  manufacturing: {
+    bg: "from-slate-950 via-slate-900 to-amber-950",
+    iconBg: "bg-amber-500/20 text-amber-300 border-amber-400/30",
+    textAccent: "group-hover:text-amber-200",
+    border: "border-amber-500/20 hover:border-amber-500/50",
+    glow: "bg-amber-500/10",
+  },
+  retail: {
+    bg: "from-slate-950 via-slate-900 to-rose-950",
+    iconBg: "bg-rose-500/20 text-rose-300 border-rose-400/30",
+    textAccent: "group-hover:text-rose-200",
+    border: "border-rose-500/20 hover:border-rose-500/50",
+    glow: "bg-rose-500/10",
+  },
+  education: {
+    bg: "from-slate-950 via-slate-900 to-cyan-950",
+    iconBg: "bg-cyan-500/20 text-cyan-300 border-cyan-400/30",
+    textAccent: "group-hover:text-cyan-200",
+    border: "border-cyan-500/20 hover:border-cyan-500/50",
+    glow: "bg-cyan-500/10",
+  },
+  hospitality: {
+    bg: "from-slate-950 via-slate-900 to-orange-950",
+    iconBg: "bg-orange-500/20 text-orange-300 border-orange-400/30",
+    textAccent: "group-hover:text-orange-200",
+    border: "border-orange-500/20 hover:border-orange-500/50",
+    glow: "bg-orange-500/10",
+  },
+};
+
+const defaultGradient = {
+  bg: "from-slate-950 via-slate-900 to-slate-950",
+  iconBg: "bg-white/10 text-white border-white/20",
+  textAccent: "group-hover:text-pink-200",
+  border: "border-slate-800 hover:border-[#D41367]/50",
+  glow: "bg-white/5",
 };
 
 const categoryDescriptions: Record<string, string> = {
@@ -166,8 +246,8 @@ function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps
             placement === "right"
               ? "right-0 left-auto"
               : placement === "center"
-              ? "left-1/2 -translate-x-1/2"
-              : "left-0 right-auto"
+                ? "left-1/2 -translate-x-1/2"
+                : "left-0 right-auto"
           )}
         >
           <div className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1 sticky top-0 bg-white z-10">
@@ -221,7 +301,7 @@ export function CategoryDetailView({
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   const IconComponent = iconMap[category.slug] || Layers;
-  const bgImage = categoryImages[category.slug] || categoryImages["others"];
+  const style = gradientStyles[category.slug] || defaultGradient;
   const descriptionText =
     categoryDescriptions[category.slug] ||
     `Explore verified Rotaract businesses, founders, and enterprises in ${category.name}.`;
@@ -358,22 +438,24 @@ export function CategoryDetailView({
         </div>
 
         {/* ================= SECTOR HERO BANNER CARD ================= */}
-        <div className="relative rounded-3xl overflow-hidden shadow-lg border border-pink-100/60 min-h-[260px] sm:min-h-[290px] flex flex-col justify-between p-6 sm:p-9 bg-slate-950 text-white">
+        <div className={`relative rounded-3xl overflow-hidden shadow-lg border ${style.border} min-h-[240px] sm:min-h-[270px] flex flex-col justify-between p-6 sm:p-9 bg-slate-950 text-white`}>
+          {/* Sector Photo Background */}
           <Image
-            src={bgImage}
+            src={categoryPhotos[category.slug] || defaultCategoryPhoto}
             alt={category.name}
             fill
-            unoptimized
-            sizes="100vw"
-            className="object-cover object-center opacity-45 transition-transform duration-700 hover:scale-105"
             priority
+            unoptimized
+            className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30 pointer-events-none" />
+          {/* Dark Overlay Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/45 pointer-events-none" />
+          <div className={`absolute top-0 right-0 w-80 h-80 ${style.glow} rounded-full blur-3xl pointer-events-none`} />
 
           {/* Top Row: Icon Badge & Sector Label */}
           <div className="relative z-10 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center shadow-md">
+              <div className={`w-12 h-12 rounded-2xl ${style.iconBg} backdrop-blur-md border flex items-center justify-center shadow-md`}>
                 <IconComponent className="w-6 h-6 text-white" />
               </div>
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-xs font-semibold text-white">
@@ -384,7 +466,7 @@ export function CategoryDetailView({
           </div>
 
           {/* Bottom Row: Heading, Description & Quick Metrics */}
-          <div className="relative z-10 space-y-3 mt-8">
+          <div className="relative z-10 space-y-3 mt-6">
             <div className="max-w-3xl space-y-1.5">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
                 {category.name}
@@ -535,25 +617,40 @@ export function CategoryDetailView({
         </div>
 
         {/* ================= RESULTS CONTROL ROW ================= */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs min-h-[36px]">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
-            <span className="font-bold text-slate-500">
-              Showing <span className="font-extrabold text-slate-900">{sortedBusinesses.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0}–{Math.min(currentPage * ITEMS_PER_PAGE, sortedBusinesses.length)}</span> of <span className="font-extrabold text-slate-900">{sortedBusinesses.length}</span> enterprises
-            </span>
+            {sortedBusinesses.length > 0 && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium border border-slate-200/80 shadow-2xs">
+                <span>Showing</span>
+                {sortedBusinesses.length === 1 ? (
+                  <span className="font-extrabold text-slate-900">1 enterprise</span>
+                ) : sortedBusinesses.length <= ITEMS_PER_PAGE ? (
+                  <span>
+                    all <strong className="font-extrabold text-slate-900">{sortedBusinesses.length}</strong> enterprises
+                  </span>
+                ) : (
+                  <span>
+                    <strong className="font-extrabold text-slate-900">
+                      {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, sortedBusinesses.length)}
+                    </strong>{" "}
+                    of <strong className="font-extrabold text-slate-900">{sortedBusinesses.length}</strong> enterprises
+                  </span>
+                )}
+              </div>
+            )}
 
             {hasFilters && (
               <>
-                <span className="text-slate-300">•</span>
                 {selectedSubcategory !== "all" && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-50 text-[#D41367] font-bold border border-pink-200 text-[10px]">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-[#D41367] font-bold border border-pink-200 text-xs shadow-2xs">
                     {subcategories.find((s) => s.slug === selectedSubcategory || s.id === selectedSubcategory)?.name || selectedSubcategory}
-                    <X className="w-2.5 h-2.5 cursor-pointer hover:opacity-80" onClick={() => setSelectedSubcategory("all")} />
+                    <X className="w-3 h-3 cursor-pointer hover:opacity-80 ml-0.5" onClick={() => setSelectedSubcategory("all")} />
                   </span>
                 )}
                 {searchQuery && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-50 text-[#D41367] font-bold border border-pink-200 text-[10px]">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-[#D41367] font-bold border border-pink-200 text-xs shadow-2xs">
                     &ldquo;{searchQuery}&rdquo;
-                    <X className="w-2.5 h-2.5 cursor-pointer hover:opacity-80" onClick={() => setSearchQuery("")} />
+                    <X className="w-3 h-3 cursor-pointer hover:opacity-80 ml-0.5" onClick={() => setSearchQuery("")} />
                   </span>
                 )}
               </>
@@ -609,9 +706,7 @@ export function CategoryDetailView({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {paginatedBusinesses.map((biz) => {
                   const city = biz.location?.city || "National";
-                  const district = biz.rotaract_profile?.district_number;
-                  const catSlug = biz.category?.slug || category.slug || "others";
-                  const imageUrl = categoryImages[catSlug] || categoryImages["others"];
+                  const displayImage = biz.cover_image_url || biz.logo_url;
 
                   return (
                     <div
@@ -619,16 +714,25 @@ export function CategoryDetailView({
                       className="group bg-white rounded-2xl border-2 border-[#D41367]/40 hover:border-[#D41367] p-2.5 sm:p-3 flex flex-col justify-between hover:shadow-lg hover:shadow-[#D41367]/10 transition-all duration-200"
                     >
                       <div className="space-y-2.5">
-                        {/* Top Media Header (Compact Height) */}
-                        <div className="relative w-full h-28 sm:h-32 rounded-xl overflow-hidden bg-slate-900">
-                          <Image
-                            src={imageUrl}
-                            alt={biz.name}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 300px"
-                            className="object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-90"
-                            unoptimized
-                          />
+                        {/* Top Media Header */}
+                        <div className="relative w-full h-28 sm:h-32 rounded-xl overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-[#1e1b4b] flex items-center justify-center">
+                          {displayImage ? (
+                            <Image
+                              src={displayImage}
+                              alt={biz.name}
+                              fill
+                              sizes="(max-width: 768px) 100vw, 300px"
+                              className="object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-95"
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-center p-3 text-white/80 group-hover:scale-105 transition-transform duration-300">
+                              <Building2 className="w-8 h-8 text-pink-300 mb-1 opacity-80" />
+                              <span className="text-[11px] font-black tracking-tight text-white line-clamp-1">
+                                {biz.name}
+                              </span>
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
                           {/* Floating Top Badges */}
@@ -645,11 +749,6 @@ export function CategoryDetailView({
 
                             <div className="flex items-center gap-1 pointer-events-auto">
                               <VerificationBadge level={biz.verification_level} size="sm" />
-                              {biz.is_featured && (
-                                <span className="inline-flex items-center text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-pink-50 text-[#D41367] border border-pink-200 shadow-xs">
-                                  Featured
-                                </span>
-                              )}
                             </div>
                           </div>
 
@@ -697,8 +796,7 @@ export function CategoryDetailView({
                 {paginatedBusinesses.map((biz) => {
                   const city = biz.location?.city || "National";
                   const district = biz.rotaract_profile?.district_number;
-                  const catSlug = biz.category?.slug || category.slug || "others";
-                  const imageUrl = categoryImages[catSlug] || categoryImages["others"];
+                  const displayImage = biz.cover_image_url || biz.logo_url;
 
                   return (
                     <div
@@ -707,16 +805,20 @@ export function CategoryDetailView({
                     >
                       {/* Left side: Thumbnail + Info */}
                       <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-slate-900 shrink-0">
-                          <Image
-                            src={imageUrl}
-                            alt={biz.name}
-                            fill
-                            sizes="80px"
-                            className="object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-90"
-                            unoptimized
-                          />
-                          <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-pink-950 shrink-0 flex items-center justify-center">
+                          {displayImage ? (
+                            <Image
+                              src={displayImage}
+                              alt={biz.name}
+                              fill
+                              sizes="80px"
+                              className="object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-95"
+                              unoptimized
+                            />
+                          ) : (
+                            <Building2 className="w-7 h-7 text-pink-300 opacity-80" />
+                          )}
+                          <div className="absolute inset-0 bg-black/10 pointer-events-none" />
                         </div>
 
                         <div className="min-w-0 flex-1 space-y-1">
@@ -728,11 +830,6 @@ export function CategoryDetailView({
                               {biz.name}
                             </Link>
                             <VerificationBadge level={biz.verification_level} size="sm" />
-                            {biz.is_featured && (
-                              <span className="inline-flex items-center text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-pink-50 text-[#D41367] border border-pink-200">
-                                Featured
-                              </span>
-                            )}
                           </div>
 
                           {biz.tagline && (
@@ -831,42 +928,10 @@ export function CategoryDetailView({
             )}
           </>
         ) : (
-          /* ================= EMPTY STATE ================= */
-          <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-10 sm:p-12 text-center max-w-lg mx-auto space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-pink-50 text-[#D41367] flex items-center justify-center mx-auto shadow-2xs">
-              <Search className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-black text-slate-900">
-                No Enterprises Found in this Selection
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
-                {hasFilters
-                  ? "No businesses currently match your search criteria or specialization filter. Try resetting filters to explore all listings."
-                  : `Be the first certified Rotaract entrepreneur to list your enterprise under ${category.name}.`}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-              {hasFilters && (
-                <Button
-                  onClick={clearAll}
-                  variant="outline"
-                  className="border-slate-200 text-slate-700 hover:text-slate-900 rounded-full px-5 text-xs font-extrabold h-9"
-                >
-                  Reset Filters
-                </Button>
-              )}
-              <Button
-                asChild
-                className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-5 text-xs font-extrabold h-9"
-              >
-                <Link href="/register">
-                  <span>Register Enterprise</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                </Link>
-              </Button>
-            </div>
+          /* ================= CLEAN MINIMAL EMPTY STATE ================= */
+          <div className="bg-slate-50/70 rounded-2xl border border-slate-200/80 py-16 px-6 text-center max-w-md mx-auto space-y-2.5 my-8">
+            <Search className="w-7 h-7 text-[#D41367] mx-auto opacity-75" />
+            <h3 className="text-sm font-bold text-slate-800 tracking-tight">No Enterprises Found</h3>
           </div>
         )}
 
@@ -895,44 +960,44 @@ export function CategoryDetailView({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {otherCategories.map((otherCat) => {
                 const OtherIcon = iconMap[otherCat.slug] || Layers;
-                const otherImg = categoryImages[otherCat.slug] || categoryImages["others"];
+                const photo = categoryPhotos[otherCat.slug] || defaultCategoryPhoto;
+                const count = otherCat.business_count || 0;
 
                 return (
                   <Link
                     key={otherCat.id}
                     href={`/categories/${otherCat.slug}`}
-                    className="group relative rounded-2xl overflow-hidden min-h-[140px] shadow-sm hover:shadow-md transition-all duration-300 border border-slate-200/80 block"
+                    className="group relative rounded-2xl overflow-hidden min-h-[140px] shadow-sm hover:shadow-md transition-all duration-300 border border-border/80 block bg-slate-900 p-4 flex flex-col justify-between"
                   >
                     <Image
-                      src={otherImg}
+                      src={photo}
                       alt={otherCat.name}
                       fill
                       unoptimized
-                      sizes="(max-width: 768px) 100vw, 300px"
-                      className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20 p-4 flex flex-col justify-between text-white">
-                      <div className="flex items-center justify-between">
-                        <div className="w-7 h-7 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center">
-                          <OtherIcon className="w-3.5 h-3.5 text-white" />
-                        </div>
-                        <span className="text-[10px] font-extrabold bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/25">
-                          {otherCat.business_count || "100+"}
-                        </span>
-                      </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/30 pointer-events-none" />
 
-                      <div className="flex items-end justify-between gap-2">
-                        <div>
-                          <h3 className="text-sm font-black text-white group-hover:text-pink-200 transition-colors line-clamp-1">
-                            {otherCat.name}
-                          </h3>
-                          <p className="text-[10px] text-white/80 font-medium">
-                            {otherCat.children?.length || 0} Specializations
-                          </p>
-                        </div>
-                        <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center shrink-0 group-hover:bg-[#D41367] group-hover:text-white transition-all">
-                          <ArrowRight className="w-3 h-3" />
-                        </div>
+                    <div className="relative z-10 flex items-center justify-between">
+                      <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md text-white border border-white/25 flex items-center justify-center">
+                        <OtherIcon className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-[10px] font-extrabold bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/30 text-white">
+                        {count} {count === 1 ? "Enterprise" : "Enterprises"}
+                      </span>
+                    </div>
+
+                    <div className="relative z-10 flex items-end justify-between gap-2 pt-3">
+                      <div>
+                        <h3 className="text-sm font-black text-white transition-colors line-clamp-1">
+                          {otherCat.name}
+                        </h3>
+                        <p className="text-[10px] text-white/80 font-medium">
+                          {otherCat.children?.length || 0} Specializations
+                        </p>
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <ArrowUpRight className="w-3.5 h-3.5 text-black" />
                       </div>
                     </div>
                   </Link>

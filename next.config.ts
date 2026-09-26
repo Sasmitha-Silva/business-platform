@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  logging: {
+    incomingRequests: false,
+  },
   async redirects() {
     return [
       {

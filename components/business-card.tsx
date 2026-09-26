@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, PhoneCall, ExternalLink, ShieldCheck } from "lucide-react";
+import { MapPin, PhoneCall, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
 import { cn } from "@/lib/utils";
@@ -13,17 +13,12 @@ interface BusinessCardProps {
 
 export function BusinessCard({ business, className }: BusinessCardProps) {
   const location = business.location;
-  const locationText = location
-    ? `${location.city}, ${location.country}`
+  const locationText = location?.city
+    ? `${location.city}, ${location.country || "Sri Lanka"}`
     : business.category?.name || "";
 
-  // Assign logo images based on ID/slug
-  const logoImage =
-    business.slug.includes("nexus") || business.slug.includes("lumina")
-      ? "/images/logo-tech.png"
-      : business.slug.includes("dental") || business.slug.includes("studio")
-      ? "/images/logo-dental.png"
-      : null;
+  const district = business.rotaract_profile?.district_number || business.district_number;
+  const logoImage = business.logo_url;
 
   return (
     <div
@@ -39,7 +34,7 @@ export function BusinessCard({ business, className }: BusinessCardProps) {
           <div className="relative shrink-0">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#D41367] to-[#B80E56] text-white font-extrabold text-lg flex items-center justify-center shadow-md shadow-[#D41367]/20 overflow-hidden relative">
               {logoImage ? (
-                <Image src={logoImage} alt={business.name} fill sizes="48px" className="object-cover" />
+                <Image src={logoImage} alt={business.name} fill sizes="48px" className="object-cover" unoptimized />
               ) : (
                 business.name.charAt(0)
               )}
@@ -54,9 +49,11 @@ export function BusinessCard({ business, className }: BusinessCardProps) {
             {business.verification_level > 0 && (
               <VerificationBadge level={business.verification_level} size="sm" />
             )}
-            <span className="text-[10px] font-bold text-muted-foreground bg-warm-bg px-2.5 py-0.5 rounded-full border border-border">
-              District 3220
-            </span>
+            {district && (
+              <span className="text-[10px] font-bold text-muted-foreground bg-warm-bg px-2.5 py-0.5 rounded-full border border-border">
+                District {district}
+              </span>
+            )}
           </div>
         </div>
 
@@ -66,13 +63,13 @@ export function BusinessCard({ business, className }: BusinessCardProps) {
             {business.name}
           </h3>
           <p className="text-xs font-semibold text-[#D41367] truncate">
-            {business.subcategory?.name || business.category?.name || "Professional Services"}
+            {business.subcategory?.name || business.category?.name || "Commercial Enterprise"}
           </p>
         </div>
 
         {/* Tagline / Description */}
         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-4">
-          {business.tagline || business.description || "Leading provider of professional services and corporate solutions."}
+          {business.tagline || business.description || "Leading provider of certified services and enterprise solutions."}
         </p>
 
         {/* Location & Tags Row */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -17,9 +17,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  getModeratorVerificationQueueAction,
+  reviewVerificationDocAction,
+} from "@/app/actions/moderator";
+
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  getCachedDashboardData,
+  setCachedDashboardData,
+} from "@/lib/cache/admin-cache";
 
 interface DistrictVerificationItem {
   id: string;
+  businessId?: string;
   name: string;
   slug: string;
   owner: string;
@@ -28,46 +39,60 @@ interface DistrictVerificationItem {
   date: string;
 }
 
-const initialDistrictVerifications: DistrictVerificationItem[] = [
-  {
-    id: "1",
-    name: "Lumina Digital Solutions",
-    slug: "lumina-digital-solutions",
-    owner: "Rtr. Anand Vardhan Sharma",
-    docType: "DRR Endorsement Letter (2026-27)",
-    status: "pending",
-    date: "2 hours ago",
-  },
-  {
-    id: "2",
-    name: "Nexus Analytics & Insights",
-    slug: "nexus-analytics",
-    owner: "Rtr. Sarah Perera",
-    docType: "GST Certificate + DRR Recommendation",
-    status: "pending",
-    date: "4 hours ago",
-  },
-  {
-    id: "3",
-    name: "Ceylon Green Spices Ltd",
-    slug: "ceylon-green-spices",
-    owner: "Rtr. Kasun Jayawardena",
-    docType: "Business Registration & Export Permit",
-    status: "approved",
-    date: "Yesterday",
-  },
-];
-
 export default function ModeratorVerificationPage() {
-  const [items, setItems] = useState<DistrictVerificationItem[]>(initialDistrictVerifications);
+  const cachedQueue = getCachedDashboardData<any[]>("mod_queue");
+
+  const [items, setItems] = useState<DistrictVerificationItem[]>(
+    cachedQueue
+      ? cachedQueue.map((doc: any, idx: number) => ({
+        id: doc.id || String(idx),
+        businessId: doc.business_id || doc.business?.id,
+        name: doc.business?.name || `Business #${doc.business_id?.slice(0, 6) || idx}`,
+        slug: doc.business?.slug || "business",
+        owner: doc.business?.owner?.full_name || "Rotaract Member",
+        docType: doc.doc_type ? `${doc.doc_type.toUpperCase()} Certificate` : "Verification Document",
+        status: (doc.status === "in_review" ? "pending" : doc.status) as any,
+        date: doc.created_at ? new Date(doc.created_at).toLocaleDateString() : "Recent",
+      }))
+      : []
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!cachedQueue);
 
   // Modals state
   const [approveModalItem, setApproveModalItem] = useState<DistrictVerificationItem | null>(null);
   const [returnModalItem, setReturnModalItem] = useState<DistrictVerificationItem | null>(null);
   const [returnFeedback, setReturnFeedback] = useState("");
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        if (!cachedQueue) {
+          setIsLoading(true);
+        }
+        const queue = await getModeratorVerificationQueueAction();
+        const mapped = (queue || []).map((doc: any, idx: number) => ({
+          id: doc.id || String(idx),
+          businessId: doc.business_id || doc.business?.id,
+          name: doc.business?.name || `Business #${doc.business_id?.slice(0, 6) || idx}`,
+          slug: doc.business?.slug || "business",
+          owner: doc.business?.owner?.full_name || "Rotaract Member",
+          docType: doc.doc_type ? `${doc.doc_type.toUpperCase()} Certificate` : "Verification Document",
+          status: (doc.status === "in_review" ? "pending" : doc.status) as any,
+          date: doc.created_at ? new Date(doc.created_at).toLocaleDateString() : "Recent",
+        }));
+        setItems(mapped);
+        setCachedDashboardData("mod_queue", queue);
+      } catch (err) {
+        console.error("Failed to load verification queue:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const filteredItems = items.filter((item) => {
     const matchesSearch =
@@ -78,20 +103,44 @@ export default function ModeratorVerificationPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const confirmApprove = () => {
+  const confirmApprove = async () => {
     if (!approveModalItem) return;
     setItems((prev) =>
       prev.map((i) => (i.id === approveModalItem.id ? { ...i, status: "approved" } : i))
     );
+    try {
+      if (approveModalItem.businessId) {
+        await reviewVerificationDocAction({
+          docId: approveModalItem.id,
+          businessId: approveModalItem.businessId,
+          status: "approved",
+          tierToAward: 2, // DRR Verified
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
     showToast(`Approved verification claim for ${approveModalItem.name}.`);
     setApproveModalItem(null);
   };
 
-  const confirmReturn = () => {
+  const confirmReturn = async () => {
     if (!returnModalItem) return;
     setItems((prev) =>
       prev.map((i) => (i.id === returnModalItem.id ? { ...i, status: "rejected" } : i))
     );
+    try {
+      if (returnModalItem.businessId) {
+        await reviewVerificationDocAction({
+          docId: returnModalItem.id,
+          businessId: returnModalItem.businessId,
+          status: "rejected",
+          rejectionReason: returnFeedback,
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
     showToast(`Returned claim for ${returnModalItem.name} with revision notes.`);
     setReturnModalItem(null);
     setReturnFeedback("");
@@ -101,6 +150,49 @@ export default function ModeratorVerificationPage() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
+        {/* Header Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-7 w-72 rounded-lg" />
+              <Skeleton className="h-5 w-24 rounded-md" />
+            </div>
+            <Skeleton className="h-4 w-96 rounded-md" />
+          </div>
+        </div>
+
+        {/* Filter Bar Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <Skeleton className="h-10 w-full sm:w-80 rounded-xl" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-28 rounded-xl" />
+            <Skeleton className="h-10 w-28 rounded-xl" />
+          </div>
+        </div>
+
+        {/* Items List Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden divide-y divide-slate-100 p-4 space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-4 w-48 rounded-md" />
+                <Skeleton className="h-3.5 w-64 rounded-md" />
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-6 w-20 rounded-md" />
+                <Skeleton className="h-8 w-20 rounded-xl" />
+                <Skeleton className="h-8 w-20 rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
@@ -211,7 +303,7 @@ export default function ModeratorVerificationPage() {
                   required
                   value={returnFeedback}
                   onChange={(e) => setReturnFeedback(e.target.value)}
-                  placeholder="Explain why this document needs correction (e.g. invalid signature, wrong tenure)..."
+                  placeholder="Explain why this document needs correction (e.g. invalid signature, wrong tenure"
                   className="w-full text-xs sm:text-sm p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:bg-white focus:border-[#D41367] focus:ring-2 focus:ring-pink-100 transition-all placeholder:text-slate-400 resize-none"
                 />
               </div>
@@ -274,7 +366,7 @@ export default function ModeratorVerificationPage() {
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search applicant, business, document..."
+            placeholder="Search applicant, business, document"
             className="pl-9.5 h-9.5 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
           />
         </div>
@@ -289,11 +381,10 @@ export default function ModeratorVerificationPage() {
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${
-                statusFilter === tab.id
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${statusFilter === tab.id
                   ? "bg-[#D41367] text-white shadow-2xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -336,19 +427,18 @@ export default function ModeratorVerificationPage() {
                     </td>
                     <td className="py-4 px-5">
                       <span
-                        className={`px-2.5 py-0.5 rounded-md text-xs font-semibold ${
-                          item.status === "approved"
+                        className={`px-2.5 py-0.5 rounded-md text-xs font-semibold ${item.status === "approved"
                             ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                             : item.status === "rejected"
-                            ? "bg-rose-100 text-rose-800 border border-rose-200"
-                            : "bg-amber-100 text-amber-800 border border-amber-200"
-                        }`}
+                              ? "bg-rose-100 text-rose-800 border border-rose-200"
+                              : "bg-amber-100 text-amber-800 border border-amber-200"
+                          }`}
                       >
                         {item.status === "approved"
                           ? "Approved"
                           : item.status === "rejected"
-                          ? "Revision Required"
-                          : "Pending Review"}
+                            ? "Revision Required"
+                            : "Pending Review"}
                       </span>
                     </td>
                     <td className="py-4 px-5 text-slate-400 font-normal">{item.date}</td>

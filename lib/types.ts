@@ -28,7 +28,7 @@ export type ProductServiceType = 'product' | 'service';
 export type ServiceArea =
   | 'local'
   | 'state'
-  | 'pan_india'
+  | 'nationwide'
   | 'international';
 
 export type BusinessType =
@@ -52,6 +52,18 @@ export interface User {
   avatar_url?: string;
   created_at: string;
   is_active: boolean;
+}
+
+export interface Profile {
+  id: string;
+  role: UserRole;
+  email: string;
+  full_name: string;
+  phone?: string;
+  avatar_url?: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface RotaractProfile {
@@ -110,10 +122,11 @@ export interface Business {
   online_delivery: boolean;
   franchise_available: boolean;
   verification_level: number; // 0, 1, 2, 3
+  district_number?: number;
   created_at: string;
   updated_at: string;
   // Relations
-  owner?: User;
+  owner?: User & { full_name?: string };
   rotaract_profile?: RotaractProfile;
   location?: BusinessLocation;
   contact?: BusinessContact;
@@ -155,7 +168,11 @@ export interface VerificationDocument {
   id: string;
   business_id: string;
   doc_type: VerificationDocType;
-  file_url: string;
+  file_key?: string;
+  file_name?: string;
+  file_size?: number;
+  mime_type?: string;
+  file_url?: string;
   status: VerificationDocStatus;
   reviewed_by?: string;
   reviewed_at?: string;
@@ -164,6 +181,7 @@ export interface VerificationDocument {
   claimed_by?: string;
   claimed_at?: string;
   created_at: string;
+  updated_at?: string;
   business?: Business;
 }
 
@@ -249,16 +267,24 @@ export interface AdminAction {
 
 export interface DashboardAnalytics {
   total_businesses: number;
-  total_businesses_change: number;
+  total_businesses_change?: number;
+  total_users?: number;
+  total_moderators?: number;
   gold_tier_count: number;
-  gold_tier_percentage: number;
+  gold_tier_percentage?: number;
   silver_tier_count: number;
-  silver_tier_percentage: number;
-  unverified_count: number;
+  silver_tier_percentage?: number;
+  unverified_count?: number;
   pending_verifications: number;
-  monthly_registrations: { month: string; businesses: number; users: number }[];
-  category_breakdown: { name: string; percentage: number; color: string }[];
-  districts_without_moderators: number[];
+  pending_deactivations?: number;
+  monthly_registrations?: { month: string; businesses: number; users: number }[];
+  category_breakdown?: { name: string; percentage: number; color: string }[];
+  districts_without_moderators?: number[];
+  businesses_by_district?: { district: number; count: number }[];
+  businesses_by_category?: { category: string; count: number }[];
+  verification_status_distribution?: { status: string; count: number }[];
+  monthly_growth?: { month: string; count: number }[];
+  recent_activity?: any[];
 }
 
 export interface ModeratorDashboardStats {

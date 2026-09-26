@@ -27,6 +27,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { registerBusinessAction } from "@/app/actions/register";
+import { getUploadUrlAction } from "@/app/actions/storage";
+import { useAuth } from "@/components/auth-provider";
+import { AlertCircle } from "lucide-react";
 
 const SECTOR_NAMES = [
   "Technology & Software",
@@ -129,9 +133,13 @@ function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps
 
 export default function HybridRegistrationPage() {
   const router = useRouter();
+  const { refreshAuth } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -169,6 +177,30 @@ export default function HybridRegistrationPage() {
     agreeTerms: false,
   });
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Restore draft from sessionStorage if available
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('rbn_register_draft');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setFormData((prev) => ({ ...prev, ...parsed }));
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
+
+  // Save draft to sessionStorage on changes
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('rbn_register_draft', JSON.stringify(formData));
+    } catch {
+      // Ignore storage errors
+    }
+  }, [formData]);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -180,17 +212,38 @@ export default function HybridRegistrationPage() {
     return () => clearTimeout(timer);
   }, [currentStep]);
 
+  const validateStep = (step: number): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (step === 1) {
+      if (!formData.fullName.trim()) errors.fullName = "Full legal name is required.";
+      if (!formData.email.trim()) {
+        errors.email = "Email address is required.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+        errors.email = "Please enter a valid email address.";
+      }
+      if (!formData.phone.trim()) errors.phone = "Phone number is required.";
+      if (!formData.memberId.trim()) errors.memberId = "Member ID / Rotary ID is required.";
+      if (!formData.password) {
+        errors.password = "Password is required.";
+      } else if (formData.password.length < 6) {
+        errors.password = "Password must be at least 6 characters long.";
+      }
+    } else if (step === 2) {
+      if (!formData.businessName.trim()) errors.businessName = "Enterprise name is required.";
+    } else if (step === 3) {
+      if (!formData.city.trim()) errors.city = "Operating city is required.";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // Keyboard navigation (Enter key helper)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey && e.target instanceof HTMLInputElement) {
-        if (currentStep === 1 && formData.fullName && formData.email && formData.phone && formData.memberId) {
-          e.preventDefault();
-          handleNext();
-        } else if (currentStep === 2 && formData.businessName) {
-          e.preventDefault();
-          handleNext();
-        } else if (currentStep === 3 && formData.city) {
+        if (currentStep < 4) {
           e.preventDefault();
           handleNext();
         } else if (currentStep === 4 && formData.agreeTerms) {
@@ -212,43 +265,129 @@ export default function HybridRegistrationPage() {
     }));
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, logoUrl: url }));
+    if (!file) return;
+
+    // Local preview immediately
+    const localUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({ ...prev, logoUrl: localUrl }));
+    setIsUploadingLogo(true);
+
+    try {
+      const res = await getUploadUrlAction({
+        filename: file.name,
+        contentType: file.type || "image/png",
+        folder: "logos",
+      });
+
+      if (res.success && res.uploadUrl) {
+        await fetch(res.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "image/png" },
+          body: file,
+        });
+        setFormData((prev) => ({ ...prev, logoUrl: res.publicUrl }));
+      }
+    } catch (err) {
+      console.error("R2 logo upload fallback to local:", err);
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, bannerUrl: url }));
+    if (!file) return;
+
+    const localUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({ ...prev, bannerUrl: localUrl }));
+    setIsUploadingBanner(true);
+
+    try {
+      const res = await getUploadUrlAction({
+        filename: file.name,
+        contentType: file.type || "image/png",
+        folder: "covers",
+      });
+
+      if (res.success && res.uploadUrl) {
+        await fetch(res.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "image/png" },
+          body: file,
+        });
+        setFormData((prev) => ({ ...prev, bannerUrl: res.publicUrl }));
+      }
+    } catch (err) {
+      console.error("R2 banner upload fallback to local:", err);
+    } finally {
+      setIsUploadingBanner(false);
     }
   };
 
   const handleNext = () => {
+    if (!validateStep(currentStep)) return;
+    setFieldErrors({});
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep((prev) => prev + 1);
     }
   };
 
   const handlePrev = () => {
+    setFieldErrors({});
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setErrorMessage("");
+
+    // Full 4-step validation before submission
+    if (!validateStep(1)) {
+      setCurrentStep(1);
+      setErrorMessage("Please complete all required account details in Step 1.");
+      return;
+    }
+    if (!validateStep(2)) {
+      setCurrentStep(2);
+      setErrorMessage("Please complete your enterprise name in Step 2.");
+      return;
+    }
+    if (!validateStep(3)) {
+      setCurrentStep(3);
+      setErrorMessage("Please specify your operating city in Step 3.");
+      return;
+    }
+    if (!formData.agreeTerms) {
+      setErrorMessage("Please agree to the Rotaract membership terms before submitting.");
+      return;
+    }
+
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    try {
+      const res = await registerBusinessAction(formData);
+
+      if (!res.success) {
+        setErrorMessage(res.error || "Failed to submit registration. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      sessionStorage.removeItem('rbn_register_draft');
+      await refreshAuth();
       setIsSuccess(true);
       setTimeout(() => {
-        router.push("/directory");
-      }, 2500);
-    }, 1200);
+        router.push(res.redirectTo || "/business-dashboard");
+        router.refresh();
+      }, 2000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "An unexpected error occurred during registration.");
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -324,6 +463,13 @@ export default function HybridRegistrationPage() {
         {!isSuccess ? (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300" key={currentStep}>
 
+            {errorMessage && (
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700 flex items-start gap-2.5 animate-in fade-in duration-200">
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             {/* CONVERSATION 1: LET'S BUILD YOUR ACCOUNT FIRST */}
             {currentStep === 1 && (
               <div className="space-y-3.5">
@@ -347,12 +493,25 @@ export default function HybridRegistrationPage() {
                         ref={inputRef}
                         type="text"
                         value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, fullName: e.target.value });
+                          if (fieldErrors.fullName) setFieldErrors({ ...fieldErrors, fullName: "" });
+                        }}
                         placeholder="e.g. Sasmitha Silva"
-                        className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        className={cn(
+                          "w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 outline-none transition-all",
+                          fieldErrors.fullName
+                            ? "border-red-400 focus:ring-red-400/20 focus:border-red-500 bg-red-50/20"
+                            : "border-slate-200 focus:ring-[#D41367]/20 focus:border-[#D41367]"
+                        )}
                       />
                       <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     </div>
+                    {fieldErrors.fullName && (
+                      <p className="text-[11px] font-bold text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {fieldErrors.fullName}
+                      </p>
+                    )}
                   </div>
 
                   {/* Email & Phone */}
@@ -363,12 +522,25 @@ export default function HybridRegistrationPage() {
                         <input
                           type="email"
                           value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          onChange={(e) => {
+                            setFormData({ ...formData, email: e.target.value });
+                            if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: "" });
+                          }}
                           placeholder="sasmitha@example.com"
-                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                          className={cn(
+                            "w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 outline-none transition-all",
+                            fieldErrors.email
+                              ? "border-red-400 focus:ring-red-400/20 focus:border-red-500 bg-red-50/20"
+                              : "border-slate-200 focus:ring-[#D41367]/20 focus:border-[#D41367]"
+                          )}
                         />
                         <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
+                      {fieldErrors.email && (
+                        <p className="text-[11px] font-bold text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {fieldErrors.email}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-1">
@@ -377,12 +549,25 @@ export default function HybridRegistrationPage() {
                         <input
                           type="tel"
                           value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          onChange={(e) => {
+                            setFormData({ ...formData, phone: e.target.value });
+                            if (fieldErrors.phone) setFieldErrors({ ...fieldErrors, phone: "" });
+                          }}
                           placeholder="+94 77 123 4567"
-                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                          className={cn(
+                            "w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 outline-none transition-all",
+                            fieldErrors.phone
+                              ? "border-red-400 focus:ring-red-400/20 focus:border-red-500 bg-red-50/20"
+                              : "border-slate-200 focus:ring-[#D41367]/20 focus:border-[#D41367]"
+                          )}
                         />
                         <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
+                      {fieldErrors.phone && (
+                        <p className="text-[11px] font-bold text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {fieldErrors.phone}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -410,26 +595,80 @@ export default function HybridRegistrationPage() {
                         <input
                           type="text"
                           value={formData.memberId}
-                          onChange={(e) => setFormData({ ...formData, memberId: e.target.value })}
+                          onChange={(e) => {
+                            setFormData({ ...formData, memberId: e.target.value });
+                            if (fieldErrors.memberId) setFieldErrors({ ...fieldErrors, memberId: "" });
+                          }}
                           placeholder="e.g. RID-89210"
-                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                          className={cn(
+                            "w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 outline-none transition-all",
+                            fieldErrors.memberId
+                              ? "border-red-400 focus:ring-red-400/20 focus:border-red-500 bg-red-50/20"
+                              : "border-slate-200 focus:ring-[#D41367]/20 focus:border-[#D41367]"
+                          )}
                         />
                         <BadgeCheck className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
+                      {fieldErrors.memberId && (
+                        <p className="text-[11px] font-bold text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {fieldErrors.memberId}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Account Password *</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-700">Account Password *</label>
+                        <span className={cn(
+                          "text-[10px] font-bold px-1.5 py-0.2 rounded transition-colors",
+                          formData.password.length >= 6
+                            ? "text-emerald-700 bg-emerald-50"
+                            : formData.password.length > 0
+                            ? "text-amber-700 bg-amber-50"
+                            : "text-slate-400"
+                        )}>
+                          {formData.password.length >= 6
+                            ? "✓ Min 6 characters met"
+                            : `${6 - formData.password.length} more chars needed`}
+                        </span>
+                      </div>
                       <div className="relative">
                         <input
                           type="password"
                           value={formData.password}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          placeholder="••••••••••••"
-                          className="w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                          onChange={(e) => {
+                            setFormData({ ...formData, password: e.target.value });
+                            if (fieldErrors.password && e.target.value.length >= 6) {
+                              setFieldErrors((prev) => {
+                                const copy = { ...prev };
+                                delete copy.password;
+                                return copy;
+                              });
+                            }
+                          }}
+                          onBlur={() => {
+                            if (formData.password && formData.password.length < 6) {
+                              setFieldErrors((prev) => ({
+                                ...prev,
+                                password: "Password must be at least 6 characters long.",
+                              }));
+                            }
+                          }}
+                          placeholder="At least 6 characters"
+                          className={cn(
+                            "w-full pl-3.5 pr-9 py-2.5 rounded-xl bg-slate-50 border text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 outline-none transition-all",
+                            fieldErrors.password
+                              ? "border-red-400 focus:ring-red-400/20 focus:border-red-500 bg-red-50/20"
+                              : "border-slate-200 focus:ring-[#D41367]/20 focus:border-[#D41367]"
+                          )}
                         />
                         <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       </div>
+                      {fieldErrors.password && (
+                        <p className="text-[11px] font-bold text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {fieldErrors.password}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -437,8 +676,7 @@ export default function HybridRegistrationPage() {
                 <div className="pt-2 flex items-center gap-3">
                   <Button
                     onClick={handleNext}
-                    disabled={!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.memberId.trim()}
-                    className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-6 py-2.5 text-xs sm:text-sm font-extrabold shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-40 h-auto"
+                    className="bg-[#D41367] hover:bg-[#B80E56] text-white rounded-full px-6 py-2.5 text-xs sm:text-sm font-extrabold shadow-md flex items-center gap-2 cursor-pointer h-auto"
                   >
                     <span>Continue to Business Details</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -472,10 +710,23 @@ export default function HybridRegistrationPage() {
                         ref={inputRef}
                         type="text"
                         value={formData.businessName}
-                        onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, businessName: e.target.value });
+                          if (fieldErrors.businessName) setFieldErrors({ ...fieldErrors, businessName: "" });
+                        }}
                         placeholder="e.g. Apex Digital Solutions"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#D41367]/20 focus:border-[#D41367] outline-none transition-all"
+                        className={cn(
+                          "w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-xs sm:text-sm font-black text-slate-900 focus:bg-white focus:ring-2 outline-none transition-all",
+                          fieldErrors.businessName
+                            ? "border-red-400 focus:ring-red-400/20 focus:border-red-500 bg-red-50/20"
+                            : "border-slate-200 focus:ring-[#D41367]/20 focus:border-[#D41367]"
+                        )}
                       />
+                      {fieldErrors.businessName && (
+                        <p className="text-[11px] font-bold text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {fieldErrors.businessName}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-1">

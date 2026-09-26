@@ -26,7 +26,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { VerificationBadge } from "@/components/verification-badge";
-import { mockBusinesses, mockDeactivationRequests } from "@/lib/mock-data";
 import {
   DEACTIVATION_REASON_CATEGORIES,
   DEACTIVATION_URGENCY_BADGES,
@@ -36,8 +35,22 @@ import type {
   BusinessDeactivationRequest,
   DeactivationReasonCategory,
 } from "@/lib/types";
+import {
+  getModeratorDistrictBusinessesAction,
+  submitBusinessDeactivationRequestAction,
+} from "@/app/actions/moderator";
+import { getDeactivationRequestsAdminAction } from "@/app/actions/admin";
+
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  getCachedDashboardData,
+  setCachedDashboardData,
+} from "@/lib/cache/admin-cache";
 
 export default function ModeratorDirectoryPage() {
+  const cachedBiz = getCachedDashboardData<Business[]>("mod_district_businesses");
+  const cachedDeacts = getCachedDashboardData<BusinessDeactivationRequest[]>("admin_deactivations");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -45,14 +58,34 @@ export default function ModeratorDirectoryPage() {
   // Deactivation requests state
   const [deactivationRequests, setDeactivationRequests] = useState<
     BusinessDeactivationRequest[]
-  >(mockDeactivationRequests);
+  >(cachedDeacts || []);
 
   // Businesses list state
-  const [businesses] = useState<Business[]>(
-    mockBusinesses.filter(
-      (b) => b.location?.country === "Sri Lanka" || b.status === "approved"
-    )
-  );
+  const [businesses, setBusinesses] = useState<Business[]>(cachedBiz || []);
+  const [isLoading, setIsLoading] = useState(!cachedBiz);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        if (!cachedBiz) {
+          setIsLoading(true);
+        }
+        const [bizList, deactList] = await Promise.all([
+          getModeratorDistrictBusinessesAction(),
+          getDeactivationRequestsAdminAction(),
+        ]);
+        setBusinesses(bizList);
+        setDeactivationRequests(deactList);
+        setCachedDashboardData("mod_district_businesses", bizList);
+        setCachedDashboardData("admin_deactivations", deactList);
+      } catch (err) {
+        console.error("Failed to load moderator district directory:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   // Request modal state
   const [selectedBizForDeactivation, setSelectedBizForDeactivation] =
@@ -102,7 +135,7 @@ export default function ModeratorDirectoryPage() {
     setEvidenceNotes("");
   };
 
-  const handleSubmitDeactivationRequest = (e: React.FormEvent) => {
+  const handleSubmitDeactivationRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBizForDeactivation) return;
     if (!reasonDetails.trim()) {
@@ -112,33 +145,27 @@ export default function ModeratorDirectoryPage() {
 
     setIsSubmitting(true);
 
-    const newRequest: BusinessDeactivationRequest = {
-      id: `deact-${Date.now()}`,
-      business_id: selectedBizForDeactivation.id,
-      business_name: selectedBizForDeactivation.name,
-      business_slug: selectedBizForDeactivation.slug,
-      business_category: selectedBizForDeactivation.category?.name || "Business",
-      business_location: `${selectedBizForDeactivation.location?.city || "Colombo"}, Sri Lanka`,
-      owner_name: selectedBizForDeactivation.owner?.name || "Registered Member",
-      moderator_id: "user-2",
-      moderator_name: "Ptr. Dilshan Wickremasinghe",
-      district_number: 3220,
-      reason_category: reasonCategory,
-      reason_details: reasonDetails.trim(),
-      evidence_notes: evidenceNotes.trim() || undefined,
-      urgency: urgency,
-      status: "pending",
-      created_at: new Date().toISOString(),
-    };
+    try {
+      await submitBusinessDeactivationRequestAction({
+        businessId: selectedBizForDeactivation.id,
+        districtNumber: selectedBizForDeactivation.rotaract_profile?.district_number || 3220,
+        reasonCategory,
+        reasonDetails: reasonDetails.trim(),
+        evidenceNotes: evidenceNotes.trim() || undefined,
+        urgency,
+      });
 
-    setTimeout(() => {
-      setDeactivationRequests((prev) => [newRequest, ...prev]);
-      setIsSubmitting(false);
+      const updatedRequests = await getDeactivationRequestsAdminAction();
+      setDeactivationRequests(updatedRequests);
       setSelectedBizForDeactivation(null);
       showToast(
         `Deactivation request for "${selectedBizForDeactivation.name}" submitted to District Super Admin.`
       );
-    }, 400);
+    } catch (err) {
+      console.error("Failed to submit deactivation request:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filtered = businesses.filter((b) => {
@@ -209,7 +236,7 @@ export default function ModeratorDirectoryPage() {
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search business, sector, city..."
+            placeholder="Search business, sector, city"
             className="pl-9.5 h-9.5 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
           />
         </div>
@@ -224,11 +251,10 @@ export default function ModeratorDirectoryPage() {
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${
-                statusFilter === tab.id
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${statusFilter === tab.id
                   ? "bg-[#D41367] text-white shadow-2xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -257,13 +283,12 @@ export default function ModeratorDirectoryPage() {
             return (
               <div
                 key={b.id}
-                className={`bg-white rounded-xl border p-3.5 shadow-2xs space-y-2.5 flex flex-col justify-between transition-all ${
-                  pendingDeactivation
+                className={`bg-white rounded-xl border p-3.5 shadow-2xs space-y-2.5 flex flex-col justify-between transition-all ${pendingDeactivation
                     ? "border-amber-300 ring-2 ring-amber-100/70"
                     : isSuspended
-                    ? "border-red-200 bg-red-50/20"
-                    : "border-slate-200 hover:border-pink-200 hover:shadow-xs"
-                }`}
+                      ? "border-red-200 bg-red-50/20"
+                      : "border-slate-200 hover:border-pink-200 hover:shadow-xs"
+                  }`}
               >
                 <div className="space-y-2">
                   {/* Top Row: Avatar & Status Badge */}
@@ -463,9 +488,8 @@ export default function ModeratorDirectoryPage() {
                         {DEACTIVATION_REASON_CATEGORIES[reasonCategory].label}
                       </span>
                       <ChevronDown
-                        className={`w-4 h-4 text-slate-400 transition-transform ${
-                          isReasonDropdownOpen ? "rotate-180" : ""
-                        }`}
+                        className={`w-4 h-4 text-slate-400 transition-transform ${isReasonDropdownOpen ? "rotate-180" : ""
+                          }`}
                       />
                     </button>
 
@@ -487,11 +511,10 @@ export default function ModeratorDirectoryPage() {
                                     setReasonCategory(key as DeactivationReasonCategory);
                                     setIsReasonDropdownOpen(false);
                                   }}
-                                  className={`w-full flex items-start justify-between p-2.5 rounded-lg text-left transition-colors cursor-pointer ${
-                                    isSelected
+                                  className={`w-full flex items-start justify-between p-2.5 rounded-lg text-left transition-colors cursor-pointer ${isSelected
                                       ? "bg-pink-50 text-[#D41367]"
                                       : "text-slate-700 hover:bg-slate-100"
-                                  }`}
+                                    }`}
                                 >
                                   <div className="min-w-0 pr-2">
                                     <p className="text-xs font-bold">{item.label}</p>
@@ -530,11 +553,10 @@ export default function ModeratorDirectoryPage() {
                         onClick={() =>
                           setUrgency(lvl.id as "low" | "medium" | "high" | "critical")
                         }
-                        className={`py-2 px-2 text-center rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                          urgency === lvl.id
+                        className={`py-2 px-2 text-center rounded-xl text-xs font-semibold border transition-all cursor-pointer ${urgency === lvl.id
                             ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
                             : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                        }`}
+                          }`}
                       >
                         {lvl.label}
                       </button>
@@ -552,7 +574,7 @@ export default function ModeratorDirectoryPage() {
                     rows={3}
                     value={reasonDetails}
                     onChange={(e) => setReasonDetails(e.target.value)}
-                    placeholder="Explain why this business should be deactivated (e.g. invalid phone number on audit calls, business has permanently shut down, ethical/policy violation with details)..."
+                    placeholder="Explain why this business should be deactivated (e.g. invalid phone number on audit calls, business has permanently shut down, ethical/policy violation with details"
                     className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white resize-none"
                   />
                 </div>
@@ -591,7 +613,7 @@ export default function ModeratorDirectoryPage() {
                   className="bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs sm:text-sm font-semibold h-9.5 px-5 shadow-xs gap-1.5 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>{isSubmitting ? "Submitting..." : "Submit to Admin"}</span>
+                  <span>{isSubmitting ? "Submitting" : "Submit to Admin"}</span>
                 </Button>
               </div>
             </form>

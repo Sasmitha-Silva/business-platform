@@ -17,59 +17,148 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { mockCategories } from "@/lib/mock-data";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
+import { getCategoriesAdminAction, saveCategoryAdminAction } from "@/app/actions/admin";
 import type { Category } from "@/lib/types";
+import {
+  getCachedDashboardData,
+  setCachedDashboardData,
+} from "@/lib/cache/admin-cache";
 
 export default function CategoryManagerPage() {
-  const [categories, setCategories] = useState(mockCategories);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ "cat-4": true, "cat-1": true });
+  const cachedCats = getCachedDashboardData<Category[]>("admin_categories_list");
+
+  const [categories, setCategories] = useState<Category[]>(cachedCats || []);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [newCatDescription, setNewCatDescription] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!cachedCats);
 
-  const toggleExpand = (id: string) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleToggleCategory = (id: string) => {
-    setCategories((prev) =>
-      prev.map((cat) => (cat.id === id ? { ...cat, is_active: !cat.is_active } : cat))
-    );
-    showToast("Category status updated.");
-  };
-
-  const handleCreateCategory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCatName.trim()) return;
-
-    const newCat: Category = {
-      id: `cat-${Date.now()}`,
-      name: newCatName.trim(),
-      slug: newCatName.toLowerCase().replace(/\s+/g, "-"),
-      parent_id: null,
-      sort_order: categories.length + 1,
-      is_active: true,
-      children: [],
-    };
-
-    setCategories([newCat, ...categories]);
-    setNewCatName("");
-    setNewCatDescription("");
-    setShowAddModal(false);
-    showToast(`Category "${newCat.name}" created successfully.`);
-  };
+  useEffect(() => {
+    async function loadData() {
+      try {
+        if (!cachedCats) {
+          setIsLoading(true);
+        }
+        const data = await getCategoriesAdminAction();
+        setCategories(data);
+        const initialExpanded: Record<string, boolean> = {};
+        data.slice(0, 2).forEach((c) => {
+          initialExpanded[c.id] = true;
+        });
+        setExpanded(initialExpanded);
+        setCachedDashboardData("admin_categories_list", data);
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const toggleExpand = (id: string) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleToggleCategory = async (id: string) => {
+    const cat = categories.find((c) => c.id === id);
+    if (!cat) return;
+    const updatedStatus = !cat.is_active;
+    try {
+      await saveCategoryAdminAction({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        parentId: cat.parent_id,
+        isActive: updatedStatus,
+      });
+      setCategories((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, is_active: updatedStatus } : c))
+      );
+      showToast("Category status updated.");
+    } catch (err) {
+      console.error("Failed to toggle category:", err);
+    }
+  };
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+
+    try {
+      await saveCategoryAdminAction({
+        name: newCatName.trim(),
+        slug: newCatName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        isActive: true,
+      });
+      const data = await getCategoriesAdminAction();
+      setCategories(data);
+      setNewCatName("");
+      setNewCatDescription("");
+      setShowAddModal(false);
+      showToast(`Category "${newCatName}" created successfully.`);
+    } catch (err) {
+      console.error("Failed to create category:", err);
+    }
+  };
+
   const totalCategories = categories.length;
   const activeCount = categories.filter((c) => c.is_active).length;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
+        {/* Header Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-7 w-72 rounded-lg" />
+              <Skeleton className="h-5 w-24 rounded-md" />
+            </div>
+            <Skeleton className="h-4 w-96 rounded-md" />
+          </div>
+          <Skeleton className="h-9.5 w-36 rounded-xl" />
+        </div>
+
+        {/* Categories List Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <Skeleton className="h-5 w-40 rounded-md" />
+            <Skeleton className="h-5 w-20 rounded-md" />
+          </div>
+          <div className="divide-y divide-slate-100 p-4 space-y-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="p-3.5 rounded-xl border border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-6 h-6 rounded-md" />
+                  <div className="space-y-1">
+                    <Skeleton className="h-4 w-40 rounded-md" />
+                    <Skeleton className="h-3 w-28 rounded-md" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-6 w-12 rounded-full" />
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
@@ -149,7 +238,7 @@ export default function CategoryManagerPage() {
                   rows={2}
                   value={newCatDescription}
                   onChange={(e) => setNewCatDescription(e.target.value)}
-                  placeholder="Brief taxonomy overview..."
+                  placeholder="Brief taxonomy overview"
                   className="w-full text-xs sm:text-sm p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:bg-white focus:border-[#D41367] focus:ring-2 focus:ring-pink-100 transition-all placeholder:text-slate-400 resize-none"
                 />
               </div>

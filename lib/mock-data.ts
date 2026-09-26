@@ -395,7 +395,7 @@ export const mockProducts: ProductService[] = [
     id: 'prod-2', business_id: 'biz-1', name: 'Security Audit Pro', type: 'service',
     description: 'Comprehensive vulnerability assessment & reporting.',
     tags: ['Cybersecurity', 'Audit', 'Compliance'], price_from: 1250,
-    service_area: 'pan_india', images: [{ id: 'img-2', product_id: 'prod-2', image_url: '/images/product-tech.png', sort_order: 1 }],
+    service_area: 'nationwide', images: [{ id: 'img-2', product_id: 'prod-2', image_url: '/images/product-tech.png', sort_order: 1 }],
   },
   {
     id: 'prod-3', business_id: 'biz-1', name: 'Enterprise Software', type: 'product',

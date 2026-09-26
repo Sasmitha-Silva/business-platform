@@ -20,21 +20,39 @@ import {
   FileWarning,
   ChevronDown,
   Check,
+  Building2,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { mockDeactivationRequests } from "@/lib/mock-data";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DEACTIVATION_REASON_CATEGORIES,
   DEACTIVATION_STATUS_BADGES,
   DEACTIVATION_URGENCY_BADGES,
 } from "@/lib/constants";
-import type { BusinessDeactivationRequest } from "@/lib/types";
+import type { Business, BusinessDeactivationRequest } from "@/lib/types";
+import {
+  getAllBusinessesAdminAction,
+  updateBusinessStatusAdminAction,
+  getDeactivationRequestsAdminAction,
+  resolveDeactivationRequestAdminAction,
+} from "@/app/actions/admin";
+import {
+  getModeratorVerificationQueueAction,
+  reviewVerificationDocAction,
+} from "@/app/actions/moderator";
+
+import {
+  getCachedDashboardData,
+  setCachedDashboardData,
+} from "@/lib/cache/admin-cache";
 
 interface AdminVerificationItem {
   id: string;
+  businessId: string;
   name: string;
   slug: string;
   district: string;
@@ -44,58 +62,66 @@ interface AdminVerificationItem {
   status: "pending" | "approved" | "rejected";
 }
 
-const initialVerifications: AdminVerificationItem[] = [
-  {
-    id: "1",
-    name: "Lumina Digital Solutions",
-    slug: "lumina-digital-solutions",
-    district: "District 3220",
-    requestedBadge: "DRR Verified",
-    docs: "DRR Letter, GST Cert",
-    submitted: "2h ago",
-    status: "pending",
-  },
-  {
-    id: "2",
-    name: "Apex Dental Studio",
-    slug: "apex-dental-studio",
-    district: "District 3141",
-    requestedBadge: "DRR Verified",
-    docs: "DRR Letter, Tax Proof",
-    submitted: "5h ago",
-    status: "pending",
-  },
-  {
-    id: "3",
-    name: "Vivid Design Hub",
-    slug: "vivid-design-hub",
-    district: "District 9212",
-    requestedBadge: "GST Verified",
-    docs: "GST Certificate",
-    submitted: "1d ago",
-    status: "pending",
-  },
-  {
-    id: "4",
-    name: "Colombo Tea Exports Ltd",
-    slug: "colombo-tea-exports",
-    district: "District 3220",
-    requestedBadge: "DRR Verified",
-    docs: "Export License, DRR Letter",
-    submitted: "2d ago",
-    status: "approved",
-  },
-];
-
 export default function AdminVerificationsPage() {
-  const [activeTab, setActiveTab] = useState<"verifications" | "deactivations">("verifications");
-  const [verifications, setVerifications] = useState<AdminVerificationItem[]>(initialVerifications);
-  const [deactivations, setDeactivations] = useState<BusinessDeactivationRequest[]>(mockDeactivationRequests);
+  const cachedBusinesses = getCachedDashboardData<Business[]>("admin_all_businesses");
+  const cachedVerifs = getCachedDashboardData<AdminVerificationItem[]>("admin_verifications_list");
+  const cachedDeacts = getCachedDashboardData<BusinessDeactivationRequest[]>("admin_deactivations");
+
+  const [activeTab, setActiveTab] = useState<"listings" | "verifications" | "deactivations">("listings");
+  const [businesses, setBusinesses] = useState<Business[]>(cachedBusinesses || []);
+  const [verifications, setVerifications] = useState<AdminVerificationItem[]>(cachedVerifs || []);
+  const [deactivations, setDeactivations] = useState<BusinessDeactivationRequest[]>(cachedDeacts || []);
+  const [isLoading, setIsLoading] = useState(!cachedBusinesses);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [listingFilter, setListingFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
   const [tierFilter, setTierFilter] = useState("all");
   const [deactFilter, setDeactFilter] = useState("all");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Business approval modal state
+  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [approveBusinessItem, setApproveBusinessItem] = useState<Business | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        if (!cachedBusinesses) {
+          setIsLoading(true);
+        }
+        const [allBiz, docs, deacts] = await Promise.all([
+          getAllBusinessesAdminAction(),
+          getModeratorVerificationQueueAction(),
+          getDeactivationRequestsAdminAction(),
+        ]);
+        setBusinesses(allBiz);
+        const mapped: AdminVerificationItem[] = docs.map((d: any) => ({
+          id: d.id,
+          businessId: d.business?.id || d.business_id,
+          name: d.business?.name || "Enterprise",
+          slug: d.business?.slug || "",
+          district: `District ${d.business?.district_number || 3220}`,
+          requestedBadge: d.doc_type === "gst_certificate" ? "GST Verified" : "DRR Verified",
+          docs: d.file_name || d.doc_type || "Verification Document",
+          submitted: new Date(d.created_at).toLocaleDateString(),
+          status: d.status,
+        }));
+        setVerifications(mapped);
+        setDeactivations(deacts);
+
+        setCachedDashboardData("admin_all_businesses", allBiz);
+        setCachedDashboardData("admin_verifications_list", mapped);
+        setCachedDashboardData("admin_deactivations", deacts);
+      } catch (err) {
+        console.error("Failed to load admin verifications:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   // Verification modal state
   const [approveModalItem, setApproveModalItem] = useState<AdminVerificationItem | null>(null);
@@ -106,9 +132,9 @@ export default function AdminVerificationsPage() {
   const [reviewDeactItem, setReviewDeactItem] = useState<BusinessDeactivationRequest | null>(null);
   const [adminResolutionNotes, setAdminResolutionNotes] = useState("");
 
-  // Lock background scrolling and prevent Lenis capture when any modal is open
+  // Lock background scrolling when any modal is open
   useEffect(() => {
-    if (approveModalItem || returnModalItem || reviewDeactItem) {
+    if (approveBusinessItem || isRejectModalOpen || approveModalItem || returnModalItem || reviewDeactItem) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -116,8 +142,9 @@ export default function AdminVerificationsPage() {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [approveModalItem, returnModalItem, reviewDeactItem]);
+  }, [approveBusinessItem, isRejectModalOpen, approveModalItem, returnModalItem, reviewDeactItem]);
 
+  const pendingBusinessesCount = businesses.filter((b) => b.status === "pending_review").length;
   const pendingVerificationsCount = verifications.filter((i) => i.status === "pending").length;
   const pendingDeactivationsCount = deactivations.filter((i) => i.status === "pending").length;
 
@@ -126,74 +153,168 @@ export default function AdminVerificationsPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Verification handlers
-  const confirmApproveVerification = () => {
-    if (!approveModalItem) return;
-    setVerifications((prev) =>
-      prev.map((item) => (item.id === approveModalItem.id ? { ...item, status: "approved" } : item))
-    );
-    showToast(`Approved ${approveModalItem.name} for ${approveModalItem.requestedBadge} badge.`);
-    setApproveModalItem(null);
+  // Business approval handlers
+  const confirmApproveBusiness = async () => {
+    if (!approveBusinessItem) return;
+    try {
+      const res = await updateBusinessStatusAdminAction(approveBusinessItem.id, "approved");
+      if (res.success) {
+        setBusinesses((prev) =>
+          prev.map((b) => (b.id === approveBusinessItem.id ? { ...b, status: "approved" } : b))
+        );
+        showToast(`Business "${approveBusinessItem.name}" approved and published to the directory!`);
+        setApproveBusinessItem(null);
+      } else {
+        alert("Failed to approve: " + res.error);
+      }
+    } catch (err) {
+      console.error("Failed to approve business:", err);
+    }
   };
 
-  const confirmReturnVerification = () => {
+  const confirmRejectBusiness = async () => {
+    if (!selectedBusiness) return;
+    try {
+      const res = await updateBusinessStatusAdminAction(selectedBusiness.id, "rejected", rejectReason);
+      if (res.success) {
+        setBusinesses((prev) =>
+          prev.map((b) => (b.id === selectedBusiness.id ? { ...b, status: "rejected" } : b))
+        );
+        showToast(`Business "${selectedBusiness.name}" application rejected.`);
+        setIsRejectModalOpen(false);
+        setSelectedBusiness(null);
+        setRejectReason("");
+      } else {
+        alert("Failed to reject: " + res.error);
+      }
+    } catch (err) {
+      console.error("Failed to reject business:", err);
+    }
+  };
+
+  // Verification handlers
+  const confirmApproveVerification = async () => {
+    if (!approveModalItem) return;
+    try {
+      await reviewVerificationDocAction({
+        docId: approveModalItem.id,
+        businessId: approveModalItem.businessId,
+        status: "approved",
+        tierToAward: approveModalItem.requestedBadge === "DRR Verified" ? 2 : 1,
+      });
+      setVerifications((prev) =>
+        prev.map((item) => (item.id === approveModalItem.id ? { ...item, status: "approved" } : item))
+      );
+      showToast(`Approved ${approveModalItem.name} for ${approveModalItem.requestedBadge} badge.`);
+      setApproveModalItem(null);
+    } catch (err) {
+      console.error("Verification approve failed:", err);
+    }
+  };
+
+  const confirmReturnVerification = async () => {
     if (!returnModalItem) return;
-    setVerifications((prev) =>
-      prev.map((item) => (item.id === returnModalItem.id ? { ...item, status: "rejected" } : item))
-    );
-    showToast(`Returned ${returnModalItem.name} for revision.`);
-    setReturnModalItem(null);
-    setReturnFeedback("");
+    try {
+      await reviewVerificationDocAction({
+        docId: returnModalItem.id,
+        businessId: returnModalItem.businessId,
+        status: "rejected",
+        rejectionReason: returnFeedback.trim() || "Requires corrections.",
+      });
+      setVerifications((prev) =>
+        prev.map((item) => (item.id === returnModalItem.id ? { ...item, status: "rejected" } : item))
+      );
+      showToast(`Returned ${returnModalItem.name} for revision.`);
+      setReturnModalItem(null);
+      setReturnFeedback("");
+    } catch (err) {
+      console.error("Verification return failed:", err);
+    }
   };
 
   // Deactivation handlers
-  const confirmApproveDeactivation = () => {
+  const confirmApproveDeactivation = async () => {
     if (!reviewDeactItem) return;
-    setDeactivations((prev) =>
-      prev.map((item) =>
-        item.id === reviewDeactItem.id
-          ? {
+    try {
+      await resolveDeactivationRequestAdminAction({
+        requestId: reviewDeactItem.id,
+        businessId: reviewDeactItem.business_id,
+        status: "approved",
+        adminNotes: adminResolutionNotes.trim() || "Confirmed violation. Listing deactivated and suspended.",
+        suspendBusiness: true,
+      });
+      setDeactivations((prev) =>
+        prev.map((item) =>
+          item.id === reviewDeactItem.id
+            ? {
               ...item,
               status: "approved",
-              admin_notes:
-                adminResolutionNotes.trim() || "Confirmed violation. Listing deactivated and suspended.",
-              reviewed_by: "Rtn. Kanishka De Silva (Super Admin)",
+              admin_notes: adminResolutionNotes.trim() || "Confirmed violation. Listing deactivated and suspended.",
               reviewed_at: new Date().toISOString(),
             }
-          : item
-      )
-    );
-    showToast(
-      `Business "${reviewDeactItem.business_name}" has been deactivated and suspended.`
-    );
-    setReviewDeactItem(null);
-    setAdminResolutionNotes("");
+            : item
+        )
+      );
+      showToast(
+        `Business "${reviewDeactItem.business_name || "Enterprise"}" has been deactivated and suspended.`
+      );
+      setReviewDeactItem(null);
+      setAdminResolutionNotes("");
+    } catch (err) {
+      console.error("Deactivation approval failed:", err);
+    }
   };
 
-  const confirmDismissDeactivation = () => {
+  const confirmDismissDeactivation = async () => {
     if (!reviewDeactItem) return;
-    setDeactivations((prev) =>
-      prev.map((item) =>
-        item.id === reviewDeactItem.id
-          ? {
+    try {
+      await resolveDeactivationRequestAdminAction({
+        requestId: reviewDeactItem.id,
+        businessId: reviewDeactItem.business_id,
+        status: "rejected",
+        adminNotes: adminResolutionNotes.trim() || "Reviewed by Admin. Request dismissed; listing remains active.",
+        suspendBusiness: false,
+      });
+      setDeactivations((prev) =>
+        prev.map((item) =>
+          item.id === reviewDeactItem.id
+            ? {
               ...item,
               status: "rejected",
-              admin_notes:
-                adminResolutionNotes.trim() || "Reviewed by Admin. Request dismissed; listing remains active.",
-              reviewed_by: "Rtn. Kanishka De Silva (Super Admin)",
+              admin_notes: adminResolutionNotes.trim() || "Reviewed by Admin. Request dismissed; listing remains active.",
               reviewed_at: new Date().toISOString(),
             }
-          : item
-      )
-    );
-    showToast(
-      `Deactivation request for "${reviewDeactItem.business_name}" was dismissed.`
-    );
-    setReviewDeactItem(null);
-    setAdminResolutionNotes("");
+            : item
+        )
+      );
+      showToast(
+        `Deactivation request for "${reviewDeactItem.business_name || "Enterprise"}" has been dismissed.`
+      );
+      setReviewDeactItem(null);
+      setAdminResolutionNotes("");
+    } catch (err) {
+      console.error("Deactivation dismiss failed:", err);
+    }
   };
 
   // Filtered lists
+  const filteredBusinesses = businesses.filter((b) => {
+    const matchesSearch =
+      b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (b.category?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      `district ${b.district_number}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (b.owner?.full_name || "").toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      listingFilter === "all"
+        ? true
+        : listingFilter === "pending"
+          ? b.status === "pending_review"
+          : b.status === listingFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
   const filteredVerifications = verifications.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -202,8 +323,8 @@ export default function AdminVerificationsPage() {
       tierFilter === "all"
         ? true
         : tierFilter === "drr"
-        ? item.requestedBadge === "DRR Verified"
-        : item.requestedBadge === "GST Verified";
+          ? item.requestedBadge === "DRR Verified"
+          : item.requestedBadge === "GST Verified";
     return matchesSearch && matchesBadge;
   });
 
@@ -219,6 +340,68 @@ export default function AdminVerificationsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
+        {/* Header Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-7 w-72 rounded-lg" />
+              <Skeleton className="h-5 w-24 rounded-md" />
+            </div>
+            <Skeleton className="h-4 w-96 rounded-md" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-9.5 w-32 rounded-xl" />
+          </div>
+        </div>
+
+        {/* 3 Tabs Skeleton */}
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+          <Skeleton className="h-10 w-48 rounded-xl" />
+          <Skeleton className="h-10 w-48 rounded-xl" />
+          <Skeleton className="h-10 w-48 rounded-xl" />
+        </div>
+
+        {/* Search & Filter Bar Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <Skeleton className="h-10 w-full sm:w-80 rounded-xl" />
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Skeleton className="h-10 w-28 rounded-xl" />
+            <Skeleton className="h-10 w-28 rounded-xl" />
+          </div>
+        </div>
+
+        {/* Table Rows Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <Skeleton className="h-5 w-40 rounded-md" />
+            <Skeleton className="h-5 w-20 rounded-md" />
+          </div>
+          <div className="divide-y divide-slate-100 p-4 space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-4 w-44 rounded-md" />
+                    <Skeleton className="h-3.5 w-60 rounded-md" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <Skeleton className="h-6 w-24 rounded-md" />
+                  <Skeleton className="h-8 w-20 rounded-xl" />
+                  <Skeleton className="h-8 w-20 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in max-w-[1600px] mx-auto pb-12">
       {/* Toast Alert */}
@@ -226,6 +409,156 @@ export default function AdminVerificationsPage() {
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-200 border border-slate-700">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* ================= MODAL: REJECT BUSINESS LISTING APPLICATION ================= */}
+      {isRejectModalOpen && selectedBusiness && (
+        <div
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto overscroll-contain animate-in fade-in duration-200"
+        >
+          <div
+            data-lenis-prevent="true"
+            className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-xl border border-slate-200 relative my-auto max-h-[88vh] flex flex-col overscroll-contain animate-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                  <XCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900">Reject Application</h3>
+                  <p className="text-xs text-slate-500 font-normal">Provide feedback to the applicant.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRejectModalOpen(false)}
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-3.5 py-3.5 pr-1">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm">
+                <p className="font-bold text-slate-900">{selectedBusiness.name}</p>
+                <p className="text-xs text-slate-500 font-normal mt-0.5">
+                  District {selectedBusiness.district_number} • {selectedBusiness.category?.name || "Business"}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm font-semibold text-slate-700">Reason for Rejection *</Label>
+                <Textarea
+                  rows={3}
+                  required
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="e.g. Incomplete business description, non-compliant business category, or missing contact details"
+                  className="w-full text-xs sm:text-sm bg-slate-50 rounded-xl border border-slate-200 resize-none focus:bg-white focus:border-[#D41367]"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsRejectModalOpen(false)}
+                className="rounded-xl text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 h-9.5 px-4"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={confirmRejectBusiness}
+                className="bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs sm:text-sm font-semibold h-9.5 px-5 shadow-xs cursor-pointer"
+              >
+                Confirm Rejection
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: CONFIRM APPROVE BUSINESS LISTING APPLICATION ================= */}
+      {approveBusinessItem && (
+        <div
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto overscroll-contain animate-in fade-in duration-200"
+        >
+          <div
+            data-lenis-prevent="true"
+            className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-xl border border-slate-200 relative my-auto max-h-[88vh] flex flex-col overscroll-contain animate-in zoom-in-95 duration-200"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900">Approve Business Listing</h3>
+                  <p className="text-xs text-slate-500 font-normal">Publish business to directory.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApproveBusinessItem(null)}
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto space-y-3.5 py-3.5 pr-1">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs sm:text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Business Name:</span>
+                  <span className="font-bold text-slate-900">{approveBusinessItem.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Category:</span>
+                  <span className="font-semibold text-slate-800">{approveBusinessItem.category?.name || "General"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">District:</span>
+                  <span className="font-semibold text-slate-700">District {approveBusinessItem.district_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Founder:</span>
+                  <span className="text-slate-700">{approveBusinessItem.owner?.full_name || "Applicant"}</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-100 text-xs text-emerald-800 leading-relaxed">
+                Approving this application will activate the listing immediately, make it publicly searchable across the Rotary Business Directory, and grant full dashboard privileges to the owner.
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setApproveBusinessItem(null)}
+                className="rounded-xl text-xs sm:text-sm font-semibold text-slate-700 border-slate-200 hover:bg-slate-50 h-9.5 px-4"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={confirmApproveBusiness}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold h-9.5 px-5 shadow-xs cursor-pointer gap-1.5"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Confirm &amp; Publish</span>
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -357,7 +690,7 @@ export default function AdminVerificationsPage() {
                   required
                   value={returnFeedback}
                   onChange={(e) => setReturnFeedback(e.target.value)}
-                  placeholder="e.g. Scanned GST certificate is blurry, or DRR endorsement is for previous rotary tenure..."
+                  placeholder="e.g. Scanned GST certificate is blurry, or DRR endorsement is for previous rotary tenure"
                   className="w-full text-xs sm:text-sm bg-slate-50 rounded-xl border border-slate-200 resize-none focus:bg-white focus:border-[#D41367]"
                 />
               </div>
@@ -424,7 +757,6 @@ export default function AdminVerificationsPage() {
               data-lenis-prevent="true"
               className="flex-1 overflow-y-auto space-y-4 py-4 pr-1.5 scrollbar-thin overscroll-contain scroll-smooth"
             >
-              {/* Target Business & Moderator Details Card */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs sm:text-sm">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Target Business:</span>
@@ -452,7 +784,6 @@ export default function AdminVerificationsPage() {
                 </div>
               </div>
 
-              {/* Moderator Findings */}
               <div className="space-y-1.5 text-xs">
                 <Label className="font-bold text-slate-800">Moderator Justification &amp; Findings:</Label>
                 <div className="p-3.5 bg-red-50/60 rounded-xl border border-red-100 text-slate-700 leading-relaxed text-xs">
@@ -469,7 +800,6 @@ export default function AdminVerificationsPage() {
                 </div>
               )}
 
-              {/* Admin Resolution Input */}
               <div className="space-y-1.5 pb-2">
                 <Label className="text-xs sm:text-sm font-semibold text-slate-800">
                   Super Admin Resolution Memo / Note (Optional)
@@ -478,13 +808,12 @@ export default function AdminVerificationsPage() {
                   rows={3}
                   value={adminResolutionNotes}
                   onChange={(e) => setAdminResolutionNotes(e.target.value)}
-                  placeholder="Enter administrative rationale (e.g. Audit confirmed non-operational status; suspending portal access and hiding directory listing)..."
+                  placeholder="Enter administrative rationale (e.g. Audit confirmed non-operational status; suspending portal access and hiding directory listing)"
                   className="text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white resize-none"
                 />
               </div>
             </div>
 
-            {/* Decision Actions (Pinned Footer) */}
             <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-4 border-t border-slate-100 shrink-0">
               <Button
                 type="button"
@@ -527,7 +856,7 @@ export default function AdminVerificationsPage() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
-            Audit business credential submissions and review district moderator deactivation requests.
+            Review new business applications, audit statutory trust badge documents, and resolve moderator deactivation escalations.
           </p>
         </div>
 
@@ -545,22 +874,45 @@ export default function AdminVerificationsPage() {
       </div>
 
       {/* ================= MAIN TABS ================= */}
-      <div className="flex border-b border-slate-200 gap-6">
+      <div className="flex border-b border-slate-200 gap-6 overflow-x-auto">
+        {/* Tab 1: New Business Listing Applications */}
+        <button
+          onClick={() => {
+            setActiveTab("listings");
+            setSearchQuery("");
+          }}
+          className={`pb-3 text-xs sm:text-sm font-bold transition-all relative cursor-pointer flex items-center gap-2 shrink-0 ${activeTab === "listings"
+              ? "text-[#D41367]"
+              : "text-slate-500 hover:text-slate-800"
+            }`}
+        >
+          <Building2 className="w-4 h-4" />
+          <span>New Business Applications</span>
+          {pendingBusinessesCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-[11px] bg-pink-100 text-[#D41367] font-bold">
+              {pendingBusinessesCount}
+            </span>
+          )}
+          {activeTab === "listings" && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#D41367] rounded-full" />
+          )}
+        </button>
+
+        {/* Tab 2: Document & Badge Verifications */}
         <button
           onClick={() => {
             setActiveTab("verifications");
             setSearchQuery("");
           }}
-          className={`pb-3 text-xs sm:text-sm font-bold transition-all relative cursor-pointer flex items-center gap-2 ${
-            activeTab === "verifications"
+          className={`pb-3 text-xs sm:text-sm font-bold transition-all relative cursor-pointer flex items-center gap-2 shrink-0 ${activeTab === "verifications"
               ? "text-[#D41367]"
               : "text-slate-500 hover:text-slate-800"
-          }`}
+            }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          <span>Document Verifications</span>
+          <span>Trust Badge Verifications</span>
           {pendingVerificationsCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[11px] bg-pink-100 text-[#D41367] font-bold">
+            <span className="px-2 py-0.5 rounded-full text-[11px] bg-blue-100 text-blue-700 font-bold">
               {pendingVerificationsCount}
             </span>
           )}
@@ -569,16 +921,16 @@ export default function AdminVerificationsPage() {
           )}
         </button>
 
+        {/* Tab 3: Moderator Deactivations */}
         <button
           onClick={() => {
             setActiveTab("deactivations");
             setSearchQuery("");
           }}
-          className={`pb-3 text-xs sm:text-sm font-bold transition-all relative cursor-pointer flex items-center gap-2 ${
-            activeTab === "deactivations"
+          className={`pb-3 text-xs sm:text-sm font-bold transition-all relative cursor-pointer flex items-center gap-2 shrink-0 ${activeTab === "deactivations"
               ? "text-[#D41367]"
               : "text-slate-500 hover:text-slate-800"
-          }`}
+            }`}
         >
           <ShieldAlert className="w-4 h-4 text-red-600" />
           <span>Moderator Deactivation Requests</span>
@@ -593,7 +945,155 @@ export default function AdminVerificationsPage() {
         </button>
       </div>
 
-      {/* ================= TAB 1: DOCUMENT VERIFICATIONS QUEUE ================= */}
+      {/* ================= TAB 1: NEW BUSINESS LISTINGS APPLICATIONS ================= */}
+      {activeTab === "listings" && (
+        <div className="space-y-4">
+          {/* SEARCH & FILTER TOOLBAR */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search business, founder, district"
+                className="pl-9.5 h-9.5 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+              {[
+                { id: "pending", label: `Pending Approval (${pendingBusinessesCount})` },
+                { id: "approved", label: "Approved" },
+                { id: "rejected", label: "Rejected" },
+                { id: "all", label: "All Statuses" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setListingFilter(tab.id as any)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${listingFilter === tab.id
+                      ? "bg-[#D41367] text-white shadow-2xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* TABLE LISTING */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+            <table className="w-full table-fixed text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/70 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <th className="py-3.5 px-4 w-[28%] whitespace-nowrap">Business &amp; Founder</th>
+                  <th className="py-3.5 px-3 w-[16%] whitespace-nowrap">Category</th>
+                  <th className="py-3.5 px-3 w-[14%] whitespace-nowrap">District</th>
+                  <th className="py-3.5 px-3 w-[12%] whitespace-nowrap">Status</th>
+                  <th className="py-3.5 px-3 w-[12%] whitespace-nowrap">Submitted</th>
+                  <th className="py-3.5 px-4 w-[18%] text-right whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
+                {filteredBusinesses.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                      No business listing applications matched your filter.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredBusinesses.map((biz) => (
+                    <tr key={biz.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="min-w-0">
+                          <span className="font-bold text-slate-900 truncate block" title={biz.name}>
+                            {biz.name}
+                          </span>
+                          <span className="text-[11px] text-slate-400 truncate block">
+                            {biz.owner?.full_name || "Founder"} • {biz.contact?.email || biz.owner?.email || ""}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span className="font-semibold text-slate-700 truncate block">
+                          {biz.category?.name || "General"}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <span className="font-semibold text-slate-700">
+                          District {biz.district_number}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold capitalize border ${biz.status === "approved"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : biz.status === "pending_review"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-red-50 text-red-700 border-red-200"
+                            }`}
+                        >
+                          {biz.status.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap text-slate-400 font-normal">
+                        {new Date(biz.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-2 text-xs font-semibold rounded-lg border-slate-200 text-slate-700 hover:bg-slate-50 shrink-0"
+                            asChild
+                          >
+                            <Link href={`/business/${biz.slug}`} target="_blank" rel="noopener noreferrer">
+                              <Eye className="w-3 h-3 mr-1" />
+                              <span>View</span>
+                            </Link>
+                          </Button>
+                          {biz.status === "pending_review" && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => setApproveBusinessItem(biz)}
+                                className="h-8 px-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg gap-1 cursor-pointer shadow-2xs shrink-0"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Approve</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedBusiness(biz);
+                                  setRejectReason("");
+                                  setIsRejectModalOpen(true);
+                                }}
+                                className="h-8 px-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg cursor-pointer shrink-0"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                              </Button>
+                            </>
+                          )}
+                          {biz.status === "approved" && (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Live</span>
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ================= TAB 2: DOCUMENT VERIFICATIONS QUEUE (BADGES) ================= */}
       {activeTab === "verifications" && (
         <div className="space-y-4">
           {/* SEARCH & FILTER TOOLBAR */}
@@ -603,7 +1103,7 @@ export default function AdminVerificationsPage() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by business name or district..."
+                placeholder="Search by business name or district"
                 className="pl-9.5 h-9.5 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
               />
             </div>
@@ -617,11 +1117,10 @@ export default function AdminVerificationsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setTierFilter(tab.id)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${
-                    tierFilter === tab.id
+                  className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${tierFilter === tab.id
                       ? "bg-[#D41367] text-white shadow-2xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -664,11 +1163,10 @@ export default function AdminVerificationsPage() {
                       </td>
                       <td className="py-3.5 px-3">
                         <span
-                          className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap border ${
-                            item.requestedBadge === "DRR Verified"
+                          className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap border ${item.requestedBadge === "DRR Verified"
                               ? "bg-pink-50 text-[#D41367] border-pink-200 font-bold"
                               : "bg-blue-50 text-blue-700 border-blue-200"
-                          }`}
+                            }`}
                         >
                           {item.requestedBadge}
                         </span>
@@ -736,7 +1234,7 @@ export default function AdminVerificationsPage() {
         </div>
       )}
 
-      {/* ================= TAB 2: MODERATOR DEACTIVATION REQUESTS QUEUE ================= */}
+      {/* ================= TAB 3: MODERATOR DEACTIVATION REQUESTS QUEUE ================= */}
       {activeTab === "deactivations" && (
         <div className="space-y-4">
           {/* SEARCH & FILTER TOOLBAR */}
@@ -746,7 +1244,7 @@ export default function AdminVerificationsPage() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search business, moderator, district..."
+                placeholder="Search business, moderator, district"
                 className="pl-9.5 h-9.5 text-xs sm:text-sm bg-slate-50 border-slate-200 rounded-xl focus:bg-white"
               />
             </div>
@@ -761,11 +1259,10 @@ export default function AdminVerificationsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setDeactFilter(tab.id)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${
-                    deactFilter === tab.id
+                  className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold shrink-0 cursor-pointer transition-all ${deactFilter === tab.id
                       ? "bg-[#D41367] text-white shadow-2xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -825,9 +1322,8 @@ export default function AdminVerificationsPage() {
 
                         <td className="py-3 px-3">
                           <span
-                            className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold truncate max-w-full border ${
-                              reasonMeta?.badgeClass || "bg-slate-100 text-slate-700 border-slate-200"
-                            }`}
+                            className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold truncate max-w-full border ${reasonMeta?.badgeClass || "bg-slate-100 text-slate-700 border-slate-200"
+                              }`}
                             title={reasonMeta?.label || item.reason_category}
                           >
                             {reasonMeta?.label || item.reason_category}
@@ -836,9 +1332,8 @@ export default function AdminVerificationsPage() {
 
                         <td className="py-3 px-3 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold border ${
-                              statusMeta?.bgClass || "bg-slate-100 text-slate-700"
-                            }`}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold border ${statusMeta?.bgClass || "bg-slate-100 text-slate-700"
+                              }`}
                           >
                             {item.status === "pending" && <Clock className="w-3 h-3 text-amber-600 shrink-0" />}
                             {item.status === "approved" && <Ban className="w-3 h-3 text-red-600 shrink-0" />}

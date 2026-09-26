@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -22,9 +22,13 @@ import {
   Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getOwnerBusinessAction, submitVerificationDocumentAction } from "@/app/actions/owner";
+import { getUploadUrlAction } from "@/app/actions/storage";
+import type { VerificationDocType } from "@/lib/types";
 
 interface VerificationDoc {
   id: string;
+  docType: VerificationDocType;
   title: string;
   category: string;
   description: string;
@@ -39,61 +43,133 @@ interface VerificationDoc {
 const initialDocs: VerificationDoc[] = [
   {
     id: "doc-gst",
+    docType: "gst",
     title: "GST / Business Tax Registration Certificate",
     category: "Legal Proof",
-    description: "Official government-issued Goods & Services Tax (GST REG-06) or state business registration.",
-    status: "rejected",
-    feedback: "The uploaded scan was blurry with clipped corners. Please provide a clear 300 DPI PDF or high-resolution photo showing the complete document with official seal.",
-    fileName: "gst_certificate_old_scan.pdf",
-    uploadedAt: "July 22, 2026",
-    fileSize: "1.2 MB",
+    description: "Official government-issued Goods & Services Tax or state business registration certificate.",
+    status: "not_uploaded",
     icon: FileText,
   },
   {
     id: "doc-drr",
+    docType: "drr",
     title: "DRR / Rotary Club Authorization Letter",
     category: "Rotaract Accreditation",
-    description: "Official endorsement letter issued by your District Rotaract Representative (DRR) or Rotary Sponsoring Club President for active tenure.",
-    status: "rejected",
-    feedback: "The submitted letter specifies the 2023-24 tenure. Please obtain and re-upload the valid letter endorsed for the current active Rotary year.",
-    fileName: "drr_letter_signed_2023.pdf",
-    uploadedAt: "July 20, 2026",
-    fileSize: "840 KB",
+    description: "Official endorsement letter issued by your District Rotaract Representative (DRR) or Sponsoring Club President.",
+    status: "not_uploaded",
     icon: Landmark,
   },
   {
     id: "doc-msme",
-    title: "Udyam MSME Enterprise Registration",
+    docType: "udyam",
+    title: "Udyam / MSME Enterprise Registration",
     category: "Enterprise Verification",
-    description: "National Udyam certificate issued by the Ministry of Micro, Small & Medium Enterprises for Gold Tier eligibility.",
-    status: "pending",
-    fileName: "udyam_registration_lumina_final.pdf",
-    uploadedAt: "2 days ago",
-    fileSize: "2.4 MB",
+    description: "National Udyam / MSME registration certificate for Gold Tier eligibility.",
+    status: "not_uploaded",
     icon: Building2,
   },
 ];
 
 export default function VerificationUploadsPage() {
   const [docs, setDocs] = useState<VerificationDoc[]>(initialDocs);
+  const [businessId, setBusinessId] = useState<string>("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentUploadTarget, setCurrentUploadTarget] = useState<VerificationDoc | null>(null);
 
-  const handleSimulatedUpload = (id: string, docTitle: string) => {
-    setDocs((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? {
-              ...d,
-              status: "pending",
-              fileName: "updated_certificate_submission.pdf",
-              uploadedAt: "Just now",
-              fileSize: "1.8 MB",
-              feedback: undefined,
-            }
-          : d
-      )
-    );
-    showToast(`New document uploaded for ${docTitle}. Sent for moderator review.`);
+  useEffect(() => {
+    async function loadBiz() {
+      const biz = await getOwnerBusinessAction();
+      if (biz) {
+        setBusinessId(biz.id);
+        if (biz.verification_documents && biz.verification_documents.length > 0) {
+          setDocs((prev) =>
+            prev.map((d) => {
+              const matched = biz.verification_documents?.find((vd: any) => vd.doc_type === d.docType);
+              if (matched) {
+                return {
+                  ...d,
+                  status: matched.status as any,
+                  fileName: matched.file_name || d.fileName,
+                  feedback: matched.rejection_reason || undefined,
+                  uploadedAt: matched.created_at ? new Date(matched.created_at).toLocaleDateString() : d.uploadedAt,
+                };
+              }
+              return d;
+            })
+          );
+        }
+      }
+    }
+    loadBiz();
+  }, []);
+
+  const handleUploadClick = (doc: VerificationDoc) => {
+    setCurrentUploadTarget(doc);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUploadTarget) return;
+
+    setUploadingDocId(currentUploadTarget.id);
+
+    try {
+      // 1. Get presigned R2 upload URL
+      const res = await getUploadUrlAction({
+        filename: file.name,
+        contentType: file.type || "application/pdf",
+        folder: "documents",
+      });
+
+      if (res.success && res.uploadUrl && res.key) {
+        // 2. Direct upload to R2
+        await fetch(res.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "application/pdf" },
+          body: file,
+        });
+
+        // 3. Save record in Supabase
+        if (businessId) {
+          await submitVerificationDocumentAction({
+            businessId,
+            docType: currentUploadTarget.docType,
+            fileKey: res.key,
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+          });
+        }
+
+        setDocs((prev) =>
+          prev.map((d) =>
+            d.id === currentUploadTarget.id
+              ? {
+                ...d,
+                status: "pending",
+                fileName: file.name,
+                uploadedAt: "Just now",
+                fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+                feedback: undefined,
+              }
+              : d
+          )
+        );
+        showToast(`Document "${file.name}" uploaded successfully. Sent for moderator audit.`);
+      }
+    } catch (err) {
+      console.error("Failed to upload verification document:", err);
+      showToast("Upload failed. Please try again.");
+    } finally {
+      setUploadingDocId(null);
+      setCurrentUploadTarget(null);
+    }
   };
 
   const showToast = (msg: string) => {
@@ -210,25 +286,23 @@ export default function VerificationUploadsPage() {
           return (
             <div
               key={doc.id}
-              className={`bg-white rounded-2xl border p-5 sm:p-6 shadow-2xs flex flex-col justify-between space-y-5 transition-all ${
-                isRejected
+              className={`bg-white rounded-2xl border p-5 sm:p-6 shadow-2xs flex flex-col justify-between space-y-5 transition-all ${isRejected
                   ? "border-red-200 hover:border-red-300"
                   : isPending
-                  ? "border-blue-200 hover:border-blue-300"
-                  : "border-emerald-200 hover:border-emerald-300"
-              }`}
+                    ? "border-blue-200 hover:border-blue-300"
+                    : "border-emerald-200 hover:border-emerald-300"
+                }`}
             >
               <div className="space-y-4">
                 {/* Header Strip */}
                 <div className="flex items-center justify-between">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-                      isRejected
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${isRejected
                         ? "bg-red-50 text-red-600 border border-red-100"
                         : isPending
-                        ? "bg-blue-50 text-blue-600 border border-blue-100"
-                        : "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                    }`}
+                          ? "bg-blue-50 text-blue-600 border border-blue-100"
+                          : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                      }`}
                   >
                     <Icon className="w-5 h-5" />
                   </div>
@@ -306,14 +380,14 @@ export default function VerificationUploadsPage() {
 
               {/* Action / Upload Area */}
               <div>
-                {isRejected ? (
+                {isRejected || doc.status === "not_uploaded" ? (
                   <div
-                    onClick={() => handleSimulatedUpload(doc.id, doc.title)}
+                    onClick={() => handleUploadClick(doc)}
                     className="border border-dashed border-pink-300 hover:border-[#D41367] rounded-xl p-4 text-center bg-pink-50/30 hover:bg-pink-50/60 transition-all cursor-pointer space-y-1 group"
                   >
                     <Upload className="w-5 h-5 text-[#D41367] mx-auto group-hover:scale-110 transition-transform" />
                     <p className="text-xs sm:text-sm font-semibold text-[#D41367]">
-                      Click or Drag to Re-upload
+                      {uploadingDocId === doc.id ? "Uploading to R2" : "Click to Upload Document"}
                     </p>
                     <p className="text-xs text-slate-400 font-normal">PDF, JPG, PNG up to 10MB</p>
                   </div>
@@ -322,7 +396,7 @@ export default function VerificationUploadsPage() {
                     disabled
                     className="w-full bg-slate-100 text-slate-500 border border-slate-200 rounded-xl h-10 text-xs sm:text-sm font-semibold"
                   >
-                    <Lock className="w-3.5 h-3.5 mr-1.5" /> Locked during Review
+                    <Lock className="w-3.5 h-3.5 mr-1.5" /> Under Moderator Review
                   </Button>
                 ) : (
                   <Button
@@ -338,6 +412,15 @@ export default function VerificationUploadsPage() {
           );
         })}
       </div>
+
+      {/* Hidden file input for real R2 uploads */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelected}
+        accept=".pdf,.png,.jpg,.jpeg"
+        className="hidden"
+      />
 
       {/* ================= COMPLIANCE GUIDANCE & SUPPORT BANNER ================= */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
